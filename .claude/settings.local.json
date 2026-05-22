@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"E:\\\\work projects\\\\personal projects\\\\muxbir-ai-vue\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(ls -la \"E:\\\\\\\\work projects\\\\\\\\personal projects\\\\\\\\muxbir-ai-vue\")",
+      "Bash(find \"E:\\\\\\\\work projects\\\\\\\\personal projects\\\\\\\\muxbir-ai-vue\\\\\\\\src\" -type f -name \"*.vue\" -o -name \"*.js\" -o -name \"*.ts\")",
+      "Bash(find \"E:\\\\\\\\work projects\\\\\\\\personal projects\\\\\\\\muxbir-ai-vue\\\\\\\\src\" -type f \\\\\\( -name \"*.vue\" -o -name \"*.js\" -o -name \"*.ts\" \\\\\\))",
+      "Bash(find \"E:\\\\\\\\work projects\\\\\\\\personal projects\\\\\\\\muxbir-ai-vue\\\\\\\\src\" -type f -name \"*.vue\")",
+      "Bash(find \"E:\\\\\\\\work projects\\\\\\\\personal projects\\\\\\\\muxbir-ai-vue\\\\\\\\src\\\\\\\\components\" -type f -name \"*.vue\")",
+      "Bash(find \"E:\\\\\\\\work projects\\\\\\\\personal projects\\\\\\\\muxbir-ai-vue\\\\\\\\src\" -type d)",
+      "Bash(find \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\" -type f -name \"*.py\" -o -name \"*.js\" -o -name \"*.json\" -o -name \"*.md\" -o -name \"*.txt\" | grep -v __pycache__ | sort)",
+      "Bash(mkdir -p \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\\\\architecture\")",
+      "Bash(ls \"C:/Users/User/Downloads/\" | head -50)",
+      "Bash(unzip -o \"Muxbir AI \\(1\\).zip\" -d \"muxbir-ai-extracted\")",
+      "Read(//e/work projects/personal projects/backend-ai-muxbir/**)",
+      "Bash(npm install *)",
+      "Bash(powershell -Command \"cd 'E:/work projects/personal projects/backend-ai-muxbir'; node_modules/.bin/tsc --noEmit 2>&1\")",
+      "Bash(node node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(echo \"EXIT:$?\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx tsc *)",
+      "Bash(npx nest *)",
+      "Bash(cat src/api/http.js 2>/dev/null | head -30; ls ../ 2>/dev/null | head -20)",
+      "Bash(Get-ChildItem -Path 'E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\\\\src\\\\modules\\\\web-portal\\\\channels\\\\' -File -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(PGPASSWORD=postgres psql -h localhost -U postgres -d muxbir_db -c \"SELECT id, email FROM users WHERE email='uzpsychologist@gmail.com';\")",
+      "PowerShell($env:PGPASSWORD = 'postgres'; & \"psql\" -h localhost -U postgres -d muxbir_db -c \"SELECT id, email FROM users WHERE email='uzpsychologist@gmail.com';\")",
+      "Bash(xargs grep -l \"Roles\\\\|roles_decorator\\\\|@Roles\")"
+    ]
+  }
+}
