@@ -27,7 +27,15 @@
       "Bash(echo \"EXIT=$?\")",
       "Bash(PGPASSWORD=postgres psql -h localhost -U postgres -d muxbir_db -c \"SELECT id, email FROM users WHERE email='uzpsychologist@gmail.com';\")",
       "PowerShell($env:PGPASSWORD = 'postgres'; & \"psql\" -h localhost -U postgres -d muxbir_db -c \"SELECT id, email FROM users WHERE email='uzpsychologist@gmail.com';\")",
-      "Bash(xargs grep -l \"Roles\\\\|roles_decorator\\\\|@Roles\")"
+      "Bash(xargs grep -l \"Roles\\\\|roles_decorator\\\\|@Roles\")",
+      "Bash(git -C \"../backend-ai-muxbir\" diff --stat)",
+      "Bash(git -C \"../backend-ai-muxbir\" show --stat 6d90e11)",
+      "Bash(git -C \"../backend-ai-muxbir\" log --oneline origin/master..HEAD)",
+      "Bash(git -C \"../backend-ai-muxbir\" status -sb)",
+      "Bash(npm run *)",
+      "Bash(echo \"Started PID $!\")",
+      "Bash(netstat -ano)",
+      "Bash(awk '{print $5}')"
     ]
   }
 }

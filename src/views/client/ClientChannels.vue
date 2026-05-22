@@ -554,7 +554,10 @@ async function removeChannel(c) {
   try {
     await channelsApi.remove(company.value.id, c.id)
     channels.value = channels.value.filter(x => x.id !== c.id)
-  } catch {}
+  } catch (err) {
+    const msg = err?.response?.data?.message || tt('cc.modal.err.generic')
+    alert(Array.isArray(msg) ? msg.join('. ') : msg)
+  }
 }
 
 // ── Add channel modal logikasi ─────────────────────────────────

@@ -8,6 +8,7 @@ import AdminWorkerSettings from '@/views/admin/AdminWorkerSettings.vue'
 import ClientOverview from '@/views/client/ClientOverview.vue'
 import ClientChannels from '@/views/client/ClientChannels.vue'
 import ClientPosts from '@/views/client/ClientPosts.vue'
+import PostEditor from '@/views/client/PostEditor.vue'
 import ClientBilling from '@/views/client/ClientBilling.vue'
 import ClientTeam from '@/views/client/ClientTeam.vue'
 import Onboarding from '@/views/Onboarding.vue'
@@ -29,6 +30,8 @@ const routes = [
   { path: '/client/overview',  component: ClientOverview },
   { path: '/client/channels',  component: ClientChannels },
   { path: '/client/posts',     component: ClientPosts },
+  { path: '/client/posts/new',         component: PostEditor },
+  { path: '/client/posts/:id/edit',    component: PostEditor },
   { path: '/client/billing',   component: ClientBilling },
   { path: '/client/team',      component: ClientTeam },
   { path: '/signup',           component: Onboarding },
