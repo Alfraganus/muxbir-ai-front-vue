@@ -29,10 +29,12 @@ import { useRouter, useRoute } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { authApi } from '@/api/auth.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { resolveRole, homePathForRole } from '@/utils/authRole.js'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 
 const state = ref('loading')
 const errorMsg = ref('')
@@ -46,8 +48,7 @@ onMounted(async () => {
   }
   try {
     const data = await authApi.verifyMagicLink(token)
-    localStorage.setItem('access_token', data.access_token)
-    localStorage.setItem('refresh_token', data.refresh_token)
+    authStore.setTokens(data)
     state.value = 'success'
     const target = homePathForRole(resolveRole(data.user))
     setTimeout(() => router.push(target), 1000)

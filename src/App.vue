@@ -77,6 +77,7 @@ watch(() => authStore.accessToken, async (tok) => {
     store.setCompany(null)
     return
   }
+  if (!authStore.user) await authStore.fetchMe()
   syncWorkspaceFromRole()
   await loadCompanyForClient()
 })

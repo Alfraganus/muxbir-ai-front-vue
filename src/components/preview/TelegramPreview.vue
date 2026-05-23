@@ -32,7 +32,7 @@
             <button class="tg-back">‹</button>
             <div class="tg-head-info">
               <div class="tg-head-name">{{ channelName }}</div>
-              <div class="tg-head-sub">channel · {{ fakeMembers }} subscribers</div>
+              <div class="tg-head-sub">{{ subscribersLabel }}</div>
             </div>
             <div class="tg-channel-avatar" :style="{ background: channelColor }">{{ channelInitial }}</div>
           </div>
@@ -42,16 +42,18 @@
             <div class="tg-date-chip">Bugun</div>
 
             <div class="tg-bubble">
-              <!-- Media -->
-              <div v-if="photos.length === 1" class="tg-photo single" :style="{ backgroundImage: `url(${photos[0]})` }"/>
-              <div v-else-if="photos.length > 1" class="tg-album">
-                <div v-for="(ph, i) in photos.slice(0, 4)" :key="i"
+              <!-- 1) Cover (asosiy rasm) — tepada katta -->
+              <div v-if="coverUrl" class="tg-photo single" :style="{ backgroundImage: `url(${coverUrl})` }"/>
+
+              <!-- 2) Gallery — cover ostida kichik grid -->
+              <div v-if="galleryPhotos.length" class="tg-album" :class="albumClass">
+                <div v-for="(ph, i) in galleryPhotos.slice(0, 4)" :key="`${ph}-${i}`"
                   class="tg-album-item" :style="{ backgroundImage: `url(${ph})` }">
-                  <span v-if="i === 3 && photos.length > 4" class="tg-album-more">+{{ photos.length - 4 }}</span>
+                  <span v-if="i === 3 && galleryPhotos.length > 4" class="tg-album-more">+{{ galleryPhotos.length - 4 }}</span>
                 </div>
               </div>
 
-              <!-- Text content -->
+              <!-- 3) Text content — media ostida (caption) -->
               <div v-if="renderedHtml" class="tg-text" v-html="renderedHtml"/>
 
               <!-- Bubble footer -->
@@ -88,6 +90,7 @@ import { buildTelegramHtml, telegramHtmlToBrowserHtml } from '@/utils/editorjsTo
 
 const props = defineProps({
   channelName: { type: String, default: 'Mening kanalim' },
+  subscriberCount: { type: Number, default: null },
   title: { type: String, default: '' },
   shortDescription: { type: String, default: '' },
   contentJson: { type: Object, default: () => ({ blocks: [] }) },
@@ -96,10 +99,25 @@ const props = defineProps({
   tags: { type: Array, default: () => [] },
 })
 
-const photos = computed(() => {
-  const arr = [props.coverUrl, ...(props.gallery || [])].filter(Boolean)
-  return arr.slice(0, 10)
+function formatCount(n) {
+  if (n == null || !Number.isFinite(n)) return ''
+  if (n < 1000) return String(n)
+  if (n < 10_000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+  if (n < 1_000_000) return Math.round(n / 1000) + 'K'
+  return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+}
+const subscribersLabel = computed(() => {
+  const n = props.subscriberCount
+  if (n == null) return 'channel'
+  return `channel · ${formatCount(n)} subscribers`
 })
+
+const galleryPhotos = computed(() => (props.gallery || []).filter(Boolean).slice(0, 10))
+const albumClass = computed(() => {
+  const n = Math.min(galleryPhotos.value.length, 4)
+  return n === 1 ? 'count-1' : n === 2 ? 'count-2' : n === 3 ? 'count-3' : 'count-4'
+})
+const hasMedia = computed(() => !!props.coverUrl || galleryPhotos.value.length > 0)
 
 const renderedHtml = computed(() => {
   const html = buildTelegramHtml({
@@ -120,13 +138,8 @@ const channelColor = computed(() => {
   return colors[Math.abs(h) % colors.length]
 })
 
-const fakeMembers = computed(() => {
-  const hash = (props.channelName || 'x').length * 137
-  return (1.2 + (hash % 50) / 10).toFixed(1) + 'K'
-})
-
 const fakeViews = computed(() => {
-  return (photos.value.length || props.title) ? '1.2K' : '0'
+  return (hasMedia.value || props.title) ? '1.2K' : '0'
 })
 
 const nowLabel = computed(() => {
@@ -370,8 +383,11 @@ const nowLabel = computed(() => {
 
 /* Chat body — Telegram'ning klassik yashil doodle wallpaperi */
 .tg-body {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 10px 8px 14px;
   display: flex;
   flex-direction: column;
@@ -387,9 +403,12 @@ const nowLabel = computed(() => {
   background-color: #0e1621;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220' fill='none' stroke='%23223247' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'><path d='M20 30c0-6 5-11 11-11s11 5 11 11c0-6 5-11 11-11s11 5 11 11c0 12-22 24-22 24S20 42 20 30z'/><circle cx='90' cy='38' r='10'/><path d='M82 38l5 5 9-10'/><path d='M150 25l8 14 14 2-10 10 2 14-14-8-14 8 2-14-10-10 14-2z'/><path d='M180 70c4-6 12-6 16 0s4 12 0 16-12 4-16 0-4-10 0-16z'/><path d='M40 80l5 10 10 1-7 7 2 10-10-5-10 5 2-10-7-7 10-1z'/><path d='M105 90c6-3 13 1 14 8s-4 13-11 13-12-6-11-13c0-3 4-6 8-8z'/><circle cx='180' cy='130' r='10'/><path d='M170 130h20M180 120v20'/><path d='M30 150c0-8 6-14 14-14s14 6 14 14-6 14-14 14-14-6-14-14zM44 140v8M40 144h8'/><path d='M88 158l-3 8h6z'/><path d='M85 166c-3 4 0 8 4 8h4c4 0 7-4 4-8'/><path d='M130 165l8-2 8 6-2 9-9 2-7-7z'/><path d='M68 195c0-4 4-8 8-8s8 4 8 8-4 8-8 8-8-4-8-8z'/><path d='M150 195c-4 0-8 4-8 8s4 8 8 8h12c4 0 8-4 8-8s-4-8-8-8z'/></svg>");
 }
-.tg-body::-webkit-scrollbar { width: 0; }
+.tg-body::-webkit-scrollbar { width: 4px; }
+.tg-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 999px; }
+[data-theme="dark"] .tg-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
 .tg-date-chip {
+  flex-shrink: 0;
   align-self: center;
   background: rgba(255,255,255,0.7);
   color: #1f2937;
@@ -408,6 +427,7 @@ const nowLabel = computed(() => {
 
 /* Message bubble — kanal posti (incoming) oq fonda, real Telegram shaklida */
 .tg-bubble {
+  flex-shrink: 0;
   align-self: flex-start;
   max-width: 100%;
   width: 100%;
@@ -433,9 +453,15 @@ const nowLabel = computed(() => {
 
 .tg-album {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 2px;
+  margin: 6px 8px 4px;
+  border-radius: 8px;
+  overflow: hidden;
 }
+.tg-album.count-1 { grid-template-columns: 1fr; }
+.tg-album.count-2 { grid-template-columns: 1fr 1fr; }
+.tg-album.count-3 { grid-template-columns: 1fr 1fr 1fr; }
+.tg-album.count-4 { grid-template-columns: 1fr 1fr; }
 .tg-album-item {
   aspect-ratio: 1;
   background-size: cover;
@@ -443,6 +469,7 @@ const nowLabel = computed(() => {
   background-color: rgba(15,23,42,0.05);
   position: relative;
 }
+.tg-album.count-1 .tg-album-item { aspect-ratio: 4/3; }
 .tg-album-more {
   position: absolute;
   inset: 0;

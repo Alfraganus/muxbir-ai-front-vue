@@ -65,12 +65,16 @@
             <input ref="coverFileInput" type="file" accept="image/*" @change="onCoverFile" hidden/>
             <div class="pe-cover-overlay">
               <div class="pe-cover-controls">
-                <button class="pe-cover-btn" @click="coverFileInput?.click()" :title="'Yuklash'" :disabled="coverUploading">
+                <button class="pe-cover-btn" @click="coverGalleryOpen = true" :title="'Media kutubxonadan tanlash'">
+                  <AppIcon name="Layers" :size="12"/>
+                  Media kutubxona
+                </button>
+                <button class="pe-cover-btn" @click="coverFileInput?.click()" :title="'To\'g\'ridan-to\'g\'ri yuklash'" :disabled="coverUploading">
                   <AppIcon :name="coverUploading ? 'Sparkle' : 'Plus'" :size="12"/>
                   {{ coverUploading ? 'Yuklanmoqda...' : 'Yuklash' }}
                 </button>
                 <input v-model="form.cover_image_url" placeholder="https://..." class="pe-cover-input"/>
-                <button v-if="form.cover_image_url" class="pe-cover-clear" @click="form.cover_image_url = ''" :title="tt('cc.action.remove')">
+                <button v-if="form.cover_image_url" class="pe-cover-clear" @click="clearCover" :title="tt('cc.action.remove')">
                   <AppIcon name="Close" :size="11"/>
                 </button>
               </div>
@@ -148,6 +152,7 @@
             <div v-if="previewShown" class="pe-preview-body">
               <TelegramPreview
                 :channel-name="previewChannelName"
+                :subscriber-count="previewSubscriberCount"
                 :title="activeTr.title"
                 :short-description="activeTr.short_description"
                 :content-json="activeTr.content_json"
@@ -184,21 +189,49 @@
 
             <div class="pe-field">
               <label class="pe-label">{{ tt('pe.field.category') }}</label>
-              <input v-model="form.category" :placeholder="tt('pe.field.categoryPh')" class="pe-input"/>
+              <div class="pe-cat-row">
+                <select v-model="form.category_id" class="pe-input pe-cat-select">
+                  <option :value="null">— tanlang —</option>
+                  <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
+                <button type="button" class="pe-cat-add" @click="openCategoryModal" :title="'Yangi kategoriya'">
+                  <AppIcon name="Plus" :size="12"/>
+                </button>
+              </div>
             </div>
 
-            <div class="pe-field">
+            <div class="pe-field" style="position:relative;">
               <label class="pe-label">{{ tt('pe.field.tags') }}</label>
               <div class="pe-tags">
-                <span v-for="(tg, idx) in tagsArr" :key="idx" class="pe-tag">
+                <span v-for="(tg, idx) in tagsArr" :key="`${tg}-${idx}`" class="pe-tag">
                   {{ tg }}
                   <button @click="removeTag(idx)" class="pe-tag-x">
                     <AppIcon name="Close" :size="9"/>
                   </button>
                 </span>
-                <input v-model="tagInput" @keydown.enter.prevent="addTag" @keydown.,.prevent="addTag"
+                <input v-model="tagInput"
+                  @keydown.enter.prevent="onTagEnter"
+                  @keydown.,.prevent="addTag"
+                  @keydown.down.prevent="moveSuggest(1)"
+                  @keydown.up.prevent="moveSuggest(-1)"
+                  @keydown.escape="hideSuggest"
+                  @input="onTagInput"
+                  @focus="onTagInput"
+                  @blur="onTagBlur"
                   :placeholder="tagsArr.length ? '+' : tt('pe.field.tagsPh')"
                   class="pe-tag-input"/>
+              </div>
+              <!-- Autocomplete dropdown -->
+              <div v-if="tagSuggestOpen && tagSuggestions.length" class="pe-tag-suggest">
+                <button v-for="(s, i) in tagSuggestions" :key="s.name"
+                  type="button"
+                  class="pe-tag-suggest-item"
+                  :class="{ active: i === tagSuggestActive }"
+                  @mousedown.prevent="pickSuggestion(s.name)"
+                  @mouseenter="tagSuggestActive = i">
+                  <span class="pe-tag-suggest-name">{{ s.name }}</span>
+                  <span class="pe-tag-suggest-count">{{ s.count }}×</span>
+                </button>
               </div>
             </div>
 
@@ -207,7 +240,7 @@
                 <AppIcon name="Calendar" :size="11" :style="{ verticalAlign: 'middle', marginRight: '4px' }"/>
                 {{ tt('pe.field.publishAt') }}
               </label>
-              <input v-model="form.publish_at" type="datetime-local" class="pe-input"/>
+              <DateTimePicker v-model="form.publish_at"/>
               <span class="pe-hint">{{ tt('pe.field.publishAtHint') }}</span>
             </div>
           </section>
@@ -219,7 +252,7 @@
               <h3>{{ tt('pe.field.gallery') }}</h3>
             </header>
             <div class="pe-gallery-grid">
-              <div v-for="(url, i) in galleryArr" :key="i" class="pe-gallery-item"
+              <div v-for="(url, i) in galleryArr" :key="`${url}-${i}`" class="pe-gallery-item"
                 :style="{ backgroundImage: `url(${url})` }">
                 <button class="pe-gallery-x" @click="removeGallery(i)">
                   <AppIcon name="Close" :size="10"/>
@@ -228,9 +261,13 @@
             </div>
             <div class="pe-gallery-add">
               <input ref="galleryFileInput" type="file" accept="image/*" multiple @change="onGalleryFiles" hidden/>
+              <button class="pe-gallery-upload-btn pe-gallery-library-btn" @click="galleryLibraryOpen = true">
+                <AppIcon name="Layers" :size="13"/>
+                Media kutubxonadan tanlash
+              </button>
               <button class="pe-gallery-upload-btn" @click="galleryFileInput?.click()" :disabled="galleryUploading">
                 <AppIcon :name="galleryUploading ? 'Sparkle' : 'Plus'" :size="13"/>
-                {{ galleryUploading ? 'Yuklanmoqda...' : 'Rasm yuklash' }}
+                {{ galleryUploading ? 'Yuklanmoqda...' : 'Yangi yuklash' }}
               </button>
               <input v-model="galleryInput" @keydown.enter.prevent="addGallery"
                 placeholder="yoki https://... + Enter" class="pe-input"/>
@@ -290,6 +327,36 @@
         {{ formError }}
       </div>
     </template>
+
+    <!-- Media gallery (cover) -->
+    <MediaGallery v-model="coverGalleryOpen" :multiple="false" @pick="onPickCover"/>
+
+    <!-- Media gallery (gallery) -->
+    <MediaGallery v-model="galleryLibraryOpen" :multiple="true" @pick="onPickGallery"/>
+
+    <!-- Category create modal -->
+    <AppModal v-model="catModalOpen" title="Yangi kategoriya" subtitle="Faqat ushbu kompaniya uchun">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label class="pe-label">Nom</label>
+          <input v-model="catForm.name" placeholder="Masalan: Yangiliklar"
+            class="pe-input" @keydown.enter.prevent="saveCategory"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label class="pe-label">Rang (ixtiyoriy)</label>
+          <input v-model="catForm.color" type="color" class="pe-input" style="height:36px;padding:2px 6px;"/>
+        </div>
+        <div v-if="catError" class="pe-error" style="margin:0;">
+          <AppIcon name="Close" :size="12"/> {{ catError }}
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+          <AppButton variant="secondary" size="md" @click="catModalOpen = false">Bekor qilish</AppButton>
+          <AppButton variant="primary" size="md" :loading="catSaving" @click="saveCategory">
+            Saqlash
+          </AppButton>
+        </div>
+      </div>
+    </AppModal>
   </div>
 </template>
 
@@ -300,7 +367,12 @@ import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RichEditor from '@/components/editor/RichEditor.vue'
 import TelegramPreview from '@/components/preview/TelegramPreview.vue'
+import DateTimePicker from '@/components/ui/DateTimePicker.vue'
+import AppModal from '@/components/ui/AppModal.vue'
+import MediaGallery from '@/components/media/MediaGallery.vue'
+import { categoriesApi } from '@/api/categories.js'
 import { useAppStore } from '@/stores/app.js'
+import { useStorageStore } from '@/stores/storage.js'
 import { companiesApi } from '@/api/companies.js'
 import { channelsApi } from '@/api/channels.js'
 import { postsApi } from '@/api/posts.js'
@@ -309,6 +381,7 @@ import { uploadsApi } from '@/api/uploads.js'
 const route = useRoute()
 const router = useRouter()
 const store = useAppStore()
+const storageStore = useStorageStore()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
 
@@ -334,11 +407,93 @@ const post = ref(null)
 const form = reactive({
   platform: 'telegram',
   category: '',
+  category_id: null,
   publish_at: '',
   cover_image_url: '',
   telegram_channel_id: null,
   telegram_raw_long_text: '',
 })
+
+// ── Media kutubxona modal'lari ─────────────────────────────
+const coverGalleryOpen = ref(false)
+const galleryLibraryOpen = ref(false)
+
+async function onPickCover(url) {
+  if (!url) return
+  const oldUrl = form.cover_image_url
+  form.cover_image_url = url
+  // Edit rejimida DB'ga darhol saqlash
+  if (isEdit.value && company.value && post.value) {
+    try {
+      await postsApi.update(company.value.id, postId.value, { cover_image_url: url })
+    } catch { /* save'da saqlanadi */ }
+  } else if (oldUrl && oldUrl !== url) {
+    // Create rejimida: eski cover tanlangan bo'lsa, lekin u DB'da yo'q —
+    // baribir o'chirmaymiz (boshqa postlarda foydalanilayotgan bo'lishi mumkin
+    // chunki bu media kutubxonadan tanlangan, alohida uploaded fayl emas)
+  }
+  storageStore.refresh()
+}
+
+async function onPickGallery(urls) {
+  if (!urls?.length) return
+  // Dublikatlarni chiqarib tashlaymiz
+  const existing = new Set(galleryArr.value)
+  const toAdd = urls.filter(u => u && !existing.has(u))
+  if (!toAdd.length) return
+  galleryArr.value.push(...toAdd)
+  if (isEdit.value && company.value && post.value) {
+    try {
+      await postsApi.update(company.value.id, postId.value, { gallery: [...galleryArr.value] })
+    } catch { /* save'da saqlanadi */ }
+  }
+  storageStore.refresh()
+}
+
+// ── Kategoriyalar (per-company spravochnik) ─────────────────
+const categories = ref([])
+const catModalOpen = ref(false)
+const catSaving = ref(false)
+const catError = ref('')
+const catForm = reactive({ name: '', color: '#2F6FED' })
+
+async function loadCategories() {
+  if (!company.value) return
+  try {
+    categories.value = await categoriesApi.list(company.value.id)
+  } catch { /* jim */ }
+}
+
+function openCategoryModal() {
+  catForm.name = ''
+  catForm.color = '#2F6FED'
+  catError.value = ''
+  catModalOpen.value = true
+}
+
+async function saveCategory() {
+  catError.value = ''
+  const name = catForm.name.trim()
+  if (!name) { catError.value = 'Nom kiritilishi shart'; return }
+  if (!company.value) { catError.value = 'Kompaniya topilmadi'; return }
+  catSaving.value = true
+  try {
+    const created = await categoriesApi.create(company.value.id, {
+      name,
+      color: catForm.color || undefined,
+    })
+    categories.value = [...categories.value, created].sort((a, b) =>
+      (a.sort_order - b.sort_order) || a.name.localeCompare(b.name)
+    )
+    form.category_id = created.id
+    catModalOpen.value = false
+  } catch (e) {
+    const msg = e?.response?.data?.message
+    catError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Saqlashda xato')
+  } finally {
+    catSaving.value = false
+  }
+}
 
 const tagsArr = ref([])
 const tagInput = ref('')
@@ -349,14 +504,46 @@ const galleryFileInput = ref(null)
 const coverUploading = ref(false)
 const galleryUploading = ref(false)
 
+async function clearCover() {
+  const url = form.cover_image_url
+  form.cover_image_url = ''
+  if (!url) return
+  // Edit rejimida: post DB'da bor → cover_image_url=null ni darhol saqlab qo'yamiz,
+  // shunda refresh'da rasm qaytib chiqmaydi. Backend update() bucket'dan ham o'chiradi.
+  if (isEdit.value && company.value && post.value) {
+    try {
+      await postsApi.update(company.value.id, postId.value, { cover_image_url: null })
+      storageStore.refresh()
+      return
+    } catch {/* fallback: alohida delete */}
+  }
+  try {
+    await uploadsApi.deleteByUrls([url])
+    storageStore.refresh()
+  } catch { /* save'da diff orqali tozalanadi */ }
+}
+
 async function onCoverFile(e) {
   const file = e.target.files?.[0]
   e.target.value = '' // reset
   if (!file) return
   coverUploading.value = true
+  const oldUrl = form.cover_image_url
   try {
     const res = await uploadsApi.uploadImage(file)
     if (res?.url) form.cover_image_url = res.url
+
+    // Edit rejimida: yangi cover'ni DB'ga darhol yozamiz — refresh'da yo'qolmasin.
+    // Backend update() diff orqali eski cover'ni bucket'dan ham o'chiradi.
+    if (isEdit.value && company.value && post.value) {
+      try {
+        await postsApi.update(company.value.id, postId.value, { cover_image_url: form.cover_image_url || null })
+      } catch {/* save bosilganida diff orqali tozalanadi */}
+    } else if (oldUrl && oldUrl !== form.cover_image_url) {
+      // Create rejimida: eski cover'ni alohida o'chiramiz
+      uploadsApi.deleteByUrls([oldUrl]).catch(() => {})
+    }
+    storageStore.refresh()
   } catch (err) {
     const msg = err?.response?.data?.message || 'Yuklashda xato'
     formError.value = Array.isArray(msg) ? msg.join('. ') : msg
@@ -374,6 +561,14 @@ async function onGalleryFiles(e) {
     const res = await uploadsApi.uploadImages(files)
     const urls = (res?.files || []).map(f => f.url).filter(Boolean)
     galleryArr.value.push(...urls)
+
+    // Edit rejimida: yangi gallery'ni DB'ga darhol yozamiz — refresh'da yo'qolmasin
+    if (isEdit.value && company.value && post.value) {
+      try {
+        await postsApi.update(company.value.id, postId.value, { gallery: [...galleryArr.value] })
+      } catch {/* save bosilganida saqlanadi */}
+    }
+    storageStore.refresh()
   } catch (err) {
     const msg = err?.response?.data?.message || 'Yuklashda xato'
     formError.value = Array.isArray(msg) ? msg.join('. ') : msg
@@ -382,20 +577,101 @@ async function onGalleryFiles(e) {
   }
 }
 
-function addTag() {
-  const v = tagInput.value.trim().replace(/,/g, '')
+function addTag(value) {
+  const raw = typeof value === 'string' ? value : tagInput.value
+  const v = (raw || '').trim().replace(/,/g, '')
   if (!v) return
   if (!tagsArr.value.includes(v)) tagsArr.value.push(v)
   tagInput.value = ''
+  hideSuggest()
 }
 function removeTag(i) { tagsArr.value.splice(i, 1) }
+
+// ── Tag autocomplete ────────────────────────────────────────
+const tagSuggestions = ref([])
+const tagSuggestOpen = ref(false)
+const tagSuggestActive = ref(-1)
+let tagSuggestT = null
+
+async function fetchTagSuggestions(q) {
+  if (!company.value) return
+  try {
+    const list = await postsApi.listTags(company.value.id, q || undefined, 10)
+    // Allaqachon tanlangan teglarni chiqarib tashlaymiz
+    const taken = new Set(tagsArr.value.map(t => t.toLowerCase()))
+    tagSuggestions.value = (list || []).filter(s => !taken.has(s.name.toLowerCase()))
+    tagSuggestActive.value = tagSuggestions.value.length ? 0 : -1
+    tagSuggestOpen.value = tagSuggestions.value.length > 0
+  } catch {
+    tagSuggestions.value = []
+    tagSuggestOpen.value = false
+  }
+}
+
+function onTagInput() {
+  clearTimeout(tagSuggestT)
+  const q = tagInput.value.trim()
+  tagSuggestT = setTimeout(() => fetchTagSuggestions(q), 180)
+}
+
+function onTagBlur() {
+  // mousedown.prevent suggestion click'ni saqlab qoldi —
+  // bu blur faqat input outsida tugmasi bosilmaganda yopadi
+  setTimeout(() => { tagSuggestOpen.value = false }, 120)
+}
+
+function hideSuggest() {
+  tagSuggestOpen.value = false
+  tagSuggestActive.value = -1
+}
+
+function moveSuggest(delta) {
+  if (!tagSuggestOpen.value || !tagSuggestions.value.length) {
+    fetchTagSuggestions(tagInput.value.trim())
+    return
+  }
+  const n = tagSuggestions.value.length
+  tagSuggestActive.value = (tagSuggestActive.value + delta + n) % n
+}
+
+function pickSuggestion(name) {
+  addTag(name)
+}
+
+function onTagEnter() {
+  // Agar suggestion tanlangan bo'lsa shuni qo'shamiz, aks holda input matnini
+  if (tagSuggestOpen.value && tagSuggestActive.value >= 0 && tagSuggestions.value[tagSuggestActive.value]) {
+    pickSuggestion(tagSuggestions.value[tagSuggestActive.value].name)
+  } else {
+    addTag()
+  }
+}
 function addGallery() {
   const v = galleryInput.value.trim()
   if (!v) return
   galleryArr.value.push(v)
   galleryInput.value = ''
 }
-function removeGallery(i) { galleryArr.value.splice(i, 1) }
+async function removeGallery(i) {
+  const url = galleryArr.value[i]
+  galleryArr.value.splice(i, 1)
+  if (!url) return
+  // Edit rejimida: post DB'da bor → yangilangan gallery'ni darhol saqlaymiz,
+  // shunda refresh'da rasm qaytib chiqmaydi. Backend update() diff bo'yicha
+  // bucket'dan ham o'chiradi va counter'ni yangilaydi.
+  if (isEdit.value && company.value && post.value) {
+    try {
+      await postsApi.update(company.value.id, postId.value, { gallery: [...galleryArr.value] })
+      storageStore.refresh()
+      return
+    } catch {/* fallback: alohida delete */}
+  }
+  // Create rejimida (yangi post hali saqlanmagan) yoki backend xatosi — bucket'dan to'g'ridan o'chiramiz
+  try {
+    await uploadsApi.deleteByUrls([url])
+    storageStore.refresh()
+  } catch { /* keyingi save'da diff orqali tozalanadi */ }
+}
 
 const translations = reactive({
   uz: { title: '', short_description: '', content_json: { blocks: [] }, is_complete: false },
@@ -412,6 +688,10 @@ const connectedTgChannels = computed(() =>
 const previewChannelName = computed(() => {
   const ch = connectedTgChannels.value.find(c => c.id === form.telegram_channel_id)
   return ch?.display_name || ch?.username || store.companyName || 'Mening kanalim'
+})
+const previewSubscriberCount = computed(() => {
+  const ch = connectedTgChannels.value.find(c => c.id === form.telegram_channel_id)
+  return typeof ch?.subscriber_count === 'number' ? ch.subscriber_count : null
 })
 
 function platformIcon(p) {
@@ -472,11 +752,15 @@ async function loadInitial() {
     const chs = await channelsApi.list(company.value.id).catch(() => [])
     allChannels.value = chs || []
 
+    // Kategoriyalar spravochnigini yuklab olamiz (parallel emas, oddiy)
+    await loadCategories()
+
     if (isEdit.value) {
       const p = await postsApi.get(company.value.id, postId.value)
       post.value = p
       form.platform = p.platform || 'telegram'
       form.category = p.category || ''
+      form.category_id = p.category_id || null
       form.publish_at = p.publish_at ? toLocalDatetime(p.publish_at) : ''
       form.cover_image_url = p.cover_image_url || ''
       form.telegram_channel_id = p.telegram_channel_id || null
@@ -522,6 +806,7 @@ async function saveAll() {
     const payload = {
       platform: form.platform,
       category: form.category || null,
+      category_id: form.category_id || null,
       tags: tagsArr.value,
       cover_image_url: form.cover_image_url || null,
       gallery: galleryArr.value,
@@ -563,6 +848,8 @@ async function saveAll() {
     }
 
     lastSavedAt.value = Date.now()
+    // Saqlash paytida olib tashlangan rasmlar bucket'dan o'chiriladi → usage yangilanadi
+    storageStore.refresh()
 
     if (!isEdit.value && saved?.id) {
       router.replace(`/client/posts/${saved.id}/edit`)
@@ -580,6 +867,7 @@ async function onDelete() {
   if (!confirm(tt('posts.confirmDelete', { name: firstNonEmptyTitle() }))) return
   try {
     await postsApi.remove(company.value.id, postId.value)
+    storageStore.refresh()
     router.push('/client/posts')
   } catch {}
 }
@@ -866,6 +1154,17 @@ async function adaptTelegram() {
 }
 .pe-gallery-upload-btn:disabled { opacity: 0.7; cursor: wait; }
 
+.pe-gallery-library-btn {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.pe-gallery-library-btn:hover {
+  background: var(--panel-2);
+  border-color: var(--accent);
+}
+
 /* Language tabs */
 .pe-lang-tabs {
   display: flex;
@@ -1066,6 +1365,32 @@ async function adaptTelegram() {
 }
 
 .pe-field { display: flex; flex-direction: column; gap: 5px; }
+
+/* Kategoriya selecti + "+" tugmasi */
+.pe-cat-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.pe-cat-select {
+  flex: 1;
+  cursor: pointer;
+}
+.pe-cat-add {
+  width: 36px;
+  height: 36px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.pe-cat-add:hover { background: color-mix(in oklab, var(--accent) 85%, black); }
 .pe-label {
   font-size: 10.5px;
   color: var(--muted);
@@ -1175,6 +1500,65 @@ async function adaptTelegram() {
   font-size: 12.5px;
   color: var(--text);
   height: 22px;
+}
+
+/* Autocomplete dropdown */
+.pe-tag-suggest {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 18px 50px -18px rgba(15, 23, 42, 0.25), 0 6px 16px -8px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  animation: peTagPop 0.12s ease;
+}
+@keyframes peTagPop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pe-tag-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text);
+  text-align: left;
+  font-family: inherit;
+}
+.pe-tag-suggest-item:hover,
+.pe-tag-suggest-item.active {
+  background: var(--panel-2);
+}
+.pe-tag-suggest-item.active {
+  background: color-mix(in oklab, var(--accent) 12%, var(--panel));
+}
+.pe-tag-suggest-name {
+  flex: 1;
+  font-weight: 500;
+}
+.pe-tag-suggest-count {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+.pe-tag-suggest-item.active .pe-tag-suggest-count {
+  background: var(--accent);
+  color: white;
 }
 
 /* Gallery */

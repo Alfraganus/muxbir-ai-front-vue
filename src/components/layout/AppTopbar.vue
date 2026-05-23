@@ -87,7 +87,10 @@ const router = useRouter()
 const menuOpen = ref(false)
 const showLogoutSplash = ref(false)
 
-const displayName = computed(() => authStore.user?.full_name || 'Foydalanuvchi')
+const displayName = computed(() => {
+  const u = authStore.user
+  return u?.full_name || u?.fullName || u?.name || u?.email || 'Foydalanuvchi'
+})
 const displayEmail = computed(() => authStore.user?.email || '')
 
 async function onLogout() {

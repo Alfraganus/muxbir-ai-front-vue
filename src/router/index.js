@@ -11,6 +11,7 @@ import ClientPosts from '@/views/client/ClientPosts.vue'
 import PostEditor from '@/views/client/PostEditor.vue'
 import ClientBilling from '@/views/client/ClientBilling.vue'
 import ClientTeam from '@/views/client/ClientTeam.vue'
+import ClientCategories from '@/views/client/ClientCategories.vue'
 import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
 import MagicAuth from '@/views/MagicAuth.vue'
@@ -34,6 +35,7 @@ const routes = [
   { path: '/client/posts/:id/edit',    component: PostEditor },
   { path: '/client/billing',   component: ClientBilling },
   { path: '/client/team',      component: ClientTeam },
+  { path: '/client/categories', component: ClientCategories },
   { path: '/signup',           component: Onboarding },
 ]
 
@@ -63,17 +65,26 @@ async function tryRefresh() {
 }
 
 router.beforeEach(async (to) => {
-  if (PUBLIC_PATHS.includes(to.path)) return
+  const isPublic = PUBLIC_PATHS.includes(to.path)
 
   // Access token muddati o'tgan bo'lsa, darhol logout qilmaymiz —
   // avval refresh_token bilan yangilashga urinamiz
-  if (!isTokenValid()) {
-    const ok = await tryRefresh()
-    if (!ok) {
+  let valid = isTokenValid()
+  if (!valid && localStorage.getItem('refresh_token')) {
+    valid = await tryRefresh()
+    if (!valid) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
-      return '/signin'
     }
+  }
+
+  if (!valid) {
+    return isPublic ? undefined : '/signin'
+  }
+
+  // Tizimga kirgan foydalanuvchi public sahifalarda turmasin
+  if (isPublic) {
+    return homePathForRole(getUserRole())
   }
 
   const role = getUserRole()

@@ -4,6 +4,10 @@ export const postsApi = {
   list: (companyId, status) =>
     http.get(`/companies/${companyId}/posts`, { params: status ? { status } : {} }).then(r => r.data),
 
+  /** Tag autocomplete: prefiks bo'yicha unikal teglar (eng ko'p ishlatilgani oldinda) */
+  listTags: (companyId, q, limit = 20) =>
+    http.get(`/companies/${companyId}/posts/tags`, { params: { q: q || undefined, limit } }).then(r => r.data),
+
   get: (companyId, postId) =>
     http.get(`/companies/${companyId}/posts/${postId}`).then(r => r.data),
 

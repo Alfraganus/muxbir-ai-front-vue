@@ -19,7 +19,12 @@ function inlineHtml(html) {
   s = s.replace(/<code[^>]*class=["'][^"']*inline-code[^"']*["'][^>]*>/gi, '<code>')
   s = s.replace(/<strong>/gi, '<b>').replace(/<\/strong>/gi, '</b>')
   s = s.replace(/<em>/gi, '<i>').replace(/<\/em>/gi, '</i>')
+  s = s.replace(/<a\b[^>]*?href=(["'])(.*?)\1[^>]*>/gi, (_m, _q, href) => {
+    const safe = String(href).replace(/"/g, '&quot;')
+    return `<a href="${safe}">`
+  })
   s = s.replace(/<(?!\/?(b|i|u|s|a|code|pre|blockquote)(\s[^>]*)?>)[^>]+>/gi, '')
+  s = s.replace(/&nbsp;/gi, ' ')
   return s.trim()
 }
 
@@ -53,6 +58,13 @@ function renderBlock(b) {
     }
     case 'embed':
       return b.data?.source || b.data?.embed || ''
+    case 'linkTool': {
+      const url = b.data?.link
+      if (!url) return ''
+      const meta = b.data?.meta || {}
+      const title = meta.title || meta.site_name || url
+      return `<a href="${String(url).replace(/"/g, '&quot;')}">${escapeHtml(title)}</a>`
+    }
     default:
       return b.data?.text ? inlineHtml(b.data.text) : ''
   }

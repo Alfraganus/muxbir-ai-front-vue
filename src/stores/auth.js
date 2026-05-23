@@ -66,8 +66,10 @@ export const useAuthStore = defineStore('auth', () => {
     if (!accessToken.value) return null
     try {
       const me = await authApi.me()
-      user.value = me
-      return me
+      // Backend ba'zan { user: {...} } shaklida qaytaradi
+      const u = me?.user && typeof me.user === 'object' ? me.user : me
+      user.value = u
+      return u
     } catch { return null }
   }
 
