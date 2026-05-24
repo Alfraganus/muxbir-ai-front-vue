@@ -21,10 +21,10 @@
       </div>
       <span class="dtp-time-colon">:</span>
       <div class="dtp-time-group">
-        <button type="button" class="dtp-time-arrow" @click="bumpMinute(5)" aria-label="minute up">▲</button>
+        <button type="button" class="dtp-time-arrow" @click="bumpMinute(1)" aria-label="minute up">▲</button>
         <input class="dtp-time-input" type="text" inputmode="numeric" maxlength="2"
           :value="mm" @input="onMinuteInput" @blur="normalizeMinute"/>
-        <button type="button" class="dtp-time-arrow" @click="bumpMinute(-5)" aria-label="minute down">▼</button>
+        <button type="button" class="dtp-time-arrow" @click="bumpMinute(-1)" aria-label="minute down">▼</button>
       </div>
       <span class="dtp-time-mode">24 soat</span>
       <button v-if="modelValue" type="button" class="dtp-clear" @click="clear" :title="'Tozalash'">
@@ -64,17 +64,50 @@ const days = computed(() => {
 
 // Parse v-model
 function parse(v) {
-  if (!v || typeof v !== 'string') return { date: '', hh: '09', mm: '00' }
+  // Bo'sh model — default sifatida hozirgi soat:daqiqani ko'rsatamiz
+  // (foydalanuvchi hozirgi paytdan oldinroq vaqt qo'ya olmaydi)
+  if (!v || typeof v !== 'string') {
+    const now = new Date()
+    return { date: '', hh: pad(now.getHours()), mm: pad(now.getMinutes()) }
+  }
   const m = v.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/)
-  if (!m) return { date: '', hh: '09', mm: '00' }
+  if (!m) {
+    const now = new Date()
+    return { date: '', hh: pad(now.getHours()), mm: pad(now.getMinutes()) }
+  }
   return { date: m[1], hh: m[2], mm: m[3] }
 }
 
-const selectedDate = ref('')
-const hh = ref('09')
-const mm = ref('00')
+// Initial values parse'dan keladi — bo'sh model bo'lsa hozirgi vaqt
+const _initial = parse(props.modelValue)
+const selectedDate = ref(_initial.date)
+const hh = ref(_initial.hh)
+const mm = ref(_initial.mm)
+
+// Internal flag — emitValue dan keyin keladigan modelValue watch'ni
+// inkor qilish uchun (aks holda input'ga yozayotgan raqamlar yutilib ketadi).
+let lastEmitted = ''
+
+/**
+ * Tanlangan sana bugun bo'lsa minimal vaqt — hozirgi soat va daqiqa.
+ * Boshqa kunlarda — 00:00 (chegara yo'q).
+ */
+function getMinTime(iso) {
+  const todayIso = toIsoDate(new Date())
+  if (iso !== todayIso) return { h: 0, m: 0 }
+  const now = new Date()
+  return { h: now.getHours(), m: now.getMinutes() }
+}
+/** Berilgan (h, m) ni shu sana uchun ruxsat etilgan minimumga clamp qiladi. */
+function clampToMin(iso, h, m) {
+  const min = getMinTime(iso)
+  if (h < min.h) return { h: min.h, m: min.m }
+  if (h === min.h && m < min.m) return { h: min.h, m: min.m }
+  return { h, m }
+}
 
 function syncFromModel() {
+  if (props.modelValue === lastEmitted) return // o'zimiz emit qildik, sync shart emas
   const p = parse(props.modelValue)
   selectedDate.value = p.date
   hh.value = p.hh
@@ -85,57 +118,94 @@ watch(() => props.modelValue, syncFromModel)
 
 function emitValue() {
   if (!selectedDate.value) {
+    lastEmitted = ''
     emit('update:modelValue', '')
     return
   }
-  emit('update:modelValue', `${selectedDate.value}T${hh.value}:${mm.value}`)
+  const v = `${selectedDate.value}T${hh.value}:${mm.value}`
+  lastEmitted = v
+  emit('update:modelValue', v)
 }
 
 function setDate(iso) {
   selectedDate.value = iso
-  // Vaqt hali belgilanmagan bo'lsa default 09:00
-  if (!hh.value) hh.value = '09'
-  if (!mm.value) mm.value = '00'
+  // Sanani tanlaganda vaqtni clamp qilamiz: bugun bo'lsa hozirdan kechroq
+  const now = new Date()
+  let h = parseInt(hh.value || pad(now.getHours()), 10)
+  let m = parseInt(mm.value || pad(now.getMinutes()), 10)
+  if (isNaN(h)) h = now.getHours()
+  if (isNaN(m)) m = now.getMinutes()
+  const c = clampToMin(iso, h, m)
+  hh.value = pad(c.h)
+  mm.value = pad(c.m)
   emitValue()
 }
 
 function onHourInput(e) {
   const v = e.target.value.replace(/\D/g, '').slice(0, 2)
   hh.value = v
+  if (selectedDate.value) {
+    const rawH = Math.max(0, Math.min(23, parseInt(v || '0', 10) || 0))
+    const rawM = parseInt(mm.value || '0', 10) || 0
+    const c = clampToMin(selectedDate.value, rawH, rawM)
+    const v2 = `${selectedDate.value}T${pad(c.h)}:${pad(c.m)}`
+    lastEmitted = v2
+    emit('update:modelValue', v2)
+  }
 }
 function normalizeHour() {
   let n = parseInt(hh.value || '0', 10)
   if (isNaN(n)) n = 0
   n = Math.max(0, Math.min(23, n))
-  hh.value = pad(n)
+  const m = parseInt(mm.value || '0', 10) || 0
+  const c = clampToMin(selectedDate.value || toIsoDate(new Date()), n, m)
+  hh.value = pad(c.h)
+  mm.value = pad(c.m)
   if (selectedDate.value) emitValue()
 }
 function bumpHour(delta) {
   let n = parseInt(hh.value || '0', 10)
   if (isNaN(n)) n = 0
   n = (n + delta + 24) % 24
-  hh.value = pad(n)
   if (!selectedDate.value) selectedDate.value = days.value[0].iso
+  const m = parseInt(mm.value || '0', 10) || 0
+  const c = clampToMin(selectedDate.value, n, m)
+  hh.value = pad(c.h)
+  mm.value = pad(c.m)
   emitValue()
 }
 
 function onMinuteInput(e) {
   const v = e.target.value.replace(/\D/g, '').slice(0, 2)
   mm.value = v
+  if (selectedDate.value) {
+    const rawH = parseInt(hh.value || '0', 10) || 0
+    const rawM = Math.max(0, Math.min(59, parseInt(v || '0', 10) || 0))
+    const c = clampToMin(selectedDate.value, rawH, rawM)
+    const v2 = `${selectedDate.value}T${pad(c.h)}:${pad(c.m)}`
+    lastEmitted = v2
+    emit('update:modelValue', v2)
+  }
 }
 function normalizeMinute() {
   let n = parseInt(mm.value || '0', 10)
   if (isNaN(n)) n = 0
   n = Math.max(0, Math.min(59, n))
-  mm.value = pad(n)
+  const h = parseInt(hh.value || '0', 10) || 0
+  const c = clampToMin(selectedDate.value || toIsoDate(new Date()), h, n)
+  hh.value = pad(c.h)
+  mm.value = pad(c.m)
   if (selectedDate.value) emitValue()
 }
 function bumpMinute(delta) {
   let n = parseInt(mm.value || '0', 10)
   if (isNaN(n)) n = 0
   n = (n + delta + 60) % 60
-  mm.value = pad(n)
   if (!selectedDate.value) selectedDate.value = days.value[0].iso
+  const h = parseInt(hh.value || '0', 10) || 0
+  const c = clampToMin(selectedDate.value, h, n)
+  hh.value = pad(c.h)
+  mm.value = pad(c.m)
   emitValue()
 }
 

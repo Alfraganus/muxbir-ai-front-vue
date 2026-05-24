@@ -10,6 +10,9 @@ export const channelsApi = {
   setPostingMode: (companyId, channelId, posting_mode) =>
     http.patch(`/companies/${companyId}/channels/${channelId}/posting-mode`, { posting_mode }).then(r => r.data),
 
+  updateAutoSettings: (companyId, channelId, payload) =>
+    http.patch(`/companies/${companyId}/channels/${channelId}/auto-settings`, payload).then(r => r.data),
+
   getStatus: (companyId, channelId) =>
     http.get(`/companies/${companyId}/channels/${channelId}/status`).then(r => r.data),
 

@@ -19,13 +19,13 @@
       </template>
       <template v-else-if="workspace === 'client'">
         <NavSection>
-          <NavItem v-for="n in clientNav.slice(0,6)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
+          <NavItem v-for="n in clientNav.slice(0,7)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
         </NavSection>
         <NavSection label="Insights">
-          <NavItem v-for="n in clientNav.slice(6,8)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
+          <NavItem v-for="n in clientNav.slice(7,9)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
         </NavSection>
         <NavSection label="Hisob">
-          <NavItem v-for="n in clientNav.slice(8)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
+          <NavItem v-for="n in clientNav.slice(9)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
         </NavSection>
       </template>
     </div>
@@ -33,17 +33,31 @@
     <!-- Usage card for client -->
     <div v-if="workspace === 'client'" style="padding:0 12px 12px;">
       <div style="padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;flex-direction:column;gap:10px;">
-        <!-- Oylik post limiti -->
+        <!-- 1) Oylik post limiti -->
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:11px;color:var(--muted);">Oylik post limiti</span>
-          <AppBadge tone="accent">Scale</AppBadge>
+          <span v-if="postsUsage.hasTariff === false" style="font-size:9.5px;color:var(--muted-2);padding:1px 6px;border:1px solid var(--border-2);border-radius:999px;letter-spacing:0.04em;">FREE</span>
         </div>
         <div class="tabular" style="font-size:14px;font-weight:600;">
-          1 280 <span style="color:var(--muted);font-weight:400;">/ 2 000</span>
+          {{ formatNumber(postsUsage.used) }}
+          <span style="color:var(--muted);font-weight:400;">/ {{ formatNumber(postsUsage.limit) }}</span>
         </div>
-        <AppProgress :value="1280" :max="2000" tone="accent" />
+        <AppProgress :value="postsUsage.used" :max="postsUsage.limit || 1" :tone="postsTone" />
 
-        <!-- Foydalanilayotgan xotira -->
+        <!-- 2) AI tokens -->
+        <div style="height:1px;background:var(--border-2);margin:2px 0;"/>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;color:var(--muted);">Foydalanilgan tokenlar</span>
+          <span v-if="ai.hasTariff === false" style="font-size:9.5px;color:var(--muted-2);padding:1px 6px;border:1px solid var(--border-2);border-radius:999px;letter-spacing:0.04em;">FREE</span>
+          <span v-else-if="ai.calls > 0" style="font-size:9.5px;color:var(--muted);padding:1px 6px;background:var(--panel-2);border-radius:999px;">{{ ai.calls }}× call</span>
+        </div>
+        <div class="tabular" style="font-size:14px;font-weight:600;">
+          {{ formatNumber(ai.used) }}
+          <span style="color:var(--muted);font-weight:400;">/ {{ formatNumber(ai.limit) }}</span>
+        </div>
+        <AppProgress :value="ai.used" :max="ai.limit || 1" :tone="aiTone" />
+
+        <!-- 3) Xotira (eng pastda) -->
         <div style="height:1px;background:var(--border-2);margin:2px 0;"/>
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:11px;color:var(--muted);">Foydalanilayotgan xotira</span>
@@ -74,6 +88,8 @@ import NavItem from './NavItem.vue'
 import NavSection from './NavSection.vue'
 import { useAppStore } from '@/stores/app.js'
 import { useStorageStore } from '@/stores/storage.js'
+import { useAiUsageStore } from '@/stores/aiUsage.js'
+import { usePostsUsageStore } from '@/stores/postsUsage.js'
 import { COMPANIES } from '@/data/index.js'
 
 const props = defineProps({ workspace: String })
@@ -89,8 +105,10 @@ function navigate(path) {
   if (path) router.push(path)
 }
 
-// ── Storage usage (pinia store orqali) ───────────────────────
+// ── Storage, AI, Posts usage (pinia store) ───────────────────
 const storage = useStorageStore()
+const ai = useAiUsageStore()
+const postsUsage = usePostsUsageStore()
 let usageTimer = null
 
 function formatBytes(n) {
@@ -101,28 +119,40 @@ function formatBytes(n) {
   return (v / (1024 * 1024 * 1024)).toFixed(2).replace(/\.00$/, '') + ' GB'
 }
 
-const storageTone = computed(() => {
-  if (!storage.limit) return 'accent'
-  const pct = storage.used / storage.limit
+function formatNumber(n) {
+  const v = Number(n) || 0
+  return v.toLocaleString('uz-UZ').replace(/,/g, ' ')
+}
+
+function toneFor(used, limit) {
+  if (!limit) return 'accent'
+  const pct = used / limit
   if (pct >= 0.9) return 'danger'
   if (pct >= 0.7) return 'warn'
   return 'accent'
-})
+}
+
+const storageTone = computed(() => toneFor(storage.used, storage.limit))
+const aiTone = computed(() => toneFor(ai.used, ai.limit))
+const postsTone = computed(() => toneFor(postsUsage.used, postsUsage.limit))
+
+function refreshAll() {
+  if (props.workspace !== 'client') return
+  storage.refresh()
+  ai.refresh()
+  postsUsage.refresh()
+}
 
 onMounted(() => {
-  if (props.workspace === 'client') storage.refresh()
+  refreshAll()
   // Har 60 soniyada yangilab boramiz (xavfsizlik chizig'i)
-  usageTimer = setInterval(() => {
-    if (props.workspace === 'client') storage.refresh()
-  }, 60_000)
+  usageTimer = setInterval(refreshAll, 60_000)
 })
 onBeforeUnmount(() => {
   if (usageTimer) clearInterval(usageTimer)
 })
 // Route o'zgarganda ham yangilash
-watch(currentPath, () => {
-  if (props.workspace === 'client') storage.refresh()
-})
+watch(currentPath, refreshAll)
 
 const adminNav = computed(() => [
   { id: 'overview',  icon: 'Home',     label: t.value('nav.admin.overview'),   path: '/admin/overview' },
@@ -141,6 +171,7 @@ const clientNav = computed(() => [
   { id: 'overview',   icon: 'Home',     label: t.value('nav.client.overview'),  path: '/client/overview' },
   { id: 'channels',   icon: 'Telegram', label: t.value('nav.client.channels'),  path: '/client/channels', count: 6 },
   { id: 'posts',      icon: 'Send',     label: t.value('nav.client.posts'),     path: '/client/posts', count: 124 },
+  { id: 'discover',   icon: 'Sparkle',  label: 'Post ovlash',                   path: '/client/discover' },
   { id: 'categories', icon: 'Tag',      label: 'Kategoriyalar',                 path: '/client/categories' },
   { id: 'schedule',   icon: 'Calendar', label: t.value('nav.client.schedule'),  path: null },
   { id: 'sources',    icon: 'Globe2',   label: t.value('nav.client.sources'),   path: null },

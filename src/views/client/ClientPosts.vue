@@ -85,18 +85,31 @@
             <td style="padding:10px 14px;vertical-align:middle;">
               <div style="display:flex;gap:4px;">
                 <span v-for="l in ['uz','ru','en']" :key="l"
-                  class="cp-lang-chip"
+                  class="cp-lang-chip cp-lang-chip-btn"
                   :class="langChipState(p, l)"
-                  :title="langChipTitle(p, l)">
+                  :title="langChipTitle(p, l)"
+                  @click.stop="goEdit(p, l)">
                   {{ l.toUpperCase() }}
                 </span>
               </div>
             </td>
             <td style="padding:10px 14px;vertical-align:middle;color:var(--muted);">{{ publishLabel(p) }}</td>
-            <td style="padding:10px 14px;vertical-align:middle;">
-              <AppBadge :tone="statusTone(p.status)" dot>{{ tt('posts.status.' + p.status) }}</AppBadge>
+            <td style="padding:10px 14px;vertical-align:middle;" @click.stop>
+              <span class="cp-status-pill" :class="`tone-${statusTone(p.status)}`" :title="tt('pe.field.statusHint')">
+                <span class="cp-status-dot"/>
+                <select :value="p.status" class="cp-status-select" @change="onStatusChange(p, $event.target.value)">
+                  <option value="draft">{{ tt('posts.status.draft') }}</option>
+                  <option value="scheduled">{{ tt('posts.status.scheduled') }}</option>
+                  <option value="published">{{ tt('posts.status.published') }}</option>
+                  <option value="failed">{{ tt('posts.status.failed') }}</option>
+                </select>
+                <AppIcon name="ChevronL" :size="9" class="cp-status-chev"/>
+              </span>
             </td>
             <td style="padding:10px 14px;vertical-align:middle;text-align:right;white-space:nowrap;" @click.stop>
+              <AppButton v-if="p.status !== 'draft'" variant="ghost" size="sm" @click="onStatusChange(p, 'draft')" :title="tt('posts.action.toDraft')">
+                <template #icon><AppIcon name="Edit" :size="12"/></template>
+              </AppButton>
               <AppButton variant="ghost" size="sm" @click="removePost(p)">
                 <template #icon><AppIcon name="Trash" :size="12"/></template>
               </AppButton>
@@ -130,7 +143,7 @@ function tt(key, params) { return t.value(key, params) }
 const loading = ref(true)
 const company = ref(null)
 const posts = ref([])
-const filter = ref('all')
+const filter = ref('published')
 const query = ref('')
 
 async function loadAll() {
@@ -152,10 +165,10 @@ async function loadAll() {
 onMounted(loadAll)
 
 const filterTabs = computed(() => [
-  { value: 'all',       label: tt('posts.filter.all'),       count: posts.value.length },
-  { value: 'draft',     label: tt('posts.filter.draft'),     count: posts.value.filter(p => p.status === 'draft').length },
-  { value: 'scheduled', label: tt('posts.filter.scheduled'), count: posts.value.filter(p => p.status === 'scheduled').length },
   { value: 'published', label: tt('posts.filter.published'), count: posts.value.filter(p => p.status === 'published').length },
+  { value: 'scheduled', label: tt('posts.filter.scheduled'), count: posts.value.filter(p => p.status === 'scheduled').length },
+  { value: 'draft',     label: tt('posts.filter.draft'),     count: posts.value.filter(p => p.status === 'draft').length },
+  { value: 'all',       label: tt('posts.filter.all'),       count: posts.value.length },
 ])
 
 const filtered = computed(() => {
@@ -178,12 +191,14 @@ const headers = computed(() => [
 
 // ── Helpers ────────────────────────────────────────────────
 function titleOf(p) {
-  const order = [store.lang, 'uz', 'ru', 'en']
-  for (const l of order) {
-    const tr = p.translations?.find(t => t.lang === l)
-    if (tr?.title) return tr.title
-  }
-  return '— ' + tt('pe.lang.notFilled')
+  // Tanlangan tilning sarlavhasini ko'rsatamiz (fallback yo'q —
+  // agar bo'sh bo'lsa, foydalanuvchi shu tilda hali to'ldirmagan).
+  const tr = p.translations?.find(t => t.lang === store.lang)
+  if (tr?.title) return tr.title
+  // Hech qaysi tilda title bo'lmagan post — joker
+  const any = p.translations?.find(t => t.title)
+  if (!any) return '— ' + tt('pe.lang.notFilled')
+  return '— ' + tt('pe.lang.notFilled') + ' (' + store.lang.toUpperCase() + ')'
 }
 
 function langChipState(p, l) {
@@ -222,8 +237,21 @@ function statusTone(s) {
   return 'muted'
 }
 
-function goEdit(p) {
-  router.push(`/client/posts/${p.id}/edit`)
+function goEdit(p, lang) {
+  router.push({ path: `/client/posts/${p.id}/edit`, query: lang ? { lang } : {} })
+}
+
+async function onStatusChange(p, newStatus) {
+  if (!company.value || !newStatus || newStatus === p.status) return
+  const prev = p.status
+  p.status = newStatus // optimistic
+  try {
+    await postsApi.update(company.value.id, p.id, { status: newStatus })
+  } catch (e) {
+    p.status = prev
+    const msg = e?.response?.data?.message
+    alert(Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic')))
+  }
 }
 
 async function removePost(p) {
@@ -292,9 +320,69 @@ async function removePost(p) {
   background: color-mix(in oklab, var(--accent) 12%, transparent);
   border-color: transparent;
 }
+.cp-lang-chip-btn { cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.cp-lang-chip-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px -6px rgba(15,23,42,0.25); }
 .cp-lang-chip.complete {
   color: var(--success);
   background: color-mix(in oklab, var(--success) 14%, transparent);
   border-color: transparent;
+}
+
+/* Inline status pill bilan select */
+.cp-status-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 22px 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border-2);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.cp-status-pill:hover { border-color: var(--accent); }
+.cp-status-dot {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+.cp-status-pill.tone-success .cp-status-dot {
+  background: var(--success);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--success) 22%, transparent);
+}
+.cp-status-pill.tone-accent .cp-status-dot {
+  background: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.22);
+}
+.cp-status-pill.tone-danger .cp-status-dot {
+  background: var(--danger);
+}
+.cp-status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  font-weight: 600;
+}
+.cp-status-chev {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  opacity: 0.55;
+  pointer-events: none;
 }
 </style>

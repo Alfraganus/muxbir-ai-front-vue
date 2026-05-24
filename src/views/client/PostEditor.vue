@@ -27,20 +27,22 @@
           </div>
         </div>
         <div class="pe-hero-right">
-          <AppButton v-if="isEdit" variant="ghost" size="md" @click="onDelete">
+          <AppButton v-if="isEdit" variant="danger" size="md" :loading="deleting" @click="onDelete">
             <template #icon><AppIcon name="Trash" :size="13"/></template>
             <span class="pe-hide-sm">{{ tt('pe.delete') }}</span>
           </AppButton>
-          <AppButton variant="secondary" size="md" @click="$router.push('/client/posts')">
-            {{ tt('pe.cancel') }}
+          <AppButton variant="secondary" size="md" @click="$router.back()">
+            <AppIcon name="ChevronL" :size="13"/>
+            {{ tt('pe.back') }}
           </AppButton>
-          <AppButton variant="secondary" size="md" :loading="saving" @click="saveAll">
+          <AppButton variant="success" size="md" :loading="saving" @click="saveAll">
             <template #icon><AppIcon name="Check" :size="13"/></template>
-            {{ tt('pe.saveDraft') }}
+            {{ isEdit ? tt('pe.savePostEdit') : tt('pe.savePost') }}
           </AppButton>
           <AppButton v-if="isEdit && form.platform === 'telegram'" variant="primary" size="md"
-            :loading="publishing" :disabled="!form.telegram_channel_id"
-            @click="publishNow">
+            :loading="publishing || activating"
+            :disabled="!form.telegram_channel_id"
+            @click="onPublishClick">
             <template #icon><AppIcon name="Send" :size="13"/></template>
             {{ tt('pe.publish') }}
           </AppButton>
@@ -59,75 +61,141 @@
       <div class="pe-body">
         <!-- ╔══════ LEFT (writer) ══════╗ -->
         <main class="pe-writer">
-          <!-- Cover preview / drop zone -->
-          <div class="pe-cover" :class="{ filled: !!form.cover_image_url }"
-               :style="form.cover_image_url ? { backgroundImage: `url(${form.cover_image_url})` } : null">
+          <!-- Magazine-style cover hero with language switcher overlay -->
+          <div class="pe-hero-cover" :class="{ filled: !!form.cover_image_url, empty: !form.cover_image_url }">
             <input ref="coverFileInput" type="file" accept="image/*" @change="onCoverFile" hidden/>
-            <div class="pe-cover-overlay">
-              <div class="pe-cover-controls">
-                <button class="pe-cover-btn" @click="coverGalleryOpen = true" :title="'Media kutubxonadan tanlash'">
-                  <AppIcon name="Layers" :size="12"/>
-                  Media kutubxona
-                </button>
-                <button class="pe-cover-btn" @click="coverFileInput?.click()" :title="'To\'g\'ridan-to\'g\'ri yuklash'" :disabled="coverUploading">
-                  <AppIcon :name="coverUploading ? 'Sparkle' : 'Plus'" :size="12"/>
-                  {{ coverUploading ? 'Yuklanmoqda...' : 'Yuklash' }}
-                </button>
-                <input v-model="form.cover_image_url" placeholder="https://..." class="pe-cover-input"/>
-                <button v-if="form.cover_image_url" class="pe-cover-clear" @click="clearCover" :title="tt('cc.action.remove')">
-                  <AppIcon name="Close" :size="11"/>
+
+            <!-- Filled state: blurred backdrop + foreground contain -->
+            <template v-if="form.cover_image_url">
+              <div aria-hidden class="pe-hc-bg" :style="{ backgroundImage: `url(${form.cover_image_url})` }"/>
+              <img class="pe-hc-img" :src="form.cover_image_url" alt="Cover"/>
+            </template>
+
+            <!-- Decorative orbs (empty state only) -->
+            <template v-if="!form.cover_image_url">
+              <div aria-hidden class="pe-hc-orb pe-hc-orb-1"/>
+              <div aria-hidden class="pe-hc-orb pe-hc-orb-2"/>
+              <div aria-hidden class="pe-hc-grid"/>
+            </template>
+
+            <!-- Tint for filled state -->
+            <div v-if="form.cover_image_url" class="pe-hc-tint"/>
+
+            <!-- Top toolbar (right): upload / library / url / clear -->
+            <div class="pe-hc-toolbar">
+              <button class="pe-hc-btn" @click="coverGalleryOpen = true" title="Media kutubxonadan tanlash">
+                <AppIcon name="Layers" :size="12"/>
+                <span>Kutubxona</span>
+              </button>
+              <button class="pe-hc-btn" @click="coverFileInput?.click()" :disabled="coverUploading" title="Rasm yuklash">
+                <AppIcon :name="coverUploading ? 'Sparkle' : 'Plus'" :size="12"/>
+                <span>{{ coverUploading ? 'Yuklanmoqda…' : 'Yuklash' }}</span>
+              </button>
+              <input v-model="form.cover_image_url"
+                placeholder="yoki https://..."
+                class="pe-hc-url"
+                title="Rasm URL'ini kiriting"/>
+              <button v-if="form.cover_image_url" class="pe-hc-btn pe-hc-btn-icon" @click="clearCover" title="O'chirish">
+                <AppIcon name="Close" :size="11"/>
+              </button>
+            </div>
+
+            <!-- Empty state prompt (center) -->
+            <div v-if="!form.cover_image_url" class="pe-hc-empty">
+              <span class="pe-hc-empty-badge">
+                <AppIcon name="Layers" :size="20"/>
+              </span>
+              <span class="pe-hc-empty-title">Postingizga muqova tanlang</span>
+              <span class="pe-hc-empty-sub">Chiroyli cover rasm postingizni jonlantiradi</span>
+            </div>
+
+            <!-- Floating language switcher (bottom) -->
+            <div class="pe-hc-langs">
+              <div class="pe-hc-langs-inner">
+                <button v-for="l in LANGS" :key="l"
+                  class="pe-hcl"
+                  :class="[{ active: activeLang === l }, langState(l)]"
+                  @click="activeLang = l"
+                  :title="tt('pe.lang.' + l)">
+                  <span class="pe-hcl-code">{{ l.toUpperCase() }}</span>
+                  <span class="pe-hcl-dot"/>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Language tabs -->
-          <div class="pe-lang-tabs">
-            <button v-for="l in LANGS" :key="l"
-              class="pe-lang-tab"
-              :class="[{ active: activeLang === l }, langState(l)]"
-              @click="activeLang = l">
-              <span class="pe-lang-tab-flag">{{ l.toUpperCase() }}</span>
-              <span class="pe-lang-tab-label">{{ tt('pe.lang.' + l) }}</span>
-              <span class="pe-lang-tab-dot"/>
-            </button>
-            <div class="pe-lang-spacer"/>
-            <button v-if="hasAnyContent(activeLang)" class="pe-lang-remove" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
-              <AppIcon name="Trash" :size="11"/>
-            </button>
-            <button class="pe-lang-complete" :class="{ on: activeTr.is_complete }" @click="toggleComplete">
-              <AppIcon :name="activeTr.is_complete ? 'Check' : 'Edit'" :size="11"/>
-              {{ activeTr.is_complete ? tt('pe.lang.complete') : tt('pe.lang.markComplete') }}
-            </button>
+          <!-- Action ribbon: AI chips + platform + complete -->
+          <div class="pe-ribbon">
+            <div class="pe-ribbon-group">
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="aiShortenContent" title="Telegram uchun qisqartirish">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon :name="aiShortening ? 'Sparkle' : 'Bolt'" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiShortening ? 'Qisqartirilmoqda…' : 'AI qisqartirish' }}</span>
+              </button>
+              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
+              </button>
+            </div>
+
+            <div class="pe-ribbon-spacer"/>
+
+            <div class="pe-ribbon-group">
+              <div v-if="form.platform === 'telegram'" class="pe-chip pe-chip-platform" :class="{ 'pe-chip-warn': !form.telegram_channel_id }">
+                <span class="pe-chip-ic pe-chip-ic-tg">
+                  <AppIcon name="Telegram" :size="11"/>
+                </span>
+                <select v-model="form.telegram_channel_id" class="pe-chip-select" :title="tt('pe.tg.channel')">
+                  <option :value="null">— Kanalni tanlang —</option>
+                  <option v-for="ch in connectedTgChannels" :key="ch.id" :value="ch.id">
+                    {{ ch.display_name || ch.username }}
+                  </option>
+                </select>
+                <AppIcon name="ChevronL" :size="10" style="transform: rotate(-90deg); opacity: 0.6; flex-shrink: 0;"/>
+              </div>
+
+              <button class="pe-chip pe-chip-complete" :class="{ 'pe-chip-on': activeTr.is_complete }" @click="toggleComplete">
+                <AppIcon :name="activeTr.is_complete ? 'Check' : 'Edit'" :size="11"/>
+                <span class="pe-chip-text">{{ activeTr.is_complete ? 'Tayyor' : 'Qoralama' }}</span>
+              </button>
+              <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
+                <AppIcon name="Trash" :size="11"/>
+              </button>
+            </div>
           </div>
 
-          <!-- Title input (card style) -->
-          <div class="pe-card-input">
-            <label class="pe-field-label-inline">
-              <AppIcon name="Edit" :size="11"/>
-              {{ tt('pe.field.langTitle') }}
-            </label>
+          <!-- AI hint / error -->
+          <div v-if="aiError" class="pe-ribbon-hint pe-ribbon-hint-err">
+            <AppIcon name="Close" :size="11"/>
+            {{ aiError }}
+          </div>
+
+          <!-- Composition "paper" — title + short desc + editor as one unified surface -->
+          <div class="pe-paper">
             <input v-model="activeTr.title"
               :placeholder="tt('pe.field.langTitlePh')"
-              class="pe-title-input"/>
-          </div>
+              class="pe-paper-title"/>
 
-          <!-- Short description -->
-          <div class="pe-card-input">
-            <label class="pe-field-label-inline">
-              <AppIcon name="Layers" :size="11"/>
-              {{ tt('pe.field.langShortDesc') }}
-              <span class="tabular pe-card-input-counter">{{ (activeTr.short_description || '').length }} / 500</span>
-            </label>
-            <textarea v-model="activeTr.short_description"
-              :placeholder="tt('pe.field.langShortDescPh')"
-              rows="2" maxlength="500"
-              class="pe-short-input"/>
-          </div>
+            <div class="pe-paper-short-wrap">
+              <textarea v-model="activeTr.short_description"
+                :placeholder="tt('pe.field.langShortDescPh')"
+                rows="2" maxlength="500"
+                class="pe-paper-short"/>
+              <span class="pe-paper-short-counter">{{ (activeTr.short_description || '').length }}/500</span>
+            </div>
 
-          <!-- Editor.js -->
-          <div class="pe-editor-wrap">
-            <RichEditor :key="activeLang" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
+            <div class="pe-paper-divider">
+              <span/>
+              <em>Asosiy matn</em>
+              <span/>
+            </div>
+
+            <div class="pe-paper-editor">
+              <RichEditor :key="activeLang" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
+            </div>
           </div>
         </main>
 
@@ -243,6 +311,17 @@
               <DateTimePicker v-model="form.publish_at"/>
               <span class="pe-hint">{{ tt('pe.field.publishAtHint') }}</span>
             </div>
+
+            <div v-if="isEdit" class="pe-field">
+              <label class="pe-label">{{ tt('pe.field.status') }}</label>
+              <select v-model="form.status" class="pe-input" @change="onStatusChange">
+                <option value="draft">{{ tt('posts.status.draft') }}</option>
+                <option value="scheduled">{{ tt('posts.status.scheduled') }}</option>
+                <option value="published">{{ tt('posts.status.published') }}</option>
+                <option value="failed">{{ tt('posts.status.failed') }}</option>
+              </select>
+              <span class="pe-hint">{{ tt('pe.field.statusHint') }}</span>
+            </div>
           </section>
 
           <!-- Gallery card -->
@@ -274,50 +353,6 @@
             </div>
           </section>
 
-          <!-- Telegram-specific card -->
-          <section v-if="form.platform === 'telegram'" class="pe-card pe-card-platform">
-            <header class="pe-card-head">
-              <span class="pe-card-head-icon" style="background:#2AABEE26;color:#2AABEE">
-                <AppIcon name="Telegram" :size="13"/>
-              </span>
-              <h3>{{ tt('pe.section.platform') }}</h3>
-            </header>
-
-            <div class="pe-field">
-              <label class="pe-label">{{ tt('pe.tg.channel') }}</label>
-              <select v-model="form.telegram_channel_id" class="pe-input">
-                <option :value="null">{{ tt('pe.tg.channelPh') }}</option>
-                <option v-for="ch in connectedTgChannels" :key="ch.id" :value="ch.id">
-                  {{ ch.display_name || ch.username }} ({{ ch.username }})
-                </option>
-              </select>
-              <span v-if="!connectedTgChannels.length" class="pe-hint pe-hint-err">
-                {{ tt('pe.tg.noConnected') }}
-              </span>
-            </div>
-
-            <div class="pe-field">
-              <label class="pe-label">
-                <AppIcon name="Sparkle" :size="11" :style="{ verticalAlign: 'middle', marginRight: '4px', color: 'var(--accent)' }"/>
-                {{ tt('pe.tg.longText') }}
-              </label>
-              <textarea v-model="form.telegram_raw_long_text" rows="5" class="pe-input pe-textarea"
-                placeholder="..."/>
-              <span class="pe-hint">{{ tt('pe.tg.longTextHint') }}</span>
-            </div>
-
-            <AppButton variant="secondary" size="md" :loading="adapting"
-              :disabled="!isEdit || !form.telegram_raw_long_text" @click="adaptTelegram"
-              :style="{ width: '100%', justifyContent: 'center' }">
-              <template #icon><AppIcon name="Sparkle" :size="12"/></template>
-              {{ tt('pe.tg.adapt') }}
-            </AppButton>
-
-            <div v-if="adaptedResult" class="pe-adapted">
-              <div class="pe-adapted-label">{{ tt('pe.tg.adaptResult') }}</div>
-              <div class="pe-adapted-body">{{ adaptedResult }}</div>
-            </div>
-          </section>
         </aside>
       </div>
 
@@ -357,11 +392,34 @@
         </div>
       </div>
     </AppModal>
+
+    <!-- ─── Video yuklab olinmoqda — sahifani yopmang ─── -->
+    <transition name="pe-vp-fade">
+      <div v-if="post?.video_processing" class="pe-vp-overlay">
+        <div class="pe-vp-card">
+          <div class="pe-vp-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/>
+              <circle cx="24" cy="24" r="20" fill="none" stroke="white" stroke-width="3"
+                stroke-linecap="round" stroke-dasharray="32 126"
+                style="transform-origin: 24px 24px; animation: pe-vp-spin 1.1s linear infinite;"/>
+            </svg>
+            <AppIcon name="Eye" :size="20" style="position:absolute;"/>
+          </div>
+          <h3 class="pe-vp-title">Ushbu postda video bor — ko'chirilmoqda</h3>
+          <p class="pe-vp-sub">
+            Iltimos, sahifani yopmang va boshqa joyga o'tib ketmang.
+            Video o'lchamiga qarab 10–60 soniya vaqt olishi mumkin.
+          </p>
+          <div class="pe-vp-bar"><div class="pe-vp-bar-fill"/></div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, reactive, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -373,6 +431,8 @@ import MediaGallery from '@/components/media/MediaGallery.vue'
 import { categoriesApi } from '@/api/categories.js'
 import { useAppStore } from '@/stores/app.js'
 import { useStorageStore } from '@/stores/storage.js'
+import { useAiUsageStore } from '@/stores/aiUsage.js'
+import { usePostsUsageStore } from '@/stores/postsUsage.js'
 import { companiesApi } from '@/api/companies.js'
 import { channelsApi } from '@/api/channels.js'
 import { postsApi } from '@/api/posts.js'
@@ -382,6 +442,8 @@ const route = useRoute()
 const router = useRouter()
 const store = useAppStore()
 const storageStore = useStorageStore()
+const aiUsageStore = useAiUsageStore()
+const postsUsageStore = usePostsUsageStore()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
 
@@ -394,10 +456,15 @@ const postId = computed(() => route.params.id)
 const initLoading = ref(true)
 const saving = ref(false)
 const publishing = ref(false)
-const adapting = ref(false)
+const deleting = ref(false)
+const activating = ref(false)
 const previewShown = ref(false)
-const adaptedResult = ref('')
 const formError = ref('')
+
+// AI assistant state
+const aiShortening = ref(false)
+const aiTagging = ref(false)
+const aiError = ref('')
 const lastSavedAt = ref(null)
 
 const company = ref(null)
@@ -412,6 +479,7 @@ const form = reactive({
   cover_image_url: '',
   telegram_channel_id: null,
   telegram_raw_long_text: '',
+  status: 'scheduled',
 })
 
 // ── Media kutubxona modal'lari ─────────────────────────────
@@ -570,8 +638,8 @@ async function onGalleryFiles(e) {
     }
     storageStore.refresh()
   } catch (err) {
-    const msg = err?.response?.data?.message || 'Yuklashda xato'
-    formError.value = Array.isArray(msg) ? msg.join('. ') : msg
+    const msg = err?.response?.data?.message
+    formError.value = (Array.isArray(msg) ? msg.join('. ') : msg) || 'Yuklashda xato'
   } finally {
     galleryUploading.value = false
   }
@@ -678,7 +746,11 @@ const translations = reactive({
   ru: { title: '', short_description: '', content_json: { blocks: [] }, is_complete: false },
   en: { title: '', short_description: '', content_json: { blocks: [] }, is_complete: false },
 })
-const activeLang = ref(store.lang in translations ? store.lang : 'uz')
+const activeLang = ref(
+  (typeof route.query.lang === 'string' && route.query.lang in translations)
+    ? route.query.lang
+    : (store.lang in translations ? store.lang : 'uz')
+)
 const activeTr = computed(() => translations[activeLang.value])
 
 const connectedTgChannels = computed(() =>
@@ -761,10 +833,20 @@ async function loadInitial() {
       form.platform = p.platform || 'telegram'
       form.category = p.category || ''
       form.category_id = p.category_id || null
-      form.publish_at = p.publish_at ? toLocalDatetime(p.publish_at) : ''
+      // O'tib ketgan publish_at qiymatlarini ko'rsatish noto'g'ri — picker
+       // hozirgi vaqtni default ko'rsatadi. Faqat kelajakdagi qiymatlarni saqlaymiz.
+      if (p.publish_at) {
+        const dt = new Date(p.publish_at)
+        form.publish_at = (!isNaN(dt.getTime()) && dt.getTime() > Date.now())
+          ? toLocalDatetime(p.publish_at)
+          : ''
+      } else {
+        form.publish_at = ''
+      }
       form.cover_image_url = p.cover_image_url || ''
       form.telegram_channel_id = p.telegram_channel_id || null
       form.telegram_raw_long_text = p.telegram_raw_long_text || ''
+      form.status = p.status || 'scheduled'
       tagsArr.value = p.tags || []
       galleryArr.value = p.gallery || []
       for (const l of LANGS) {
@@ -795,14 +877,71 @@ function toLocalDatetime(d) {
 
 onMounted(loadInitial)
 
+// Route ID o'zgarsa qaytadan yuklash — Discover'dan kelganda yangi post
+// uchun komponent qayta mount bo'lmasligi mumkin (Vue routerning default behaviour'i).
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) loadInitial()
+})
+
+// ── Video processing polling ──────────────────────────────
+// Backend video'ni asinxron yuklab olganda postning video_processing flagi
+// true bo'ladi. Frontend uni har 3 soniyada qayta yuklab tekshiradi va
+// flag tushgach polling to'xtaydi (UI overlay yopiladi).
+let videoPollTimer = null
+function startVideoPolling() {
+  stopVideoPolling()
+  videoPollTimer = setInterval(async () => {
+    if (!post.value?.id || !company.value) { stopVideoPolling(); return }
+    if (!post.value.video_processing) { stopVideoPolling(); return }
+    try {
+      const fresh = await postsApi.get(company.value.id, postId.value)
+      post.value = fresh
+      // Tugagach to'liq qayta yuklash — translations va boshqa state'larni sinxronlash
+      if (!fresh?.video_processing) {
+        stopVideoPolling()
+        await loadInitial()
+      }
+    } catch {/* keyingi tickda yana sinaymiz */}
+  }, 3000)
+}
+function stopVideoPolling() {
+  if (videoPollTimer) { clearInterval(videoPollTimer); videoPollTimer = null }
+}
+// Post.video_processing o'zgarsa polling boshlanadi
+watch(() => post.value?.video_processing, (v) => {
+  if (v) startVideoPolling()
+  else stopVideoPolling()
+})
+onBeforeUnmount(stopVideoPolling)
+
 async function saveAll() {
+  // Aktiv inputni blur qilamiz — shu orqali DateTimePicker'ning
+  // normalizeMinute/normalizeHour ishlaydi va form.publish_at to'liq yangilanadi.
+  if (typeof document !== 'undefined' && document.activeElement && typeof (document.activeElement).blur === 'function') {
+    (document.activeElement).blur()
+    await nextTick()
+  }
   formError.value = ''
   const anyTitle = LANGS.some(l => translations[l].title && translations[l].title.trim())
   if (!anyTitle) { formError.value = tt('pe.err.noTitle'); return }
+  // Telegram platformasi tanlangan bo'lsa, kanal majburiy — bo'lmasa xato.
+  if (form.platform === 'telegram' && !form.telegram_channel_id) {
+    formError.value = tt('pe.err.noChannel')
+    return
+  }
   if (!company.value) return
 
   saving.value = true
   try {
+    // Status'ni publish_at asosida avtomatik aniqlaymiz:
+    //   - publish_at belgilangan bo'lsa → 'scheduled' (Nashr kutilayotgan)
+    //   - aks holda — joriy form.status, yo'q bo'lsa 'draft'
+    //   - 'published' / 'failed' bo'lsa o'zgartirmaymiz (manual transitions)
+    const protectedStatus = form.status === 'published' || form.status === 'failed'
+    const derivedStatus = protectedStatus
+      ? form.status
+      : (form.publish_at ? 'scheduled' : (form.status || 'draft'))
+
     const payload = {
       platform: form.platform,
       category: form.category || null,
@@ -813,6 +952,7 @@ async function saveAll() {
       publish_at: form.publish_at ? new Date(form.publish_at).toISOString() : null,
       telegram_channel_id: form.telegram_channel_id || null,
       telegram_raw_long_text: form.telegram_raw_long_text || null,
+      status: derivedStatus,
     }
 
     let saved
@@ -831,6 +971,7 @@ async function saveAll() {
       saved = await postsApi.create(company.value.id, { ...payload, translations: trArr })
     }
     post.value = saved
+    if (saved?.status) form.status = saved.status
 
     if (isEdit.value) {
       for (const l of LANGS) {
@@ -850,10 +991,11 @@ async function saveAll() {
     lastSavedAt.value = Date.now()
     // Saqlash paytida olib tashlangan rasmlar bucket'dan o'chiriladi → usage yangilanadi
     storageStore.refresh()
+    // Yangi post yaratilgan bo'lsa, oylik post sanog'i ham yangilansin
+    if (!isEdit.value) postsUsageStore.refresh()
 
-    if (!isEdit.value && saved?.id) {
-      router.replace(`/client/posts/${saved.id}/edit`)
-    }
+    // Saqlangach postlar ro'yxatiga qaytamiz
+    router.push('/client/posts')
   } catch (e) {
     const msg = e?.response?.data?.message
     formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
@@ -865,11 +1007,38 @@ async function saveAll() {
 async function onDelete() {
   if (!isEdit.value || !post.value) return
   if (!confirm(tt('posts.confirmDelete', { name: firstNonEmptyTitle() }))) return
+  deleting.value = true
   try {
     await postsApi.remove(company.value.id, postId.value)
     storageStore.refresh()
+    postsUsageStore.refresh()
     router.push('/client/posts')
-  } catch {}
+  } catch (e) {
+    const msg = e?.response?.data?.message
+    formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
+    deleting.value = false
+  }
+}
+
+/**
+ * Publish tugmasi bosilganda chaqiriladi.
+ * - Post draft bo'lsa, foydalanuvchidan tasdiqlash so'raymiz: faollashtirib
+ *   Telegramga yuboraylikmi?
+ * - Aks holda darhol publish qilamiz.
+ */
+async function onPublishClick() {
+  if (!isEdit.value || !post.value) return
+  if (!form.telegram_channel_id) {
+    formError.value = tt('pe.tg.noConnected')
+    return
+  }
+  if (post.value.status === 'draft') {
+    if (!confirm(tt('pe.confirmActivatePublish'))) return
+    // Avval draft → scheduled
+    await activatePost()
+    if (formError.value) return
+  }
+  await publishNow()
 }
 
 async function publishNow() {
@@ -887,6 +1056,7 @@ async function publishNow() {
   try {
     const res = await postsApi.publish(company.value.id, postId.value)
     post.value = res
+    if (res?.status) form.status = res.status
     lastSavedAt.value = Date.now()
   } catch (e) {
     const msg = e?.response?.data?.message
@@ -896,15 +1066,81 @@ async function publishNow() {
   }
 }
 
-async function adaptTelegram() {
-  if (!isEdit.value || !post.value) return
-  adapting.value = true
-  adaptedResult.value = ''
+async function ensurePostSaved() {
+  if (post.value && company.value) return true
+  await saveAll()
+  return !!(post.value && company.value && !formError.value)
+}
+
+async function activatePost() {
+  if (!isEdit.value || !post.value || !company.value) return
+  formError.value = ''
+  activating.value = true
   try {
-    const res = await postsApi.adaptTelegram(company.value.id, postId.value)
-    adaptedResult.value = res?.adapted || ''
-  } catch {} finally {
-    adapting.value = false
+    const updated = await postsApi.update(company.value.id, postId.value, { status: 'scheduled' })
+    post.value = updated
+    form.status = updated.status || 'scheduled'
+    lastSavedAt.value = Date.now()
+  } catch (e) {
+    const msg = e?.response?.data?.message
+    formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
+  } finally {
+    activating.value = false
+  }
+}
+
+async function onStatusChange() {
+  if (!isEdit.value || !post.value || !company.value) return
+  try {
+    const updated = await postsApi.update(company.value.id, postId.value, { status: form.status })
+    post.value = updated
+    lastSavedAt.value = Date.now()
+  } catch (e) {
+    const msg = e?.response?.data?.message
+    formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
+    form.status = post.value?.status || 'scheduled'
+  }
+}
+
+async function aiShortenContent() {
+  aiError.value = ''
+  if (!await ensurePostSaved()) {
+    aiError.value = formError.value || 'Avval postni saqlash kerak'
+    return
+  }
+  aiShortening.value = true
+  try {
+    const res = await postsApi.aiShorten(company.value.id, postId.value, activeLang.value)
+    if (res?.content_json) {
+      activeTr.value.content_json = res.content_json
+    }
+    aiUsageStore.refresh()
+  } catch (e) {
+    const msg = e?.response?.data?.message || 'Qisqartirishda xato'
+    aiError.value = Array.isArray(msg) ? msg.join('. ') : msg
+  } finally {
+    aiShortening.value = false
+  }
+}
+
+async function aiGenerateTags() {
+  aiError.value = ''
+  if (!await ensurePostSaved()) {
+    aiError.value = formError.value || 'Avval postni saqlash kerak'
+    return
+  }
+  aiTagging.value = true
+  try {
+    const res = await postsApi.aiTags(company.value.id, postId.value, activeLang.value, true)
+    if (Array.isArray(res?.tags)) {
+      tagsArr.value = res.tags
+    }
+    aiUsageStore.refresh()
+  } catch (e) {
+    const msg = e?.response?.data?.message || 'Tag generatsiyasida xato'
+    aiError.value = Array.isArray(msg) ? msg.join('. ') : msg
+  } finally {
+    aiTagging.value = false
   }
 }
 </script>
@@ -1050,87 +1286,475 @@ async function adaptTelegram() {
   min-width: 0;
 }
 
-/* Cover — Notion-style */
-.pe-cover {
+/* ────────── Magazine-style hero cover ────────── */
+.pe-hero-cover {
   position: relative;
-  height: 220px;
-  border-radius: 16px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 420px;
+  min-height: 280px;
+  border-radius: 18px;
   overflow: hidden;
+  background-color: var(--panel-2);
+  border: 1px solid var(--border);
+  isolation: isolate;
+  box-shadow: 0 20px 50px -28px rgba(15, 23, 42, 0.32),
+              0 8px 18px -12px rgba(15, 23, 42, 0.14);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.pe-hc-bg {
+  position: absolute; inset: 0; z-index: 0;
   background-size: cover;
   background-position: center;
-  background-color: var(--panel-2);
+  filter: blur(24px) saturate(1.1);
+  transform: scale(1.15);
+  opacity: 0.55;
+}
+.pe-hc-img {
+  position: absolute; inset: 0; z-index: 1;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+.pe-hero-cover:hover {
+  box-shadow: 0 26px 60px -28px rgba(15, 23, 42, 0.4),
+              0 10px 22px -12px rgba(15, 23, 42, 0.18);
+}
+.pe-hero-cover.empty {
   background-image:
+    radial-gradient(ellipse 80% 100% at 0% 0%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 60%),
+    radial-gradient(ellipse 90% 110% at 100% 100%, color-mix(in oklab, #6E56CF 22%, transparent), transparent 60%),
     linear-gradient(135deg,
-      color-mix(in oklab, var(--accent) 12%, transparent),
-      color-mix(in oklab, #6E56CF 8%, transparent));
-  border: 1px solid var(--border);
-  transition: border-color 0.15s;
+      color-mix(in oklab, var(--accent) 8%, var(--panel-2)),
+      color-mix(in oklab, #6E56CF 6%, var(--panel-2)));
 }
-.pe-cover.filled {
-  background-image: none;
+.pe-hero-cover.filled { border-color: transparent; }
+.pe-hc-tint {
+  position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(180deg, rgba(0,0,0,0.25) 0%, transparent 35%, transparent 60%, rgba(0,0,0,0.45) 100%);
+  pointer-events: none;
 }
-.pe-cover-overlay {
+.pe-hc-orb {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-end;
-  padding: 14px;
-  background: linear-gradient(180deg, transparent 0%, transparent 60%, rgba(0,0,0,0.45) 100%);
-}
-.pe-cover.filled .pe-cover-overlay {
-  background: linear-gradient(180deg, transparent 0%, transparent 60%, rgba(0,0,0,0.55) 100%);
-}
-.pe-cover-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 12px;
-  background: rgba(0,0,0,0.45);
-  border-radius: 9px;
-  color: white;
-  backdrop-filter: blur(10px);
-}
-.pe-cover-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: white;
-  font-size: 13px;
-  font-family: var(--font-mono);
-}
-.pe-cover-input::placeholder { color: rgba(255,255,255,0.65); }
-.pe-cover-clear {
-  width: 22px; height: 22px;
-  background: rgba(255,255,255,0.18);
-  border: none;
   border-radius: 999px;
-  color: white;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  filter: blur(40px);
+  z-index: 0;
+  pointer-events: none;
+  animation: peOrb 12s ease-in-out infinite;
 }
-.pe-cover-clear:hover { background: rgba(255,255,255,0.32); }
-.pe-cover-btn {
+.pe-hc-orb-1 {
+  top: -60px; left: -40px;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, color-mix(in oklab, var(--accent) 70%, transparent), transparent 70%);
+}
+.pe-hc-orb-2 {
+  bottom: -80px; right: -60px;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, color-mix(in oklab, #6E56CF 65%, transparent), transparent 70%);
+  animation-delay: -6s;
+}
+@keyframes peOrb {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(20px,-12px) scale(1.08); }
+}
+.pe-hc-grid {
+  position: absolute; inset: 0; z-index: 0;
+  background-image: radial-gradient(color-mix(in oklab, var(--text) 18%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 40%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 40%, transparent 85%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.pe-hc-toolbar {
+  position: absolute;
+  top: 14px; right: 14px;
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+}
+.pe-hc-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 26px;
-  padding: 0 10px;
-  background: rgba(255,255,255,0.18);
+  height: 30px;
+  padding: 0 11px;
+  background: rgba(255,255,255,0.16);
   border: 1px solid rgba(255,255,255,0.28);
-  color: white;
-  border-radius: 7px;
+  color: #fff;
+  border-radius: 999px;
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.15s, border-color 0.15s;
+  box-shadow: 0 4px 12px -4px rgba(0,0,0,0.25);
+}
+.pe-hero-cover.empty .pe-hc-btn {
+  background: color-mix(in oklab, var(--panel) 70%, transparent);
+  border-color: var(--border);
+  color: var(--text-2);
+}
+.pe-hc-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.28);
+  border-color: rgba(255,255,255,0.4);
+  transform: translateY(-1px);
+}
+.pe-hero-cover.empty .pe-hc-btn:hover:not(:disabled) {
+  background: var(--panel);
+  border-color: var(--accent);
+  color: var(--text);
+}
+.pe-hc-btn:disabled { opacity: 0.65; cursor: wait; }
+.pe-hc-btn-icon { padding: 0; width: 30px; justify-content: center; }
+.pe-hc-url {
+  height: 30px;
+  width: 180px;
+  padding: 0 11px;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.28);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  outline: none;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  font-family: inherit;
+}
+.pe-hc-url::placeholder { color: rgba(255,255,255,0.7); }
+.pe-hc-url:focus { border-color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.24); }
+.pe-hero-cover.empty .pe-hc-url {
+  background: color-mix(in oklab, var(--panel) 70%, transparent);
+  border-color: var(--border);
+  color: var(--text);
+}
+.pe-hero-cover.empty .pe-hc-url::placeholder { color: var(--muted); }
+.pe-hero-cover.empty .pe-hc-url:focus { border-color: var(--accent); }
+
+.pe-hc-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 16px;
+  pointer-events: none;
+}
+.pe-hc-empty-badge {
+  width: 52px; height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent), #6E56CF);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 28px -8px color-mix(in oklab, var(--accent) 60%, transparent),
+              0 4px 10px -4px color-mix(in oklab, #6E56CF 50%, transparent);
+  margin-bottom: 4px;
+  animation: peBadgeFloat 4s ease-in-out infinite;
+}
+@keyframes peBadgeFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+.pe-hc-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.pe-hc-empty-sub {
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 280px;
+  line-height: 1.45;
+}
+
+.pe-hc-langs {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 3;
+}
+.pe-hc-langs-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 999px;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 6px 18px -6px rgba(0,0,0,0.28);
+}
+.pe-hero-cover.empty .pe-hc-langs-inner {
+  background: color-mix(in oklab, var(--panel) 75%, transparent);
+  border-color: var(--border);
+}
+.pe-hcl {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.85);
+  transition: all 0.18s;
+  font-family: inherit;
+}
+.pe-hero-cover.empty .pe-hcl { color: var(--text-2); }
+.pe-hcl:hover { background: rgba(255,255,255,0.14); }
+.pe-hero-cover.empty .pe-hcl:hover { background: var(--panel-2); color: var(--text); }
+.pe-hcl.active {
+  background: #fff;
+  color: var(--accent);
+  box-shadow: 0 3px 8px -2px rgba(0,0,0,0.22);
+}
+.pe-hcl-code { font-variant-numeric: tabular-nums; }
+.pe-hcl-dot {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.5);
+}
+.pe-hero-cover.empty .pe-hcl-dot { background: var(--border); }
+.pe-hcl.active .pe-hcl-dot { background: var(--border); }
+.pe-hcl.draft .pe-hcl-dot {
+  background: #F59E0B;
+  box-shadow: 0 0 0 3px color-mix(in oklab, #F59E0B 30%, transparent);
+}
+.pe-hcl.complete .pe-hcl-dot {
+  background: #22C55E;
+  box-shadow: 0 0 0 3px color-mix(in oklab, #22C55E 30%, transparent);
+}
+
+/* ────────── Action ribbon ────────── */
+.pe-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  flex-wrap: wrap;
+}
+.pe-ribbon-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.pe-ribbon-spacer { flex: 1; min-width: 8px; }
+.pe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px 0 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
   white-space: nowrap;
 }
-.pe-cover-btn:hover:not(:disabled) { background: rgba(255,255,255,0.32); }
-.pe-cover-btn:disabled { opacity: 0.7; cursor: wait; }
+.pe-chip:hover:not(:disabled) {
+  background: var(--panel);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.pe-chip:disabled { opacity: 0.55; cursor: not-allowed; }
+.pe-chip-ic {
+  width: 22px; height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--panel);
+  color: var(--text-2);
+}
+.pe-chip-ic-ai {
+  background: linear-gradient(135deg, #6E56CF, #2F6FED);
+  color: white;
+  box-shadow: 0 2px 6px -2px color-mix(in oklab, #6E56CF 60%, transparent);
+}
+.pe-chip-ic-tg {
+  background: #2AABEE;
+  color: white;
+}
+.pe-chip-ai:hover:not(:disabled) {
+  border-color: #6E56CF;
+  background: color-mix(in oklab, #6E56CF 6%, var(--panel));
+}
+.pe-chip-platform { padding-right: 8px; }
+.pe-chip-platform.pe-chip-warn {
+  border-color: color-mix(in oklab, #F59E0B 50%, var(--border-2));
+  background: color-mix(in oklab, #F59E0B 7%, var(--panel-2));
+}
+.pe-chip-select {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 160px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.pe-chip-complete { padding-left: 10px; }
+.pe-chip-complete.pe-chip-on {
+  background: color-mix(in oklab, #22C55E 12%, var(--panel-2));
+  border-color: color-mix(in oklab, #22C55E 35%, var(--border-2));
+  color: #16A34A;
+}
+.pe-chip-danger {
+  padding: 0;
+  width: 30px;
+  justify-content: center;
+  color: var(--muted);
+}
+.pe-chip-danger:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: color-mix(in oklab, var(--danger) 35%, var(--border-2));
+  background: var(--danger-bg);
+}
+.pe-ribbon-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: color-mix(in oklab, var(--accent) 6%, var(--panel));
+  border: 1px solid color-mix(in oklab, var(--accent) 22%, var(--border));
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--text-2);
+  align-self: flex-start;
+}
+.pe-ribbon-hint-err {
+  background: var(--danger-bg);
+  border-color: color-mix(in oklab, var(--danger) 28%, transparent);
+  color: var(--danger);
+}
+
+/* ────────── Composition paper ────────── */
+.pe-paper {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 12px 32px -20px rgba(15, 23, 42, 0.22),
+              0 4px 10px -6px rgba(15, 23, 42, 0.08);
+}
+.pe-paper::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 26px;
+  width: 3px; height: 40px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--accent), #6E56CF);
+}
+.pe-paper-title {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  color: var(--text);
+  font-family: inherit;
+  line-height: 1.18;
+  padding: 0;
+}
+.pe-paper-title::placeholder {
+  color: color-mix(in oklab, var(--text) 25%, transparent);
+  font-weight: 700;
+}
+.pe-paper-short-wrap { position: relative; margin-top: 2px; }
+.pe-paper-short {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text-2);
+  font-family: inherit;
+  line-height: 1.55;
+  font-style: italic;
+  resize: vertical;
+  padding: 0 56px 0 0;
+  min-height: 44px;
+}
+.pe-paper-short::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+.pe-paper-short-counter {
+  position: absolute;
+  bottom: 4px;
+  right: 0;
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  padding: 2px 7px;
+  background: var(--panel-2);
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pe-paper-short-wrap:focus-within .pe-paper-short-counter {
+  opacity: 1;
+}
+.pe-paper-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.pe-paper-divider span {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+.pe-paper-divider em {
+  font-style: normal;
+  padding: 0 4px;
+}
+.pe-paper-editor { margin-top: 4px; }
 
 .pe-gallery-upload-btn {
   display: inline-flex;
@@ -1600,6 +2224,66 @@ async function adaptTelegram() {
     var(--panel) 100%);
 }
 
+/* AI assistant card */
+.pe-card-ai {
+  border-color: color-mix(in oklab, #6E56CF 35%, var(--border));
+  background: linear-gradient(180deg,
+    color-mix(in oklab, #6E56CF 5%, var(--panel)) 0%,
+    var(--panel) 100%);
+}
+.pe-ai-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pe-ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.pe-ai-btn:hover:not(:disabled) {
+  border-color: #6E56CF;
+  background: color-mix(in oklab, #6E56CF 6%, var(--panel));
+}
+.pe-ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.pe-ai-btn-icon {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #6E56CF, #2F6FED);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pe-ai-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  line-height: 1.25;
+}
+.pe-ai-btn-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.pe-ai-btn-sub {
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .pe-adapted {
   background: var(--panel-2);
   border: 1px solid var(--border-2);
@@ -1767,5 +2451,65 @@ async function adaptTelegram() {
   .pe-hero-inner { flex-wrap: wrap; }
   .pe-title-input { font-size: 20px; }
   .pe-hide-sm { display: none; }
+}
+
+/* ─── Video processing overlay ─── */
+.pe-vp-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  padding: 24px;
+}
+.pe-vp-fade-enter-active, .pe-vp-fade-leave-active { transition: opacity .25s ease; }
+.pe-vp-fade-enter-from, .pe-vp-fade-leave-to { opacity: 0; }
+.pe-vp-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 36px 30px 28px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #F59E0B 0%, #DC2626 100%);
+  color: white;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 30px 80px -20px rgba(245,158,11,0.55), 0 10px 30px -10px rgba(15,23,42,0.3);
+}
+.pe-vp-icon {
+  position: relative;
+  width: 48px; height: 48px;
+  margin-bottom: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+@keyframes pe-vp-spin { to { transform: rotate(360deg); } }
+.pe-vp-title {
+  margin: 0 0 6px;
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.pe-vp-sub {
+  margin: 0 0 18px;
+  font-size: 13px;
+  opacity: 0.92;
+  line-height: 1.5;
+  max-width: 360px;
+}
+.pe-vp-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.2);
+  overflow: hidden;
+}
+.pe-vp-bar-fill {
+  height: 100%;
+  width: 40%;
+  background: white;
+  border-radius: 999px;
+  animation: pe-vp-bar 1.6s ease-in-out infinite;
+}
+@keyframes pe-vp-bar {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
 }
 </style>

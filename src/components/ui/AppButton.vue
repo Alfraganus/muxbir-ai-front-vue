@@ -43,6 +43,7 @@ const variants = computed(() => ({
   ghost:     { background: props.active ? 'var(--accent-bg)' : 'transparent', color: props.active ? 'var(--accent)' : 'var(--text-2)', border: '1px solid transparent' },
   soft:      { background: 'var(--panel-2)', color: 'var(--text)', border: '1px solid var(--border)' },
   danger:    { background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid color-mix(in oklab, var(--danger) 25%, transparent)' },
+  success:   { background: '#198754', color: 'white', border: '1px solid #146c43', boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset, 0 1px 2px rgba(15,23,42,0.15)' },
 }))
 
 const variantStyle = computed(() => variants.value[props.variant] || variants.value.ghost)

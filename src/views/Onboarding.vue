@@ -304,6 +304,179 @@
                     </div>
                   </div>
 
+                  <!-- ─── AI Assistant config (faqat AVTOMATIK rejimda) ─── -->
+                  <Transition name="ai-fade">
+                    <div v-if="tgNewMode === 'auto'" class="oz-ai-box">
+                      <div class="oz-ai-head">
+                        <span class="oz-ai-icon">
+                          <AppIcon name="Sparkle" :size="13" :stroke-width="1.8"/>
+                        </span>
+                        <div style="flex:1">
+                          <div class="oz-ai-title">AI assistent sozlamalari</div>
+                          <div class="oz-ai-sub">Avtomatik rejimda postlar shu qoidalar bilan qayta yoziladi</div>
+                        </div>
+                      </div>
+
+                      <!-- 0. Topic selector -->
+                      <div class="oz-ai-group">
+                        <div class="oz-ai-group-label">
+                          <AppIcon name="Globe2" :size="11" :stroke-width="1.9"/>
+                          Mavzu
+                          <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;margin-left:4px">(faqat tanlangan mavzudagi postlar qabul qilinadi)</span>
+                        </div>
+                        <div class="oz-topic-chips">
+                          <button v-for="t in TOPIC_PRESETS" :key="t.id"
+                            type="button" class="oz-topic-chip"
+                            :class="{ active: ai.topics.includes(t.id) }"
+                            @click="toggleTopic(t.id)">
+                            <span class="oz-topic-chip-label">{{ t.label }}</span>
+                            <span class="oz-topic-chip-desc">{{ t.desc }}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- 1. Content type filter -->
+                      <div class="oz-ai-group">
+                        <div class="oz-ai-group-label">
+                          <AppIcon name="Globe2" :size="11" :stroke-width="1.9"/>
+                          Kontent turi
+                        </div>
+                        <label class="oz-ai-toggle" :class="{ on: ai.onlyNews }">
+                          <input type="checkbox" v-model="ai.onlyNews"/>
+                          <span class="oz-ai-toggle-box">
+                            <svg v-if="ai.onlyNews" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          </span>
+                          <span style="flex:1">
+                            <span class="oz-ai-toggle-title">Faqat "xabar / yangilik" turidagi postlar</span>
+                            <span class="oz-ai-toggle-sub">Reklama, e'lon, intervyu, lichniy gap tashlab yuboriladi</span>
+                          </span>
+                        </label>
+                      </div>
+
+                      <!-- 2. Rewrite rules -->
+                      <div class="oz-ai-group">
+                        <div class="oz-ai-group-label">
+                          <AppIcon name="Edit" :size="11" :stroke-width="1.9"/>
+                          Qayta yozish qoidalari
+                        </div>
+                        <label class="oz-ai-toggle" :class="{ on: ai.stripSource }">
+                          <input type="checkbox" v-model="ai.stripSource"/>
+                          <span class="oz-ai-toggle-box">
+                            <svg v-if="ai.stripSource" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          </span>
+                          <span style="flex:1">
+                            <span class="oz-ai-toggle-title">Manba nomini va havolalarini olib tashlash</span>
+                            <span class="oz-ai-toggle-sub">Masalan: "Kun.uz rasmiy kanali", "Manba: @kunuzofficial" — o'chiriladi</span>
+                          </span>
+                        </label>
+                        <label class="oz-ai-toggle" :class="{ on: ai.paraphrase }">
+                          <input type="checkbox" v-model="ai.paraphrase"/>
+                          <span class="oz-ai-toggle-box">
+                            <svg v-if="ai.paraphrase" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          </span>
+                          <span style="flex:1">
+                            <span class="oz-ai-toggle-title">Matnni paraphrase qilish</span>
+                            <span class="oz-ai-toggle-sub">Asl ma'no saqlanib, so'z va jumlalar qayta yoziladi</span>
+                          </span>
+                        </label>
+                        <label class="oz-ai-toggle" :class="{ on: ai.prefixSource }">
+                          <input type="checkbox" v-model="ai.prefixSource"/>
+                          <span class="oz-ai-toggle-box">
+                            <svg v-if="ai.prefixSource" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          </span>
+                          <span style="flex:1">
+                            <span class="oz-ai-toggle-title">Boshiga "&lt;Manba&gt; xabar berishicha" qo'shish</span>
+                            <span class="oz-ai-toggle-sub">Masalan: "Kun.uz xabar berishicha, …"</span>
+                          </span>
+                        </label>
+                      </div>
+
+                      <!-- 3. Hard restrictions (locked) -->
+                      <div class="oz-ai-group">
+                        <div class="oz-ai-group-label danger">
+                          <AppIcon name="Shield" :size="11" :stroke-width="1.9"/>
+                          Majburiy cheklovlar
+                          <span class="oz-ai-lock">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                            Doim yoqilgan
+                          </span>
+                        </div>
+                        <div class="oz-ai-locked-item">
+                          <span class="oz-ai-locked-dot"/>
+                          Islomiy / diniy kontent — aslo o'tkazilmaydi
+                        </div>
+                        <div class="oz-ai-locked-item">
+                          <span class="oz-ai-locked-dot"/>
+                          O'zbekiston Respublikasi nomiga tanqid — aslo o'tkazilmaydi
+                        </div>
+                        <div class="oz-ai-locked-item">
+                          <span class="oz-ai-locked-dot"/>
+                          Prezident va oila a'zolari haqida salbiy kontent — aslo o'tkazilmaydi
+                        </div>
+                      </div>
+
+                      <!-- 4. Custom extra instruction -->
+                      <div class="oz-ai-group">
+                        <div class="oz-ai-group-label">
+                          <AppIcon name="Sparkle" :size="11" :stroke-width="1.9"/>
+                          Qo'shimcha ko'rsatma <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">(ixtiyoriy)</span>
+                        </div>
+                        <textarea v-model="ai.extra" class="oz-ai-textarea"
+                          placeholder="Masalan: postlar oxiriga emoji qo'shma, sarlavhani qalin yozma, qisqaroq qil…"/>
+                      </div>
+
+                      <!-- 5. Avtomatik nashr qoidalari (info) -->
+                      <div class="oz-ai-group">
+                        <div class="oz-ai-group-label">
+                          <AppIcon name="Bolt" :size="11" :stroke-width="1.9"/>
+                          AI yuborgan post bilan nima bo'ladi
+                        </div>
+                        <div class="oz-ai-info-row">
+                          <span class="oz-ai-info-num">1</span>
+                          <div class="oz-ai-info-body">
+                            <div class="oz-ai-info-title">Postlar oqimiga qo'shiladi</div>
+                            <div class="oz-ai-info-sub">Har bir avtomatik yuborilgan xabar <strong>"Nashr qilinganlar"</strong> ro'yxatida ko'rinadi — sarlavha, vaqt, manba va kanal bilan</div>
+                          </div>
+                        </div>
+                        <div class="oz-ai-info-row">
+                          <span class="oz-ai-info-num">2</span>
+                          <div class="oz-ai-info-body">
+                            <div class="oz-ai-info-title">Tokenlar ro'yxatga olinadi</div>
+                            <div class="oz-ai-info-sub">Har AI chaqiruvi uchun ishlatilgan token soni post bilan birga saqlanadi (audit va analitika uchun)</div>
+                          </div>
+                        </div>
+                        <div class="oz-ai-info-row">
+                          <span class="oz-ai-info-num">3</span>
+                          <div class="oz-ai-info-body">
+                            <div class="oz-ai-info-title">Oylik tarif limitidan yechiladi</div>
+                            <div class="oz-ai-info-sub">Ishlatilgan tokenlar tarifingizdagi <strong>oylik AI token limiti</strong>dan kamayadi. Limit tugasa avtomatik yuborish vaqtincha to'xtatiladi</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- AI-bypass yo'q — qattiq kontract -->
+                      <div class="oz-ai-strict">
+                        <AppIcon name="Shield" :size="13" :stroke-width="1.9" style="flex-shrink:0;color:var(--danger);margin-top:1px"/>
+                        <div>
+                          <div class="oz-ai-strict-title">AI ni chetlab o'tib bo'lmaydi</div>
+                          <div class="oz-ai-strict-sub">
+                            Avtomatik rejimda kanalga keladigan <strong>har bir post majburan AI dan o'tadi</strong>.
+                            AI bo'sh javob qaytarsa (post xabar emas yoki cheklov buzgan), <strong>post tashlanadi</strong> — manba matni o'z holicha hech qachon nashr qilinmaydi.
+                            Rejim almashtirilgan paytda allaqachon kelgan eski postlar avtomatik yuborilmaydi.
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 6. Preview compiled prompt -->
+                      <button class="oz-ai-preview-toggle" @click="ai.showPrompt = !ai.showPrompt">
+                        <AppIcon :name="ai.showPrompt ? 'ChevronL' : 'ChevronR'" :size="11" :stroke-width="2"
+                          :style="{ transform: ai.showPrompt ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform .2s' }"/>
+                        Tizim promptini ko'rish
+                      </button>
+                      <pre v-if="ai.showPrompt" class="oz-ai-prompt">{{ compiledPrompt }}</pre>
+                    </div>
+                  </Transition>
+
                   <!-- Yangi kanal qo'shish input -->
                   <div style="display:flex;gap:8px;align-items:center">
                     <div class="oz-tg-input">
@@ -857,6 +1030,140 @@ const tgError = ref('')
 const tgDeepLink = ref('')         // bot deep_link, init javobidan keladi
 let tgPollTimer = null
 
+// ── AI assistent sozlamalari (Avtomatik rejim uchun) ──────────
+const TOPIC_PRESETS = [
+  { id: 'jahon', label: 'Jahon', desc: 'Faqat xalqaro voqealar' },
+  { id: 'siyosat', label: 'Siyosat', desc: 'Davlat, diplomatiya, qarorlar' },
+  { id: 'iqtisod', label: 'Iqtisodiyot', desc: 'Bozor, narx, biznes' },
+  { id: 'sport', label: 'Sport', desc: 'Futbol, boks, olimpiada' },
+  { id: 'texnologiya', label: 'Texnologiya', desc: 'IT, AI, gadjet' },
+  { id: 'madaniyat', label: 'Madaniyat', desc: 'Kino, musiqa, san\'at' },
+  { id: 'jamiyat', label: 'Jamiyat', desc: 'Mahalliy voqealar, O\'zbekiston' },
+  { id: 'all', label: 'Barchasi', desc: 'Mavzu cheklovi yo\'q' },
+]
+const ai = ref({
+  topics: ['all'],     // tanlangan mavzu(lar)
+  onlyNews: true,
+  stripSource: true,
+  paraphrase: true,
+  prefixSource: true,
+  extra: '',
+  showPrompt: false,
+})
+function toggleTopic(id) {
+  if (id === 'all') {
+    ai.value.topics = ['all']
+    return
+  }
+  const list = ai.value.topics.filter(t => t !== 'all')
+  const i = list.indexOf(id)
+  if (i >= 0) list.splice(i, 1)
+  else list.push(id)
+  ai.value.topics = list.length ? list : ['all']
+}
+
+const compiledPrompt = computed(() => {
+  const lines = []
+  lines.push("Siz O'zbek tilidagi yangiliklar uchun AI muharrirsiz.")
+  lines.push("Sizning vazifangiz HAR DOIM kiritilgan postni qayta yozish.")
+  lines.push("HECH QACHON bo'sh javob qaytarmang — bo'sh javob XATO.")
+  lines.push('')
+  lines.push("Faqat HARD cheklov buzilsa: '#SKIP' so'zini qaytaring (bo'sh string emas).")
+  lines.push('')
+
+  // ─── KLASSIFIKATOR ───────────────────────────────────────
+  if (ai.value.onlyNews) {
+    lines.push('━━━ 1-BOSQICH: KLASSIFIKATSIYA ━━━')
+    lines.push('ASOSIY QOIDA: agar matnda kim/qachon/qaerda nima QILDI yoki nima BO\'LDI — bu XABAR.')
+    lines.push('Hatto matn 1-2 jumla bo\'lsa ham (havola/promo qatorlar bilan) — agar FAKT bo\'lsa — bu XABAR.')
+    lines.push('')
+    lines.push('XABAR deb hisoblang (qabul qiling):')
+    lines.push('  ✓ "X Y bilan uchrashdi" / "X bayonot berdi" / "X ga tashrif buyurdi"')
+    lines.push('  ✓ "X bo\'lib o\'tdi" / "X yakunlandi" / "X boshlandi"')
+    lines.push('  ✓ Rasmiy qaror, farmon, qonun, statistika, hisobot')
+    lines.push('  ✓ Sport natijasi, jang/o\'yin yakuni, hisob, mukofot')
+    lines.push('  ✓ Iqtisodiy ko\'rsatkich, narx, valyuta kursi')
+    lines.push('  ✓ Tabiiy hodisa, ofat, baxtsiz hodisa')
+    lines.push('  ✓ Texnologiya/ilm-fan, kompaniya e\'loni')
+    lines.push('  ✓ Siyosiy yangilik (uchrashuv, kelishuv, tayinlanish)')
+    lines.push('')
+    lines.push('  → Matn qisqa bo\'lsa ham, havola bor bo\'lsa ham — fakt bo\'lsa kifoya, QABUL QILING')
+    lines.push('')
+    lines.push('XABAR EMAS deb hisoblang (BO\'SH JAVOB qaytaring) — aniq turlar:')
+    lines.push('  ✗ Podcast, ko\'rsatuv, video-blog ANONSI ("Yangi son chiqdi", "Eshiting")')
+    lines.push('  ✗ Kitob/qissa/hikoya TAHLILI ("X asarida nima haqida gap ketadi")')
+    lines.push('  ✗ Falsafiy/motivatsion/shaxsiy fikr / esse / kolumka')
+    lines.push('  ✗ Viktorina / test')
+    lines.push('  ✗ Reklama / vakansiya / kurs taklifi')
+    lines.push('  ✗ Intervyu transkripti ("Mehmonimiz X")')
+    lines.push('  ✗ Tabriklash / hayrlashuv / tahririyat lichniy gapi')
+    lines.push('  ✗ KLIKBEYT-ogohlantirish (⚠️ + BOSH HARFLAR + "JARIMA"/"DIQQAT" + maslahat/qo\'llanma)')
+    lines.push('  ✗ Yuridik MASLAHAT-qo\'llanma ("Qanday saqlanish", "Nima qilish lozim")')
+    lines.push('  ✗ Viral zanjir ("Yaqinlarga yuboring") — agar BUTUN POST shu chaqiriq atrofida bo\'lsa')
+    lines.push('  ✗ Folbinlik / horoskop')
+    lines.push('')
+    lines.push('MUHIM: havola, "Batafsil 👇", "👉 link", obuna qatori ("RASMIY|LIVE|SPORT")')
+    lines.push('XABAR EMASLIGINI BILDIRMAYDI. Bular shunchaki kanal stilistikasi — siz ularni TASHLAB qo\'yasiz,')
+    lines.push('lekin post mazmuni XABAR bo\'lsa qabul qilasiz.')
+    lines.push('')
+    lines.push('SHUBHA BO\'LSA — qabul qiling. Faqat yuqorida sanab o\'tilgan turlarni rad eting.')
+    lines.push('')
+    lines.push('━━━ 2-BOSQICH: faqat 1-bosqich "XABAR" bo\'lsa bajariladi ━━━')
+  }
+
+  lines.push('QAYTA YOZISH QOIDALARI:')
+  if (ai.value.stripSource) {
+    lines.push('• Manba nomi va havolalarini matn ichidan TO\'LIQ OLIB TASHLANG:')
+    lines.push('    - "Kun.uz rasmiy kanali", "Kun.uz расмий канали" — o\'chirilsin')
+    lines.push('    - "Manba: @kunuzofficial", "Manba: @@kunuzofficial" — o\'chirilsin')
+    lines.push('    - Har qanday t.me/* yoki kun.uz/* yoki boshqa sayt havolalari — o\'chirilsin')
+    lines.push('    - "👉 link", "Batafsil:", "To\'liq:" kabi havola-qo\'shimchalari — o\'chirilsin')
+    lines.push('    - @username, #hashtag, emoji-strelkalar (👉, ➡️) — o\'chirilsin')
+  }
+  if (ai.value.paraphrase) {
+    lines.push('• Telegram posti sifatida KENGAYTIRIB yozing (shunchaki paraphrase emas):')
+    lines.push('  - Boshida e\'tibor tortuvchi sarlavha + emoji (📢 🌙 🚌 🎫 ⚡️)')
+    lines.push('  - 3-5 paragraf: sarlavha → asosiy xabar → kontekst/tafsilot → praktik xulosa')
+    lines.push('  - Kontekst qo\'shing: nima uchun, kim uchun, qachondan, foydasi nimada')
+    lines.push('  - Tilda murojaat: "yurtdoshlar", "vatandoshlar"')
+    lines.push('  - Oxirida foydali maslahat/tavsiya bo\'lishi mumkin')
+    lines.push('  - O\'rtacha uzunlik: 80-200 so\'z (asl matn qisqa bo\'lsa ham — kontekst bilan kengaytiring)')
+    lines.push('  - Cyrillic kelgan bo\'lsa — javobni LOTIN da bering')
+  }
+  if (ai.value.prefixSource) {
+    lines.push('• Tayyor matn BIRINCHI jumlasi MAJBURAN "<Manba nomi> xabar berishicha, …" formatida boshlansin.')
+    lines.push('  Misol: "Kun.uz xabar berishicha, …"')
+    lines.push('  Bu qoida buzilmaydi — har qanday qayta yozilgan post shu prefiks bilan boshlanadi.')
+  }
+  lines.push('')
+
+  lines.push('MAJBURIY CHEKLOVLAR (BUZILMAYDI):')
+  lines.push('• ISLOMIY / diniy mavzudagi har qanday kontent — ASLO o\'tkazilmaydi. BO\'SH JAVOB.')
+  lines.push('  (oddiy diniy bayram xabarlari, rasmiy tabriklar mustasno — ular qabul qilinadi)')
+  lines.push('• O\'ZBEKISTON RESPUBLIKASIga TANQID yoki salbiy fikr — ASLO o\'tkazilmaydi.')
+  lines.push('  (lekin O\'zbekiston haqida oddiy yangiliklar — iqtisod, sport, voqealar — QABUL QILINADI)')
+  lines.push('• PREZIDENT va OILA A\'ZOLARI haqidagi TANQID/SALBIY/YOMON kontent — ASLO o\'tkazilmaydi.')
+  lines.push('  MUHIM AYIRMA:')
+  lines.push('    ✓ QABUL — rasmiy uchrashuv, tashrif, bayonot, tayinlanish, mukofot, neytral/musbat xabar')
+  lines.push('      Misol: "Saida Mirziyoyeva Marko Rubio bilan uchrashdi" — QABUL')
+  lines.push('      Misol: "Prezident Janubiy Koreyaga tashrif buyurdi" — QABUL')
+  lines.push('    ✗ RAD — tanqid, qoralash, ayblash, fosh qilish, mish-mish')
+  lines.push('      Misol: "Prezident oilasi korrupsiyada ayblanmoqda" — RAD')
+  lines.push('  Demak: HAR QANDAY post emas, balki faqat SALBIY/TANQIDIY mazmunli post rad etiladi.')
+
+  if (ai.value.extra && ai.value.extra.trim()) {
+    lines.push('')
+    lines.push('QO\'SHIMCHA KO\'RSATMA:')
+    lines.push(ai.value.extra.trim())
+  }
+
+  lines.push('')
+  lines.push('━━━ JAVOB FORMATI ━━━')
+  lines.push('Agar 1-bosqichdan o\'tmagan bo\'lsa yoki birorta cheklov buzilsa: BO\'SH STRING ("") qaytaring, hech narsa yozmang, izoh bermang.')
+  lines.push('Agar o\'tgan bo\'lsa: faqat qayta yozilgan post matnini qaytaring (sarlavhalar, izohlar, "Mana:" kabi qo\'shimchalarsiz).')
+  return lines.join('\n')
+})
+
 function togglePlatform(slug) {
   const i = selectedPlatforms.value.indexOf(slug)
   if (i >= 0) selectedPlatforms.value.splice(i, 1)
@@ -956,7 +1263,34 @@ async function submitStep3() {
   submitting.value = true
   apiError.value = ''
   try {
-    await onboardingApi.updateStep(3, {}).catch(() => {})
+    await onboardingApi.updateStep(3, {
+      ai_config: {
+        mode: tgNewMode.value,
+        topics: ai.value.topics.includes('all') ? [] : ai.value.topics
+          .map(id => TOPIC_PRESETS.find(t => t.id === id)?.label)
+          .filter(Boolean),
+        only_news: ai.value.onlyNews,
+        strip_source: ai.value.stripSource,
+        paraphrase: ai.value.paraphrase,
+        prefix_source: ai.value.prefixSource,
+        extra: ai.value.extra || null,
+        system_prompt: compiledPrompt.value,
+        hard_rules: {
+          no_islamic_content: true,
+          no_uzbekistan_criticism: true,
+          no_president_family_criticism: true,
+        },
+        publishing: {
+          record_to_published_posts: true,   // har post posts ro'yxatiga qo'shiladi
+          track_tokens_per_post: true,       // har post bilan ishlatilgan token saqlanadi
+          count_against_monthly_quota: true, // tokenlar oylik tarif limitidan yechiladi
+          pause_when_quota_exceeded: true,   // limit tugasa avtomatik yuborish to'xtatiladi
+          no_ai_bypass: true,                // AI'ni chetlab o'tib post yuborib bo'lmaydi
+          drop_when_ai_returns_empty: true,  // AI bo'sh javob qaytarsa post tashlanadi
+          ignore_backlog_on_mode_switch: true, // rejim almashtirilganda eski postlar tashlanadi
+        },
+      },
+    }).catch(() => {})
     submitting.value = false
     stopTgPolling()
     await goToStep(4)
@@ -1508,6 +1842,309 @@ onMounted(async () => {
   transition: color .15s, border-color .15s;
 }
 .oz-tg-mode-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── AI Assistant config box ──────────────── */
+.oz-ai-box {
+  margin: 12px 0;
+  padding: 14px;
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--accent) 5%, var(--panel)) 0%,
+    var(--panel) 100%);
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
+  border-radius: var(--r-md, 10px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.oz-ai-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.oz-ai-icon {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px -4px color-mix(in oklab, var(--accent) 60%, transparent);
+}
+.oz-ai-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.01em;
+}
+.oz-ai-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+  line-height: 1.4;
+}
+
+.oz-ai-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.oz-ai-group-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 2px;
+}
+.oz-ai-group-label.danger { color: var(--danger); }
+.oz-ai-lock {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  background: color-mix(in oklab, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in oklab, var(--danger) 25%, transparent);
+  color: var(--danger);
+  border-radius: 999px;
+}
+
+.oz-ai-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.oz-ai-toggle:hover { border-color: color-mix(in oklab, var(--accent) 40%, var(--border)); }
+.oz-ai-toggle.on {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 5%, var(--panel));
+}
+.oz-ai-toggle input { display: none; }
+.oz-ai-toggle-box {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border);
+  background: var(--panel);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all .15s;
+}
+.oz-ai-toggle.on .oz-ai-toggle-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.oz-ai-toggle-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+.oz-ai-toggle-sub {
+  display: block;
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.oz-ai-locked-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  background: color-mix(in oklab, var(--danger) 4%, var(--panel));
+  border: 1px solid color-mix(in oklab, var(--danger) 18%, transparent);
+  border-radius: var(--r-sm);
+  line-height: 1.35;
+}
+.oz-ai-locked-dot {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--danger);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--danger) 18%, transparent);
+}
+
+.oz-ai-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 9px 11px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+.oz-ai-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 12%, transparent);
+}
+
+.oz-topic-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.oz-topic-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 11px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: all .15s;
+  min-width: 110px;
+}
+.oz-topic-chip:hover { border-color: color-mix(in oklab, var(--accent) 45%, var(--border)); }
+.oz-topic-chip.active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+.oz-topic-chip-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.oz-topic-chip.active .oz-topic-chip-label { color: var(--accent); }
+.oz-topic-chip-desc {
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.oz-ai-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  background: color-mix(in oklab, var(--success) 5%, var(--panel));
+  border: 1px solid color-mix(in oklab, var(--success) 20%, transparent);
+  border-radius: var(--r-sm);
+}
+.oz-ai-info-num {
+  width: 20px; height: 20px;
+  border-radius: 999px;
+  background: var(--success);
+  color: white;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.oz-ai-info-body { flex: 1; min-width: 0; }
+.oz-ai-info-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+.oz-ai-info-sub {
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.oz-ai-info-sub strong { color: var(--text-2); font-weight: 600; }
+
+.oz-ai-strict {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  background: color-mix(in oklab, var(--danger) 6%, var(--panel));
+  border: 1px solid color-mix(in oklab, var(--danger) 30%, transparent);
+  border-radius: var(--r-sm);
+}
+.oz-ai-strict-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--danger);
+  letter-spacing: -.005em;
+}
+.oz-ai-strict-sub {
+  font-size: 11px;
+  color: var(--text-2);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+.oz-ai-strict-sub strong { color: var(--text); font-weight: 600; }
+
+.oz-ai-preview-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.oz-ai-preview-toggle:hover { color: var(--accent); border-color: var(--accent); }
+
+.oz-ai-prompt {
+  margin: 0;
+  padding: 11px 13px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.ai-fade-enter-active, .ai-fade-leave-active {
+  transition: opacity .25s ease, transform .25s ease, max-height .3s ease;
+  overflow: hidden;
+}
+.ai-fade-enter-from, .ai-fade-leave-to {
+  opacity: 0; transform: translateY(-6px); max-height: 0;
+}
+.ai-fade-enter-to, .ai-fade-leave-from {
+  opacity: 1; max-height: 1200px;
+}
 
 /* ── Step content transition ──────────────── */
 .oz-step-enter-active {

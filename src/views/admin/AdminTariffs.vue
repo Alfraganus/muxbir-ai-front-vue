@@ -1,365 +1,361 @@
 <template>
-  <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
-    <PageHeader title="Tarif konstruktori" subtitle="Dynamic tariff — kanal, post, AI token, joy va boshqa parametrlar bo'yicha narx avtomatik hisoblanadi">
+  <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:18px;">
+    <PageHeader title="Tariflar" :subtitle="subtitleText">
       <template #right>
-        <AppButton variant="secondary" size="md"><template #icon><AppIcon name="Eye" :size="13"/></template>Mijoz ko'rinishida</AppButton>
-        <AppButton variant="secondary" size="md">Bekor qilish</AppButton>
-        <AppButton variant="primary" size="md"><template #icon><AppIcon name="Check" :size="13"/></template>Tarifni saqlash</AppButton>
+        <AppButton variant="secondary" size="md" @click="load">
+          <template #icon><AppIcon name="Sort" :size="13"/></template>
+          Yangilash
+        </AppButton>
+        <AppButton variant="primary" size="md" @click="goCreate">
+          <template #icon><AppIcon name="Plus" :size="13"/></template>
+          Yangi tarif
+        </AppButton>
       </template>
     </PageHeader>
 
-    <!-- Preset chips -->
+    <!-- Toolbar -->
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <span style="font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:500;">Tayyor shablon:</span>
-      <button v-for="p in PLAN_PRESETS" :key="p.id" @click="applyPreset(p.id)" :style="presetBtnStyle(p.id)">
-        <span :style="{ width:'8px',height:'8px',borderRadius:'999px',background:p.color }" />
-        {{ p.name }}
-      </button>
-      <button :style="saveBtnStyle">
-        <AppIcon name="Plus" :size="12"/> Shablon saqlash
-      </button>
+      <div style="display:flex;padding:2px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;height:34px;">
+        <button v-for="v in viewOptions" :key="v.id" @click="view = v.id" :style="viewBtnStyle(v.id)">
+          <AppIcon :name="v.icon" :size="13" />
+          {{ v.label }}
+        </button>
+      </div>
+      <div style="display:flex;padding:2px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;height:34px;">
+        <button v-for="b in billingOptions" :key="b.id" @click="billingPreview = b.id" :style="billingBtnStyle(b.id)">
+          {{ b.label }}
+        </button>
+      </div>
+      <div style="flex:1;"/>
+      <AppInput v-model="query" placeholder="Tarif nomi..." :style="{ width:'220px' }">
+        <template #icon><AppIcon name="Search" :size="13" :style="{color:'var(--muted)'}" /></template>
+      </AppInput>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
-      <!-- Left column -->
-      <div style="display:flex;flex-direction:column;gap:16px;">
+    <!-- States -->
+    <div v-if="loading" style="padding:60px;text-align:center;color:var(--muted);font-size:13px;">Yuklanmoqda...</div>
+    <div v-else-if="error" style="padding:60px;text-align:center;color:var(--danger);font-size:13px;">{{ error }}</div>
 
-        <!-- Plan basics -->
-        <AppPanel title="Asosiy ma'lumotlar" :dense="true">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:11px;color:var(--muted);font-weight:500;">Tarif nomi</label>
-              <AppInput v-model="name"/>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:11px;color:var(--muted);font-weight:500;">Ichki kod</label>
-              <AppInput v-model="code" :mono="true"/>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:11px;color:var(--muted);font-weight:500;">Hisob-kitob davri</label>
-              <div style="display:flex;padding:2px;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;height:32px;">
-                <button v-for="o in billingOptions" :key="o.id" @click="billingCycle = o.id" :style="cycleBtnStyle(o.id)">{{ o.label }}</button>
+    <!-- Empty -->
+    <AppPanel v-else-if="!filtered.length" :padding="0">
+      <div style="padding:60px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div style="width:56px;height:56px;border-radius:14px;background:var(--accent-bg);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;">
+          <AppIcon name="Sparkle" :size="22"/>
+        </div>
+        <div style="font-size:15px;font-weight:600;">Hozircha tarif yo'q</div>
+        <div style="font-size:12.5px;color:var(--muted);max-width:360px;">
+          Tarif konstruktori orqali birinchi tarifingizni yarating — resurslar, modullar va narx avtomatik hisoblanadi.
+        </div>
+        <AppButton variant="primary" size="md" @click="goCreate">
+          <template #icon><AppIcon name="Plus" :size="13"/></template>
+          Birinchi tarifni yaratish
+        </AppButton>
+      </div>
+    </AppPanel>
+
+    <!-- Card grid -->
+    <div v-else-if="view === 'cards'"
+      style="display:grid;grid-template-columns:repeat(auto-fill, minmax(290px, 1fr));gap:14px;">
+      <div v-for="(t, i) in filtered" :key="t.id" :style="cardStyle(i)">
+        <!-- Top: gradient header -->
+        <div :style="{
+          padding:'16px 18px 14px',
+          background: `linear-gradient(135deg, ${tariffColor(i)}1a 0%, transparent 70%)`,
+          borderBottom:'1px solid var(--border-2)',
+        }">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span :style="{
+                width:'34px',height:'34px',borderRadius:'9px',
+                background: tariffColor(i),
+                color:'white',
+                display:'inline-flex',alignItems:'center',justifyContent:'center',
+                boxShadow: `0 4px 12px ${tariffColor(i)}55`,
+              }">
+                <AppIcon :name="tariffIcon(i)" :size="16"/>
+              </span>
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <span style="font-size:14px;font-weight:600;line-height:1.1;">{{ tariffName(t) }}</span>
+                <span class="mono" style="font-size:10.5px;color:var(--muted);">{{ t.slug }}</span>
               </div>
             </div>
+            <AppBadge :tone="t.is_active ? 'success' : 'muted'" :dot="true">
+              {{ t.is_active ? 'Faol' : 'Nofaol' }}
+            </AppBadge>
           </div>
-        </AppPanel>
-
-        <!-- Quantities -->
-        <AppPanel title="Resurslar" subtitle="Har bir parametr bo'yicha narx avtomatik hisoblanadi" :dense="true">
-          <div style="display:flex;flex-direction:column;gap:14px;">
-            <DimensionRow v-for="d in TARIFF_DIMS" :key="d.key" :dim="d" :value="qty[d.key]" @change="v => { qty[d.key] = v; activePreset = null; }"/>
+          <!-- Price -->
+          <div style="display:flex;align-items:baseline;gap:6px;margin-top:14px;">
+            <span class="tabular" :style="{
+              fontSize:'28px',fontWeight:700,letterSpacing:'-0.02em',
+              color: priceFor(t) === 0 ? 'var(--muted)' : 'var(--text)',
+            }">
+              {{ priceFor(t) === 0 ? 'Bepul' : fmtSom(priceFor(t)) }}
+            </span>
+            <span v-if="priceFor(t) !== 0" style="font-size:11.5px;color:var(--muted);">
+              so'm / {{ billingPreview === 'monthly' ? 'oy' : 'yil' }}
+            </span>
           </div>
-        </AppPanel>
-
-        <!-- Addons -->
-        <AppPanel title="Qo'shimcha modullar" subtitle="Yoqilgan modullar oylik narxga qo'shiladi" :dense="true">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <AddonRow v-for="a in TARIFF_ADDONS" :key="a.key" :addon="a" :value="addons[a.key]" @change="v => { addons[a.key] = v; activePreset = null; }"/>
+          <div v-if="billingPreview === 'yearly' && t.price_monthly > 0" style="font-size:11px;color:var(--muted);margin-top:2px;">
+            ≈ {{ fmtSom(Math.round(t.price_yearly / 12)) }} so'm/oy
           </div>
-        </AppPanel>
+        </div>
 
         <!-- Limits -->
-        <AppPanel title="Cheklov va kirish" :dense="true">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:11px;color:var(--muted);font-weight:500;">Chegirma (%)</label>
-              <AppInput v-model.number="discount" type="number" suffix="%"/>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:11px;color:var(--muted);font-weight:500;">Trial muddati</label>
-              <AppInput :model-value="14" type="number" suffix="kun"/>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:11px;color:var(--muted);font-weight:500;">Maksimum jamoa a'zolari</label>
-              <AppInput :model-value="qty.seats * 2" type="number" suffix="kishi"/>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:11px;color:var(--muted);font-weight:500;">Tarif holati</label>
-              <div style="display:flex;gap:8px;align-items:center;height:32px;">
-                <AppBadge tone="success" :dot="true">Faol — barchaga ko'rinadi</AppBadge>
-              </div>
-            </div>
-          </div>
-        </AppPanel>
-      </div>
+        <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px;">
+          <LimitLine icon="Hash" :label="'Telegram kanallar'" :value="fmtNum(t.channels_limit)" />
+          <LimitLine icon="Pen" :label="'Postlar / oy'" :value="fmtNum(t.posts_monthly_limit)" />
+          <LimitLine icon="Sparkle" :label="'AI token / oy'" :value="fmtCompact(t.ai_tokens_monthly)" />
+          <LimitLine icon="UserPlus" :label="'Jamoa joylari'" :value="fmtNum(t.seats_limit)" />
+          <LimitLine icon="Cloud" :label="'Saqlash'" :value="t.storage_gb + ' GB'" />
+        </div>
 
-      <!-- Right: price summary sticky -->
-      <div style="position:sticky;top:72px;">
-        <PriceSummary
-          :name="name" :code="code" :billing-cycle="billingCycle"
-          :breakdown="breakdown" :addons="addons"
-          :dimensions-total="dimensionsTotal" :addon-total="addonTotal"
-          :subtotal="subtotal" :discount="discount" :discount-amt="discountAmt"
-          :total="total" :yearly="yearly" :final-amt="finalAmt"
-        />
+        <!-- Features -->
+        <div v-if="t.features?.length"
+          style="padding:12px 18px;border-top:1px solid var(--border-2);display:flex;flex-direction:column;gap:7px;">
+          <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:500;">Modullar</div>
+          <div v-for="f in t.features.slice(0, 5)" :key="f.id || f.key"
+            style="display:flex;align-items:center;gap:8px;font-size:12px;">
+            <span :style="{
+              width:'16px',height:'16px',borderRadius:'4px',
+              background: f.value === 'true' ? 'var(--success)' : 'var(--border-2)',
+              color:'white',display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0,
+            }">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M3 8l3 3 7-7"/>
+              </svg>
+            </span>
+            <span style="color:var(--text-2);">{{ featureLabel(f) }}</span>
+          </div>
+          <span v-if="t.features.length > 5" style="font-size:11px;color:var(--muted);padding-left:24px;">
+            +{{ t.features.length - 5 }} boshqa modul
+          </span>
+        </div>
+
+        <!-- Footer / actions -->
+        <div style="padding:12px 14px;border-top:1px solid var(--border-2);display:flex;align-items:center;gap:8px;background:var(--panel-2);">
+          <AppButton variant="ghost" size="sm" @click="confirmRemove(t)">
+            <template #icon><AppIcon name="Trash" :size="12"/></template>
+            O'chirish
+          </AppButton>
+          <div style="flex:1;"/>
+          <AppButton variant="secondary" size="sm" @click="toggleActive(t)">
+            {{ t.is_active ? 'Yashirish' : 'Faollashtirish' }}
+          </AppButton>
+        </div>
       </div>
     </div>
+
+    <!-- Table -->
+    <AppPanel v-else :padding="0">
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th v-for="h in colHeaders" :key="h.label"
+              :style="{textAlign:h.right?'right':'left',padding:'10px 12px',fontWeight:500,fontSize:'11px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--muted)'}">
+              {{ h.label }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(t, i) in filtered" :key="t.id" :style="{borderTop:i===0?'none':'1px solid var(--border-2)'}">
+            <td style="padding:12px;vertical-align:middle;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span :style="{width:'26px',height:'26px',borderRadius:'7px',background:tariffColor(i),color:'white',display:'inline-flex',alignItems:'center',justifyContent:'center'}">
+                  <AppIcon :name="tariffIcon(i)" :size="13"/>
+                </span>
+                <div style="display:flex;flex-direction:column;">
+                  <span style="font-weight:500;">{{ tariffName(t) }}</span>
+                  <span class="mono" style="font-size:11px;color:var(--muted);">{{ t.slug }}</span>
+                </div>
+              </div>
+            </td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtNum(t.channels_limit) }}</td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtNum(t.posts_monthly_limit) }}</td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtCompact(t.ai_tokens_monthly) }}</td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtNum(t.seats_limit) }}</td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;font-weight:500;" class="tabular">
+              {{ priceFor(t) === 0 ? 'Bepul' : fmtSom(priceFor(t)) + " so'm" }}
+            </td>
+            <td style="padding:12px;vertical-align:middle;">
+              <AppBadge :tone="t.is_active ? 'success' : 'muted'" :dot="true">{{ t.is_active ? 'Faol' : 'Nofaol' }}</AppBadge>
+            </td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;">
+              <div style="display:inline-flex;gap:6px;">
+                <AppButton variant="secondary" size="sm" @click="toggleActive(t)">
+                  {{ t.is_active ? 'Yashirish' : 'Yoqish' }}
+                </AppButton>
+                <AppButton variant="ghost" size="sm" @click="confirmRemove(t)">
+                  <template #icon><AppIcon name="Trash" :size="12"/></template>
+                </AppButton>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </AppPanel>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useAppStore } from '@/stores/app.js'
+import { ref, computed, onMounted, h, defineComponent } from 'vue'
+import { useRouter } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
-import AppToggle from '@/components/ui/AppToggle.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import { TARIFF_DIMS, TARIFF_ADDONS, PLAN_PRESETS } from '@/data/index.js'
-import { fmtSom } from '@/i18n/index.js'
+import { tariffsApi } from '@/api/tariffs.js'
+import { fmtSom, fmtCompact } from '@/i18n/index.js'
 
-const store = useAppStore()
+const router = useRouter()
 
-const name = ref('Core')
-const code = ref('CORE_2026')
-const billingCycle = ref('monthly')
-const discount = ref(0)
-const activePreset = ref('core')
+const tariffs = ref([])
+const loading = ref(false)
+const error = ref(null)
+const view = ref('cards')
+const billingPreview = ref('monthly')
+const query = ref('')
 
-const qty = ref({ channels: 1, posts: 500, tokens: 150, seats: 2, storage: 10 })
-const addons = ref({ fb: false, ig: false, priority: false, branding: false })
-
+const viewOptions = [
+  { id: 'cards', label: 'Kartalar', icon: 'Hash' },
+  { id: 'table', label: 'Jadval',   icon: 'Sort' },
+]
 const billingOptions = [
   { id: 'monthly', label: 'Oylik' },
-  { id: 'yearly',  label: 'Yillik (-15%)' },
+  { id: 'yearly',  label: 'Yillik' },
 ]
 
-function applyPreset(id) {
-  const p = PLAN_PRESETS.find(x => x.id === id)
-  if (!p) return
-  activePreset.value = id
-  name.value = p.name
-  code.value = p.name.toUpperCase() + '_2026'
-  qty.value = { ...p.qty }
-  const a = { fb: false, ig: false, priority: false, branding: false }
-  p.addons.forEach(k => { a[k] = true })
-  addons.value = a
-}
+const COLORS = ['#5b8def', '#7b61ff', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#ef4444']
+const ICONS  = ['Hash', 'Sparkle', 'Bolt', 'Pen', 'Cloud', 'UserPlus']
 
-const breakdown = computed(() => TARIFF_DIMS.map(d => {
-  const q = qty.value[d.key]
-  const extra = Math.max(0, q - d.baseQty)
-  const baseLine = d.pricePerUnit * d.baseQty
-  const extraLine = d.pricePerUnit * extra
-  return { key: d.key, label: d.label[store.lang], unit: d.unit[store.lang], qty: q, base: baseLine, extra: extraLine, perUnit: d.pricePerUnit }
-}))
+const tariffColor = (i) => COLORS[i % COLORS.length]
+const tariffIcon  = (i) => ICONS[i % ICONS.length]
 
-const dimensionsTotal = computed(() => breakdown.value.reduce((s, b) => s + b.base + b.extra, 0))
-const addonTotal = computed(() => TARIFF_ADDONS.filter(a => addons.value[a.key]).reduce((s, a) => s + a.price, 0))
-const subtotal = computed(() => dimensionsTotal.value + addonTotal.value)
-const discountAmt = computed(() => Math.round(subtotal.value * (discount.value / 100)))
-const total = computed(() => subtotal.value - discountAmt.value)
-const yearly = computed(() => billingCycle.value === 'yearly' ? total.value * 12 * 0.85 : total.value)
-const finalAmt = computed(() => billingCycle.value === 'yearly' ? yearly.value : total.value)
-
-const presetBtnStyle = (id) => ({
-  height: '28px', padding: '0 12px',
-  fontSize: '12px', fontWeight: '500',
-  background: activePreset.value === id ? 'var(--accent-bg)' : 'var(--panel)',
-  border: `1px solid ${activePreset.value === id ? 'color-mix(in oklab, var(--accent) 30%, transparent)' : 'var(--border)'}`,
-  color: activePreset.value === id ? 'var(--accent)' : 'var(--text-2)',
-  borderRadius: '999px', cursor: 'pointer',
-  display: 'inline-flex', alignItems: 'center', gap: '6px',
+const subtitleText = computed(() => {
+  const total = tariffs.value.length
+  const active = tariffs.value.filter(t => t.is_active).length
+  return `${total} ta tarif · ${active} ta faol`
 })
-const saveBtnStyle = {
-  height: '28px', padding: '0 12px', fontSize: '12px', fontWeight: '500',
-  background: 'transparent', border: '1px dashed var(--border)',
-  color: 'var(--muted)', borderRadius: '999px',
-  display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+
+const filtered = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  if (!q) return tariffs.value
+  return tariffs.value.filter(t =>
+    (t.slug || '').toLowerCase().includes(q) ||
+    tariffName(t).toLowerCase().includes(q)
+  )
+})
+
+const colHeaders = [
+  { label: 'Tarif' },
+  { label: 'Kanal',     right: true },
+  { label: 'Postlar/oy',right: true },
+  { label: 'AI tokens', right: true },
+  { label: "Joy",       right: true },
+  { label: 'Narx',      right: true },
+  { label: 'Holat' },
+  { label: '' },
+]
+
+function tariffName(t) {
+  const lang = localStorage.getItem('lang') || 'uz'
+  return t.name_i18n?.[lang] || t.name_i18n?.uz || t.slug || '—'
 }
-const cycleBtnStyle = (id) => ({
-  flex: '1',
-  background: billingCycle.value === id ? 'var(--panel)' : 'transparent',
-  border: 'none', borderRadius: '4px',
+function featureLabel(f) {
+  const lang = localStorage.getItem('lang') || 'uz'
+  return f.label_i18n?.[lang] || f.label_i18n?.uz || f.key
+}
+function priceFor(t) {
+  const p = billingPreview.value === 'yearly' ? t.price_yearly : t.price_monthly
+  return Number(p) || 0
+}
+function fmtNum(n) {
+  if (n === null || n === undefined) return '—'
+  return Number(n).toLocaleString('uz-UZ').replace(/,/g, ' ')
+}
+
+const cardStyle = (i) => ({
+  background: 'var(--panel)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--r-lg, 12px)',
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  transition: 'transform .15s ease, box-shadow .15s ease',
+  boxShadow: 'var(--shadow-sm, 0 1px 2px rgba(0,0,0,.04))',
+})
+
+const viewBtnStyle = (id) => ({
+  display: 'inline-flex', alignItems: 'center', gap: '6px',
+  height: '30px', padding: '0 12px',
+  background: view.value === id ? 'var(--panel)' : 'transparent',
+  border: 'none', borderRadius: '6px',
   fontSize: '12px', fontWeight: '500',
-  color: billingCycle.value === id ? 'var(--text)' : 'var(--muted)',
-  boxShadow: billingCycle.value === id ? 'var(--shadow-sm)' : 'none',
+  color: view.value === id ? 'var(--text)' : 'var(--muted)',
+  boxShadow: view.value === id ? 'var(--shadow-sm)' : 'none',
   cursor: 'pointer',
 })
-</script>
-
-<script>
-// DimensionRow sub-component
-import { defineComponent, h, computed } from 'vue'
-import AppIcon from '@/components/ui/AppIcon.vue'
-import { fmtSom } from '@/i18n/index.js'
-import { useAppStore } from '@/stores/app.js'
-
-const DimensionRow = defineComponent({
-  name: 'DimensionRow',
-  props: { dim: Object, value: Number },
-  emits: ['change'],
-  setup(props, { emit }) {
-    const store = useAppStore()
-    const lang = computed(() => store.lang)
-    return { lang, fmtSom, emit }
-  },
-  template: `
-    <div style="display:grid;grid-template-columns:180px 1fr 130px 110px;align-items:center;gap:14px;">
-      <div style="display:flex;flex-direction:column;gap:2px;">
-        <span style="font-size:12.5px;font-weight:500;">{{ dim.label[lang] }}</span>
-        <span style="font-size:11px;color:var(--muted);">{{ fmtSom(dim.pricePerUnit) }} so'm / {{ dim.unit[lang] }}</span>
-      </div>
-      <div style="position:relative;">
-        <input type="range" :min="dim.min" :max="dim.max" :step="dim.step" :value="value"
-          @input="emit('change', +$event.target.value)"
-          style="width:100%;accent-color:var(--accent);height:4px;cursor:pointer;"/>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted-2);font-family:var(--font-mono);margin-top:2px;">
-          <span>{{ dim.min }}</span><span>{{ dim.max }}</span>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;height:32px;padding:0 4px;">
-        <button @click="emit('change', Math.max(dim.min, value - dim.step))"
-          style="width:24px;height:24px;border:none;background:transparent;color:var(--muted);border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
-          <svg width="12" height="12" viewBox="0 0 16 16"><rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/></svg>
-        </button>
-        <input type="number" :value="value" @input="emit('change', +$event.target.value)"
-          style="flex:1;min-width:0;height:24px;border:none;outline:none;background:transparent;text-align:center;font-size:12.5px;font-family:var(--font-mono);font-weight:500;"/>
-        <button @click="emit('change', Math.min(dim.max, value + dim.step))"
-          style="width:24px;height:24px;border:none;background:transparent;color:var(--muted);border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
-          <svg width="12" height="12" viewBox="0 0 16 16"><rect x="7" y="2" width="2" height="12" rx="1" fill="currentColor"/><rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/></svg>
-        </button>
-      </div>
-      <div class="tabular" style="font-size:12.5px;font-weight:500;text-align:right;color:var(--text);">
-        {{ fmtSom(dim.pricePerUnit * value) }} <span style="font-size:10px;color:var(--muted);">so'm</span>
-      </div>
-    </div>
-  `
+const billingBtnStyle = (id) => ({
+  height: '30px', padding: '0 14px',
+  background: billingPreview.value === id ? 'var(--panel)' : 'transparent',
+  border: 'none', borderRadius: '6px',
+  fontSize: '12px', fontWeight: '500',
+  color: billingPreview.value === id ? 'var(--text)' : 'var(--muted)',
+  boxShadow: billingPreview.value === id ? 'var(--shadow-sm)' : 'none',
+  cursor: 'pointer',
 })
 
-const AddonRow = defineComponent({
-  name: 'AddonRow',
-  props: { addon: Object, value: Boolean },
-  emits: ['change'],
-  setup(props, { emit }) {
-    const store = useAppStore()
-    const lang = computed(() => store.lang)
-    const iconMap = { fb: 'Facebook', ig: 'Instagram', priority: 'Bolt', branding: 'Sparkle' }
-    return { lang, fmtSom, emit, iconMap }
+async function load() {
+  loading.value = true
+  error.value = null
+  try {
+    const data = await tariffsApi.list()
+    tariffs.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    error.value = e.response?.data?.message || 'Tariflarni yuklab boʻlmadi'
+  } finally {
+    loading.value = false
+  }
+}
+
+function goCreate() {
+  router.push('/admin/tariffs/new')
+}
+
+async function toggleActive(t) {
+  try {
+    const updated = await tariffsApi.update(t.id, { is_active: !t.is_active })
+    const idx = tariffs.value.findIndex(x => x.id === t.id)
+    if (idx !== -1) tariffs.value.splice(idx, 1, { ...t, ...updated })
+  } catch (e) {
+    alert(e.response?.data?.message || 'Holatni o\'zgartirib bo\'lmadi')
+  }
+}
+
+async function confirmRemove(t) {
+  if (!confirm(`"${tariffName(t)}" tarifini o'chirilsinmi?`)) return
+  try {
+    await tariffsApi.remove(t.id)
+    tariffs.value = tariffs.value.filter(x => x.id !== t.id)
+  } catch (e) {
+    alert(e.response?.data?.message || "Tarifni o'chirib bo'lmadi")
+  }
+}
+
+const LimitLine = defineComponent({
+  name: 'LimitLine',
+  props: { icon: String, label: String, value: [String, Number] },
+  render() {
+    return h('div', { style: 'display:flex;align-items:center;gap:10px;font-size:12.5px;' }, [
+      h('span', { style: 'width:22px;height:22px;border-radius:6px;background:var(--panel-2);color:var(--muted);display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border-2);flex-shrink:0;' }, [
+        h(AppIcon, { name: this.icon, size: 12 }),
+      ]),
+      h('span', { style: 'color:var(--muted);flex:1;' }, this.label),
+      h('span', { class: 'tabular', style: 'font-weight:500;color:var(--text);' }, this.value),
+    ])
   },
-  template: `
-    <button @click="!addon.soon && emit('change', !value)" :disabled="addon.soon"
-      :style="{
-        textAlign:'left',
-        background: value ? 'var(--accent-bg)' : 'var(--panel-2)',
-        border: \`1px solid \${value ? 'color-mix(in oklab, var(--accent) 30%, transparent)' : 'var(--border)'}\`,
-        borderRadius: '8px', padding: '10px 12px',
-        display: 'flex', alignItems: 'center', gap: '10px',
-        cursor: addon.soon ? 'not-allowed' : 'pointer',
-        opacity: addon.soon ? 0.6 : 1,
-        width: '100%',
-      }">
-      <span :style="{
-        width:'28px',height:'28px',borderRadius:'6px',
-        background: value ? 'var(--accent)' : 'var(--panel)',
-        color: value ? 'white' : 'var(--text-2)',
-        border: value ? 'none' : '1px solid var(--border)',
-        display:'inline-flex',alignItems:'center',justifyContent:'center',
-      }">
-        <svg v-if="addon.key==='fb'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-        <svg v-else-if="addon.key==='ig'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-        <svg v-else-if="addon.key==='priority'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 3z"/><path d="M17.796 9.204a7.5 7.5 0 0 0-9 9"/></svg>
-      </span>
-      <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
-        <span style="font-size:12.5px;font-weight:500;">{{ addon.label[lang] }}</span>
-        <span style="font-size:11px;color:var(--muted);">+{{ fmtSom(addon.price) }} so'm/oy</span>
-      </div>
-      <div :style="{
-        width:'36px',height:'20px',borderRadius:'999px',background: value ? 'var(--accent)' : 'var(--border-2)',
-        display:'inline-flex',alignItems:'center',padding:'0 2px',
-        transition:'background .15s',
-      }">
-        <div :style="{
-          width:'16px',height:'16px',borderRadius:'999px',background:'white',
-          transform: value ? 'translateX(16px)' : 'translateX(0)',
-          transition:'transform .15s',
-          boxShadow:'0 1px 3px rgba(0,0,0,.25)',
-        }"/>
-      </div>
-    </button>
-  `
 })
 
-const PriceSummary = defineComponent({
-  name: 'PriceSummary',
-  props: {
-    name: String, code: String, billingCycle: String,
-    breakdown: Array, addons: Object,
-    dimensionsTotal: Number, addonTotal: Number,
-    subtotal: Number, discount: Number, discountAmt: Number,
-    total: Number, yearly: Number, finalAmt: Number,
-  },
-  setup(props) {
-    const store = useAppStore()
-    const lang = computed(() => store.lang)
-    const hasAddons = computed(() => props.addons && Object.values(props.addons).some(Boolean))
-    return { lang, fmtSom, hasAddons, TARIFF_ADDONS }
-  },
-  template: `
-    <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;">
-      <div style="padding:16px 18px;border-bottom:1px solid var(--border-2);">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">Hisob-kitob</span>
-          <span class="mono" style="font-size:10.5px;color:var(--muted);">{{ code }}</span>
-        </div>
-        <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px;">
-          <span style="font-size:20px;font-weight:600;">{{ name }}</span>
-          <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--accent-bg);color:var(--accent);font-weight:500;">{{ billingCycle === 'monthly' ? 'oylik' : 'yillik' }}</span>
-        </div>
-      </div>
-      <div style="padding:12px 18px;">
-        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;margin-bottom:8px;">Resurslar</div>
-        <div v-for="b in breakdown" :key="b.key" style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:12.5px;">
-          <span style="color:var(--text-2);"><span class="tabular">{{ b.qty }}</span> {{ b.unit }} <span style="color:var(--muted);margin-left:4px;">· {{ b.label }}</span></span>
-          <span class="tabular" style="font-weight:500;">{{ fmtSom(b.base + b.extra) }}</span>
-        </div>
-        <template v-if="hasAddons">
-          <div style="height:1px;background:var(--border-2);margin:10px 0;"/>
-          <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;margin-bottom:8px;">Modullar</div>
-          <div v-for="a in TARIFF_ADDONS.filter(a => addons[a.key])" :key="a.key" style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:12.5px;">
-            <span style="color:var(--text-2);">+ {{ a.label[lang] }}</span>
-            <span class="tabular" style="font-weight:500;">{{ fmtSom(a.price) }}</span>
-          </div>
-        </template>
-        <div style="height:1px;background:var(--border-2);margin:12px 0;"/>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;">
-          <span style="color:var(--muted);">Resurslar</span>
-          <span class="tabular" style="color:var(--muted);">{{ fmtSom(dimensionsTotal) }}</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;">
-          <span style="color:var(--muted);">Modullar</span>
-          <span class="tabular" style="color:var(--muted);">{{ fmtSom(addonTotal) }}</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;">
-          <span style="color:var(--text-2);">Subtotal</span>
-          <span class="tabular" style="font-weight:500;">{{ fmtSom(subtotal) }}</span>
-        </div>
-        <div v-if="discount > 0" style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;">
-          <span style="color:var(--text-2);">Chegirma ({{ discount }}%)</span>
-          <span class="tabular" style="font-weight:500;color:var(--success);">−{{ fmtSom(discountAmt) }}</span>
-        </div>
-        <div v-if="billingCycle === 'yearly'" style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;">
-          <span style="color:var(--text-2);">Yillik -15%</span>
-          <span class="tabular" style="font-weight:500;color:var(--success);">qo'llanildi</span>
-        </div>
-      </div>
-      <div style="padding:14px 18px;background:var(--accent-bg);border-top:1px solid color-mix(in oklab, var(--accent) 20%, transparent);display:flex;flex-direction:column;gap:4px;">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;">
-          <span style="font-size:12px;color:var(--text-2);">Jami {{ billingCycle === 'monthly' ? 'oyiga' : 'yiliga' }}</span>
-          <span style="display:flex;align-items:baseline;gap:4px;">
-            <span class="tabular" style="font-size:22px;font-weight:600;color:var(--accent-ink);letter-spacing:-0.015em;">{{ fmtSom(Math.round(finalAmt)) }}</span>
-            <span style="font-size:12px;color:var(--accent-ink);">so'm</span>
-          </span>
-        </div>
-        <span v-if="billingCycle === 'monthly'" style="font-size:11px;color:var(--muted);">≈ {{ fmtSom(Math.round(total * 12 * 0.85)) }} so'm/yil (yillik ko'chsa)</span>
-        <span v-else style="font-size:11px;color:var(--muted);">≈ {{ fmtSom(Math.round(total)) }} so'm/oy</span>
-      </div>
-    </div>
-  `
-})
-
-export { DimensionRow, AddonRow, PriceSummary }
+onMounted(load)
 </script>

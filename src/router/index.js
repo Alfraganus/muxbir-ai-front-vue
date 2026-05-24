@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import AdminOverview from '@/views/admin/AdminOverview.vue'
 import AdminCompanies from '@/views/admin/AdminCompanies.vue'
 import AdminTariffs from '@/views/admin/AdminTariffs.vue'
+import AdminTariffBuilder from '@/views/admin/AdminTariffBuilder.vue'
 import AdminUsers from '@/views/admin/AdminUsers.vue'
 import AdminReferences from '@/views/admin/AdminReferences.vue'
 import AdminWorkerSettings from '@/views/admin/AdminWorkerSettings.vue'
@@ -12,6 +13,7 @@ import PostEditor from '@/views/client/PostEditor.vue'
 import ClientBilling from '@/views/client/ClientBilling.vue'
 import ClientTeam from '@/views/client/ClientTeam.vue'
 import ClientCategories from '@/views/client/ClientCategories.vue'
+import ClientDiscover from '@/views/client/ClientDiscover.vue'
 import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
 import MagicAuth from '@/views/MagicAuth.vue'
@@ -25,12 +27,14 @@ const routes = [
   { path: '/admin/overview',   component: AdminOverview },
   { path: '/admin/companies',  component: AdminCompanies },
   { path: '/admin/tariffs',    component: AdminTariffs },
+  { path: '/admin/tariffs/new', component: AdminTariffBuilder },
   { path: '/admin/users',      component: AdminUsers },
   { path: '/admin/references', component: AdminReferences },
   { path: '/admin/worker-settings', component: AdminWorkerSettings },
   { path: '/client/overview',  component: ClientOverview },
   { path: '/client/channels',  component: ClientChannels },
   { path: '/client/posts',     component: ClientPosts },
+  { path: '/client/discover',  component: ClientDiscover },
   { path: '/client/posts/new',         component: PostEditor },
   { path: '/client/posts/:id/edit',    component: PostEditor },
   { path: '/client/billing',   component: ClientBilling },

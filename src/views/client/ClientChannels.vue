@@ -100,6 +100,10 @@
             ID: <span class="mono" style="color:var(--text-2);">{{ c.telegram_chat_id || '—' }}</span>
           </span>
           <div style="display:flex;gap:6px;">
+            <AppButton v-if="(c.posting_mode||'auto')==='auto'" variant="ghost" size="sm" @click="openAutoSettings(c)" title="Avto-post sozlamalari">
+              <template #icon><AppIcon name="Sparkle" :size="12"/></template>
+              Sozlash
+            </AppButton>
             <AppButton variant="ghost" size="sm" @click="togglePostingMode(c)">
               <template #icon><AppIcon :name="(c.posting_mode||'auto')==='auto' ? 'Edit' : 'Sparkle'" :size="12"/></template>
               {{ (c.posting_mode||'auto') === 'auto' ? tt('cc.action.setManual') : tt('cc.action.setAuto') }}
@@ -151,6 +155,10 @@
             <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ connectedDate(c) }}</td>
             <td style="padding:10px;vertical-align:middle;"><AppBadge :tone="isActive(c) ? 'success' : 'muted'" dot>{{ statusLabel(c) }}</AppBadge></td>
             <td style="padding:10px;vertical-align:middle;text-align:right;white-space:nowrap;">
+              <AppButton v-if="(c.posting_mode||'auto')==='auto'" variant="ghost" size="sm" @click="openAutoSettings(c)">
+                <template #icon><AppIcon name="Sparkle" :size="12"/></template>
+                Sozlash
+              </AppButton>
               <AppButton variant="ghost" size="sm" @click="togglePostingMode(c)">
                 {{ (c.posting_mode||'auto') === 'auto' ? tt('cc.action.setManual') : tt('cc.action.setAuto') }}
               </AppButton>
@@ -238,6 +246,133 @@
                   </div>
                 </div>
 
+                <!-- ─── Avto rejim qo'shimcha sozlamalari ─── -->
+                <div v-if="addMode === 'auto'" class="cc-auto">
+                  <div class="cc-auto-head">
+                    <span class="cc-auto-head-icon"><AppIcon name="Sparkle" :size="13"/></span>
+                    <div>
+                      <div class="cc-auto-head-title">Avto-post sozlamalari</div>
+                      <div class="cc-auto-head-sub">Tizim shu kanal uchun postlarni qanday tanlashini sozlang</div>
+                    </div>
+                  </div>
+
+                  <!-- Interval -->
+                  <div class="cc-field">
+                    <label class="cc-field-label">
+                      <AppIcon name="Bolt" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                      Yuborish intervali
+                    </label>
+                    <div class="cc-chip-row">
+                      <button v-for="o in INTERVAL_PRESETS" :key="o.value" type="button"
+                        class="cc-chip" :class="{ active: autoInterval === o.value }"
+                        @click="autoInterval = o.value">{{ o.label }}</button>
+                    </div>
+                    <div class="cc-field-hint">
+                      Boshqa qiymat:
+                      <input type="number" min="1" max="10080" v-model.number="autoInterval"
+                        class="cc-inline-num"/>
+                      daqiqa
+                    </div>
+                  </div>
+
+                  <!-- Kategoriyalar -->
+                  <div class="cc-field">
+                    <label class="cc-field-label">
+                      <AppIcon name="Hash" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                      Mavzular (kategoriyalar)
+                    </label>
+                    <div v-if="!categories.length" class="cc-field-hint" style="padding:6px 0;">
+                      Hali kategoriya yo'q —
+                      <a href="#/client/categories" class="cc-modal-link" style="display:inline;padding:0;">
+                        kategoriyalar bo'limidan qo'shing
+                      </a>
+                    </div>
+                    <div v-else class="cc-chip-row">
+                      <button v-for="cat in categories" :key="cat.id" type="button"
+                        class="cc-chip" :class="{ active: autoCategoryIds.includes(cat.id) }"
+                        :style="autoCategoryIds.includes(cat.id) && cat.color
+                          ? { borderColor: cat.color, background: cat.color + '1f', color: cat.color }
+                          : null"
+                        @click="toggleAutoCategory(cat.id)">
+                        <span v-if="cat.color" class="cc-chip-dot" :style="{background: cat.color}"/>
+                        {{ cat.name }}
+                      </button>
+                    </div>
+                    <div v-if="categories.length" class="cc-field-hint">
+                      Bo'sh qoldirilsa — hamma mavzulardan post tanlanadi
+                    </div>
+                  </div>
+
+                  <!-- Filtrlar -->
+                  <div class="cc-auto-row">
+                    <div class="cc-field" style="flex:1;min-width:160px;">
+                      <label class="cc-field-label">Vaqt oraligi</label>
+                      <div class="cc-chip-row">
+                        <button v-for="o in TIME_RANGE_OPTIONS" :key="o.value" type="button"
+                          class="cc-chip"
+                          :class="{ active: autoFilters.time_range === o.value }"
+                          @click="autoFilters.time_range = o.value">{{ o.label }}</button>
+                      </div>
+                    </div>
+                    <div class="cc-field" style="flex:0 0 150px;">
+                      <label class="cc-field-label">Har kanaldan</label>
+                      <div class="cc-num-input">
+                        <button type="button" @click="autoFilters.per_channel = Math.max(1, autoFilters.per_channel - 1)">−</button>
+                        <input type="number" min="1" max="30" v-model.number="autoFilters.per_channel"/>
+                        <button type="button" @click="autoFilters.per_channel = Math.min(30, autoFilters.per_channel + 1)">+</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="cc-field">
+                    <label class="cc-field-label">Takrorlanishga sezgirlik</label>
+                    <div class="cc-chip-row">
+                      <button v-for="th in [{v:0.3,l:'Past (ko\'p tanlash)'},{v:0.5,l:'O\'rta'},{v:0.7,l:'Yuqori (kam tanlash)'}]"
+                        :key="th.v" type="button" class="cc-chip"
+                        :class="{ active: autoFilters.similarity_threshold === th.v }"
+                        @click="autoFilters.similarity_threshold = th.v">{{ th.l }}</button>
+                    </div>
+                    <div class="cc-field-hint">Yangi post o'zimizning eski post bilan o'xshashlik darajasi</div>
+                  </div>
+
+                  <div class="cc-field">
+                    <label class="cc-field-label">Til</label>
+                    <div class="cc-chip-row">
+                      <button v-for="l in LANG_OPTIONS" :key="l.value" type="button"
+                        class="cc-chip" :class="{ active: autoFilters.languages.includes(l.value) }"
+                        @click="toggleAutoLanguage(l.value)">{{ l.label }}</button>
+                    </div>
+                    <div class="cc-field-hint">Bo'sh — hamma tildagi postlar mos keladi</div>
+                  </div>
+
+                  <div class="cc-auto-row">
+                    <label class="cc-toggle-row">
+                      <input type="checkbox" v-model="autoFilters.include_videos"/>
+                      <span>Video postlarni qo'shish</span>
+                    </label>
+                    <label class="cc-toggle-row">
+                      <input type="checkbox" v-model="autoFilters.require_media"/>
+                      <span>Faqat media bilan</span>
+                    </label>
+                  </div>
+
+                  <div class="cc-auto-row">
+                    <div class="cc-field" style="flex:0 0 140px;">
+                      <label class="cc-field-label">Min. uzunlik</label>
+                      <div class="cc-num-input">
+                        <input type="number" min="0" v-model.number="autoFilters.min_length"/>
+                        <span style="padding:0 8px;font-size:11px;color:var(--muted);">belgi</span>
+                      </div>
+                    </div>
+                    <div class="cc-field" style="flex:1;min-width:200px;">
+                      <label class="cc-field-label">Kalit so'zlar</label>
+                      <input type="text" class="cc-text-input" v-model="autoFilters.keywords"
+                        placeholder="iqtisod, valyuta, banki..."/>
+                      <div class="cc-field-hint">Vergul bilan ajrating — kamida bittasi matnda bo'lsa o'tadi</div>
+                    </div>
+                  </div>
+                </div>
+
                 <div v-if="addError" class="cc-modal-error">
                   <AppIcon name="Close" :size="12"/>
                   {{ addError }}
@@ -314,6 +449,164 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ────── Auto-post Settings Modal (mavjud kanal uchun) ────── -->
+    <Teleport to="body">
+      <Transition name="cc-modal">
+        <div v-if="autoModalOpen" class="cc-modal-backdrop" @click.self="closeAutoModal">
+          <div class="cc-modal" role="dialog" aria-modal="true">
+            <button class="cc-modal-close" @click="closeAutoModal" aria-label="Yopish">
+              <AppIcon name="Close" :size="14"/>
+            </button>
+
+            <div class="cc-modal-hero" :style="{ background: heroGradient('telegram') }">
+              <div aria-hidden class="cc-modal-hero-dots"/>
+              <div class="cc-modal-hero-inner">
+                <span class="cc-modal-hero-icon"><AppIcon name="Sparkle" :size="22"/></span>
+                <div>
+                  <div class="cc-modal-hero-title">Avto-post sozlamalari</div>
+                  <div class="cc-modal-hero-sub">
+                    <b>{{ autoModalChannel?.display_name || autoModalChannel?.username }}</b>
+                    — bot qanday postlarni qachon tanlashini sozlang
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cc-modal-body">
+              <div class="cc-auto" style="background:transparent;border:none;padding:0;">
+                <!-- Interval -->
+                <div class="cc-field">
+                  <label class="cc-field-label">
+                    <AppIcon name="Bolt" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                    Yuborish intervali
+                  </label>
+                  <div class="cc-chip-row">
+                    <button v-for="o in INTERVAL_PRESETS" :key="o.value" type="button"
+                      class="cc-chip" :class="{ active: autoInterval === o.value }"
+                      @click="autoInterval = o.value">{{ o.label }}</button>
+                  </div>
+                  <div class="cc-field-hint">
+                    Boshqa qiymat:
+                    <input type="number" min="1" max="10080" v-model.number="autoInterval" class="cc-inline-num"/>
+                    daqiqa
+                  </div>
+                </div>
+
+                <!-- Kategoriyalar -->
+                <div class="cc-field">
+                  <label class="cc-field-label">
+                    <AppIcon name="Hash" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                    Mavzular (kategoriyalar)
+                  </label>
+                  <div v-if="!categories.length" class="cc-field-hint" style="padding:6px 0;">
+                    Hali kategoriya yo'q —
+                    <a href="#/client/categories" class="cc-modal-link" style="display:inline;padding:0;">
+                      kategoriyalar bo'limidan qo'shing
+                    </a>
+                  </div>
+                  <div v-else class="cc-chip-row">
+                    <button v-for="cat in categories" :key="cat.id" type="button"
+                      class="cc-chip" :class="{ active: autoCategoryIds.includes(cat.id) }"
+                      :style="autoCategoryIds.includes(cat.id) && cat.color
+                        ? { borderColor: cat.color, background: cat.color + '1f', color: cat.color }
+                        : null"
+                      @click="toggleAutoCategory(cat.id)">
+                      <span v-if="cat.color" class="cc-chip-dot" :style="{background: cat.color}"/>
+                      {{ cat.name }}
+                    </button>
+                  </div>
+                  <div v-if="categories.length" class="cc-field-hint">
+                    Bo'sh qoldirilsa — hamma mavzulardan post tanlanadi
+                  </div>
+                </div>
+
+                <!-- Filtrlar -->
+                <div class="cc-auto-row">
+                  <div class="cc-field" style="flex:1;min-width:160px;">
+                    <label class="cc-field-label">Vaqt oraligi</label>
+                    <div class="cc-chip-row">
+                      <button v-for="o in TIME_RANGE_OPTIONS" :key="o.value" type="button"
+                        class="cc-chip" :class="{ active: autoFilters.time_range === o.value }"
+                        @click="autoFilters.time_range = o.value">{{ o.label }}</button>
+                    </div>
+                  </div>
+                  <div class="cc-field" style="flex:0 0 150px;">
+                    <label class="cc-field-label">Har kanaldan</label>
+                    <div class="cc-num-input">
+                      <button type="button" @click="autoFilters.per_channel = Math.max(1, autoFilters.per_channel - 1)">−</button>
+                      <input type="number" min="1" max="30" v-model.number="autoFilters.per_channel"/>
+                      <button type="button" @click="autoFilters.per_channel = Math.min(30, autoFilters.per_channel + 1)">+</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="cc-field">
+                  <label class="cc-field-label">Takrorlanishga sezgirlik</label>
+                  <div class="cc-chip-row">
+                    <button v-for="th in [{v:0.3,l:'Past (ko\'p tanlash)'},{v:0.5,l:'O\'rta'},{v:0.7,l:'Yuqori (kam tanlash)'}]"
+                      :key="th.v" type="button" class="cc-chip"
+                      :class="{ active: autoFilters.similarity_threshold === th.v }"
+                      @click="autoFilters.similarity_threshold = th.v">{{ th.l }}</button>
+                  </div>
+                  <div class="cc-field-hint">Yangi post o'zimizning eski post bilan o'xshashlik darajasi</div>
+                </div>
+
+                <div class="cc-field">
+                  <label class="cc-field-label">Til</label>
+                  <div class="cc-chip-row">
+                    <button v-for="l in LANG_OPTIONS" :key="l.value" type="button"
+                      class="cc-chip" :class="{ active: autoFilters.languages.includes(l.value) }"
+                      @click="toggleAutoLanguage(l.value)">{{ l.label }}</button>
+                  </div>
+                  <div class="cc-field-hint">Bo'sh — hamma tildagi postlar mos keladi</div>
+                </div>
+
+                <div class="cc-auto-row">
+                  <label class="cc-toggle-row">
+                    <input type="checkbox" v-model="autoFilters.include_videos"/>
+                    <span>Video postlarni qo'shish</span>
+                  </label>
+                  <label class="cc-toggle-row">
+                    <input type="checkbox" v-model="autoFilters.require_media"/>
+                    <span>Faqat media bilan</span>
+                  </label>
+                </div>
+
+                <div class="cc-auto-row">
+                  <div class="cc-field" style="flex:0 0 140px;">
+                    <label class="cc-field-label">Min. uzunlik</label>
+                    <div class="cc-num-input">
+                      <input type="number" min="0" v-model.number="autoFilters.min_length"/>
+                      <span style="padding:0 8px;font-size:11px;color:var(--muted);">belgi</span>
+                    </div>
+                  </div>
+                  <div class="cc-field" style="flex:1;min-width:200px;">
+                    <label class="cc-field-label">Kalit so'zlar</label>
+                    <input type="text" class="cc-text-input" v-model="autoFilters.keywords"
+                      placeholder="iqtisod, valyuta, banki..."/>
+                    <div class="cc-field-hint">Vergul bilan ajrating — kamida bittasi matnda bo'lsa o'tadi</div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="autoSaveError" class="cc-modal-error">
+                <AppIcon name="Close" :size="12"/>
+                {{ autoSaveError }}
+              </div>
+
+              <div class="cc-modal-actions">
+                <AppButton variant="secondary" size="md" @click="closeAutoModal">Bekor qilish</AppButton>
+                <AppButton variant="primary" size="md" :loading="autoSaving" @click="saveAutoSettings">
+                  <template #icon><AppIcon name="Check" :size="13"/></template>
+                  {{ autoModalSwitching ? "Auto'ga o'tkazish va saqlash" : 'Saqlash' }}
+                </AppButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -329,6 +622,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import { companiesApi } from '@/api/companies.js'
 import { channelsApi } from '@/api/channels.js'
 import { referencesApi } from '@/api/references.js'
+import { categoriesApi } from '@/api/categories.js'
 import { useAppStore } from '@/stores/app.js'
 
 const router = useRouter()
@@ -355,6 +649,78 @@ const addStage = ref('input')         // input | pending | success
 const addedChannel = ref(null)
 const addDeepLink = ref('')
 let addPollTimer = null
+
+// ── Avto-post sozlamalari (faqat auto rejimda) ─────────────────
+const INTERVAL_PRESETS = [
+  { value: 1,    label: '1 daq' },
+  { value: 5,    label: '5 daq' },
+  { value: 15,   label: '15 daq' },
+  { value: 30,   label: '30 daq' },
+  { value: 60,   label: '1 soat' },
+  { value: 180,  label: '3 soat' },
+  { value: 360,  label: '6 soat' },
+  { value: 720,  label: '12 soat' },
+  { value: 1440, label: '24 soat' },
+]
+const TIME_RANGE_OPTIONS = [
+  { value: '24h', label: '24 soat' },
+  { value: '3d',  label: '3 kun' },
+  { value: '7d',  label: '7 kun' },
+  { value: '30d', label: '30 kun' },
+  { value: '90d', label: '90 kun' },
+]
+const LANG_OPTIONS = [
+  { value: 'uz', label: "O'zbekcha" },
+  { value: 'ru', label: 'Ruscha' },
+  { value: 'en', label: 'Inglizcha' },
+]
+
+const categories = ref([])
+const autoInterval = ref(60)
+const autoCategoryIds = ref([])         // []
+const autoFilters = ref({
+  time_range: '7d',
+  per_channel: 3,
+  similarity_threshold: 0.5,
+  include_videos: true,
+  require_media: false,
+  min_length: 50,
+  languages: [],
+  keywords: '',
+})
+
+async function loadCategories() {
+  if (!company.value) return
+  try {
+    const data = await categoriesApi.list(company.value.id)
+    categories.value = Array.isArray(data) ? data : []
+  } catch { categories.value = [] }
+}
+
+function toggleAutoCategory(id) {
+  const i = autoCategoryIds.value.indexOf(id)
+  if (i === -1) autoCategoryIds.value.push(id)
+  else autoCategoryIds.value.splice(i, 1)
+}
+function toggleAutoLanguage(code) {
+  const i = autoFilters.value.languages.indexOf(code)
+  if (i === -1) autoFilters.value.languages.push(code)
+  else autoFilters.value.languages.splice(i, 1)
+}
+function resetAutoSettings() {
+  autoInterval.value = 60
+  autoCategoryIds.value = []
+  autoFilters.value = {
+    time_range: '7d',
+    per_channel: 3,
+    similarity_threshold: 0.5,
+    include_videos: true,
+    require_media: false,
+    min_length: 50,
+    languages: [],
+    keywords: '',
+  }
+}
 
 // ── Status helperlari ─────────────────────────────────────────────
 function isActive(c) {
@@ -533,6 +899,7 @@ async function loadAll() {
     }
     const data = await channelsApi.list(company.value.id)
     channels.value = data || []
+    loadCategories()
   } catch {
     channels.value = []
   } finally {
@@ -541,12 +908,99 @@ async function loadAll() {
 }
 
 async function togglePostingMode(c) {
-  const next = (c.posting_mode || 'auto') === 'auto' ? 'manual' : 'auto'
+  const current = c.posting_mode || 'auto'
+  const next = current === 'auto' ? 'manual' : 'auto'
+
+  // manual → auto: avval sozlamalar modalini ochib olaylik
+  if (next === 'auto') {
+    openAutoSettings(c, { switchFromManual: true })
+    return
+  }
+
+  // auto → manual: darhol saqlaymiz
   try {
     const updated = await channelsApi.setPostingMode(company.value.id, c.id, next)
     const idx = channels.value.findIndex(x => x.id === c.id)
     if (idx >= 0) channels.value.splice(idx, 1, updated)
   } catch {}
+}
+
+// ── Mavjud kanal uchun "Avto-post sozlamalari" modal ─────────
+const autoModalOpen = ref(false)
+const autoModalChannel = ref(null)
+const autoModalSwitching = ref(false)   // manualdan auto'ga o'tish bayrog'i
+const autoSaving = ref(false)
+const autoSaveError = ref('')
+
+function openAutoSettings(channel, opts = {}) {
+  autoModalChannel.value = channel
+  autoModalSwitching.value = !!opts.switchFromManual
+  autoSaveError.value = ''
+
+  // Kanal sozlamalari bilan oldindan to'ldiramiz
+  autoInterval.value = channel.auto_interval_minutes || 60
+  autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
+  const f = channel.auto_filters || {}
+  autoFilters.value = {
+    time_range: f.time_range || '7d',
+    per_channel: f.per_channel ?? 3,
+    similarity_threshold: f.similarity_threshold ?? 0.5,
+    include_videos: f.include_videos !== false,
+    require_media: !!f.require_media,
+    min_length: f.min_length ?? 50,
+    languages: Array.isArray(f.languages) ? [...f.languages] : [],
+    keywords: Array.isArray(f.keywords) ? f.keywords.join(', ') : (f.keywords || ''),
+  }
+
+  loadCategories()
+  autoModalOpen.value = true
+}
+
+function closeAutoModal() {
+  autoModalOpen.value = false
+  autoModalChannel.value = null
+  autoModalSwitching.value = false
+  autoSaving.value = false
+  autoSaveError.value = ''
+}
+
+async function saveAutoSettings() {
+  if (!autoModalChannel.value || !company.value) return
+  autoSaving.value = true
+  autoSaveError.value = ''
+  try {
+    let updated = autoModalChannel.value
+
+    // Manualdan auto'ga o'tish bo'lsa, avval posting_mode ni o'zgartiramiz
+    if (autoModalSwitching.value) {
+      updated = await channelsApi.setPostingMode(company.value.id, updated.id, 'auto')
+    }
+
+    updated = await channelsApi.updateAutoSettings(company.value.id, updated.id, {
+      auto_interval_minutes: autoInterval.value,
+      auto_category_ids: [...autoCategoryIds.value],
+      auto_filters: {
+        time_range: autoFilters.value.time_range,
+        per_channel: autoFilters.value.per_channel,
+        similarity_threshold: autoFilters.value.similarity_threshold,
+        include_videos: autoFilters.value.include_videos,
+        require_media: autoFilters.value.require_media,
+        min_length: autoFilters.value.min_length,
+        languages: [...autoFilters.value.languages],
+        keywords: (autoFilters.value.keywords || '')
+          .split(',').map(s => s.trim()).filter(Boolean),
+      },
+    })
+
+    const idx = channels.value.findIndex(x => x.id === updated.id)
+    if (idx >= 0) channels.value.splice(idx, 1, updated)
+    closeAutoModal()
+  } catch (err) {
+    const msg = err?.response?.data?.message
+    autoSaveError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Sozlamalarni saqlab boʻlmadi')
+  } finally {
+    autoSaving.value = false
+  }
 }
 
 async function removeChannel(c) {
@@ -600,6 +1054,8 @@ function openAddModal(slug = 'telegram') {
   addStage.value = 'input'
   addedChannel.value = null
   addDeepLink.value = ''
+  resetAutoSettings()
+  loadCategories()
   addModalOpen.value = true
 }
 
@@ -639,10 +1095,34 @@ async function submitAdd() {
     const res = await channelsApi.initTelegram(company.value.id, url, addMode.value)
     addedChannel.value = res.channel
     addDeepLink.value = res.deep_link
+
+    // Auto rejimda qo'shimcha sozlamalarni darhol saqlaymiz
+    if (addMode.value === 'auto' && res.channel?.id) {
+      try {
+        const updated = await channelsApi.updateAutoSettings(company.value.id, res.channel.id, {
+          auto_interval_minutes: autoInterval.value,
+          auto_category_ids: [...autoCategoryIds.value],
+          auto_filters: {
+            time_range: autoFilters.value.time_range,
+            per_channel: autoFilters.value.per_channel,
+            similarity_threshold: autoFilters.value.similarity_threshold,
+            include_videos: autoFilters.value.include_videos,
+            require_media: autoFilters.value.require_media,
+            min_length: autoFilters.value.min_length,
+            languages: [...autoFilters.value.languages],
+            keywords: (autoFilters.value.keywords || '')
+              .split(',').map(s => s.trim()).filter(Boolean),
+          },
+        })
+        addedChannel.value = { ...res.channel, ...updated }
+      } catch { /* sozlamalar muvaffaqiyatsiz bo'lsa ham kanal yaratildi */ }
+    }
+
     // ro'yxatga ham qo'shamiz (yoki yangilaymiz)
-    const idx = channels.value.findIndex(c => c.id === res.channel.id)
-    if (idx >= 0) channels.value.splice(idx, 1, res.channel)
-    else channels.value.unshift(res.channel)
+    const finalCh = addedChannel.value
+    const idx = channels.value.findIndex(c => c.id === finalCh.id)
+    if (idx >= 0) channels.value.splice(idx, 1, finalCh)
+    else channels.value.unshift(finalCh)
 
     if (res.channel.status === 'connected') {
       addStage.value = 'success'
@@ -681,7 +1161,9 @@ function stopAddPolling() {
 
 // ESC bilan yopish
 function handleKey(e) {
-  if (e.key === 'Escape' && addModalOpen.value) closeAddModal()
+  if (e.key !== 'Escape') return
+  if (addModalOpen.value) closeAddModal()
+  else if (autoModalOpen.value) closeAutoModal()
 }
 
 onMounted(() => {
@@ -995,6 +1477,133 @@ onBeforeUnmount(() => {
   justify-content: center;
   flex-shrink: 0;
 }
+
+/* ── Avto-post panel ───────────────────────── */
+.cc-auto {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  background: color-mix(in oklab, var(--accent) 5%, var(--panel-2));
+  border: 1px solid color-mix(in oklab, var(--accent) 22%, var(--border));
+  border-radius: 12px;
+  animation: ccAutoIn .25s ease;
+}
+@keyframes ccAutoIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cc-auto-head {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed color-mix(in oklab, var(--accent) 28%, transparent);
+}
+.cc-auto-head-icon {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: white;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.cc-auto-head-title {
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.cc-auto-head-sub {
+  font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.4;
+}
+.cc-auto-row {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.cc-chip-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.cc-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 11px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+  white-space: nowrap;
+}
+.cc-chip:hover { border-color: var(--accent); }
+.cc-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.cc-chip-dot {
+  width: 8px; height: 8px; border-radius: 999px; display: inline-block;
+}
+.cc-inline-num {
+  width: 64px;
+  height: 24px;
+  margin: 0 4px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  text-align: center;
+  outline: none;
+}
+.cc-inline-num:focus { border-color: var(--accent); }
+
+.cc-num-input {
+  display: inline-flex; align-items: center;
+  height: 34px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 4px;
+}
+.cc-num-input button {
+  width: 26px; height: 26px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+.cc-num-input button:hover { color: var(--text); background: var(--panel-2); }
+.cc-num-input input {
+  flex: 1; min-width: 0;
+  height: 26px;
+  border: none; outline: none; background: transparent;
+  text-align: center;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.cc-text-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--text);
+  outline: none;
+  font-family: var(--font-mono);
+}
+.cc-text-input:focus { border-color: var(--accent); }
+
+.cc-toggle-row {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 6px 0;
+}
+.cc-toggle-row input { accent-color: var(--accent); width: 14px; height: 14px; }
 
 .cc-modal-error {
   display: flex;

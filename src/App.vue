@@ -21,6 +21,8 @@
         <AppSidebar :workspace="store.workspace"/>
         <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;">
           <AppTopbar/>
+          <AiQuotaBanner v-if="store.workspace === 'client'"/>
+          <StorageQuotaBanner v-if="store.workspace === 'client'"/>
           <main style="flex:1;overflow-y:auto;">
             <RouterView v-slot="{ Component, route: r }">
               <Transition name="page" mode="out-in">
@@ -43,6 +45,8 @@ import { companiesApi } from '@/api/companies.js'
 import { getUserRole, isAdminRole } from '@/utils/authRole.js'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
+import AiQuotaBanner from '@/components/layout/AiQuotaBanner.vue'
+import StorageQuotaBanner from '@/components/layout/StorageQuotaBanner.vue'
 
 const store = useAppStore()
 const authStore = useAuthStore()
