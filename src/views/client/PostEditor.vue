@@ -41,7 +41,6 @@
           </AppButton>
           <AppButton v-if="isEdit && form.platform === 'telegram'" variant="primary" size="md"
             :loading="publishing || activating"
-            :disabled="!form.telegram_channel_id"
             @click="onPublishClick">
             <template #icon><AppIcon name="Send" :size="13"/></template>
             {{ tt('pe.publish') }}
@@ -127,11 +126,11 @@
           <!-- Action ribbon: AI chips + platform + complete -->
           <div class="pe-ribbon">
             <div class="pe-ribbon-group">
-              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="aiShortenContent" title="Telegram uchun qisqartirish">
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite" title="AI bilan qayta yozish — prompt va model tanlash">
                 <span class="pe-chip-ic pe-chip-ic-ai">
-                  <AppIcon :name="aiShortening ? 'Sparkle' : 'Bolt'" :size="11"/>
+                  <AppIcon name="Sparkle" :size="11"/>
                 </span>
-                <span class="pe-chip-text">{{ aiShortening ? 'Qisqartirilmoqda…' : 'AI qisqartirish' }}</span>
+                <span class="pe-chip-text">{{ aiShortening ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
               </button>
               <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
                 <span class="pe-chip-ic pe-chip-ic-ai">
@@ -144,19 +143,6 @@
             <div class="pe-ribbon-spacer"/>
 
             <div class="pe-ribbon-group">
-              <div v-if="form.platform === 'telegram'" class="pe-chip pe-chip-platform" :class="{ 'pe-chip-warn': !form.telegram_channel_id }">
-                <span class="pe-chip-ic pe-chip-ic-tg">
-                  <AppIcon name="Telegram" :size="11"/>
-                </span>
-                <select v-model="form.telegram_channel_id" class="pe-chip-select" :title="tt('pe.tg.channel')">
-                  <option :value="null">— Kanalni tanlang —</option>
-                  <option v-for="ch in connectedTgChannels" :key="ch.id" :value="ch.id">
-                    {{ ch.display_name || ch.username }}
-                  </option>
-                </select>
-                <AppIcon name="ChevronL" :size="10" style="transform: rotate(-90deg); opacity: 0.6; flex-shrink: 0;"/>
-              </div>
-
               <button class="pe-chip pe-chip-complete" :class="{ 'pe-chip-on': activeTr.is_complete }" @click="toggleComplete">
                 <AppIcon :name="activeTr.is_complete ? 'Check' : 'Edit'" :size="11"/>
                 <span class="pe-chip-text">{{ activeTr.is_complete ? 'Tayyor' : 'Qoralama' }}</span>
@@ -201,6 +187,48 @@
 
         <!-- ╔══════ RIGHT (sticky sidebar) ══════╗ -->
         <aside class="pe-sidebar">
+          <!-- ─── Telegram kanal tanlash (eng tepada, doim ko'rinadi) ─── -->
+          <section v-if="form.platform === 'telegram'"
+                   :style="{
+                     padding: '14px',
+                     borderRadius: '10px',
+                     border: '1px solid ' + (!form.telegram_channel_id ? 'rgba(245,158,11,.4)' : 'var(--border-2)'),
+                     background: !form.telegram_channel_id ? 'rgba(245,158,11,.05)' : 'var(--panel)',
+                     display: 'flex', flexDirection: 'column', gap: '8px',
+                   }">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <AppIcon name="Telegram" :size="13" :style="{ color: '#229ED9' }"/>
+              <span style="font-size:11.5px;font-weight:600;color:var(--text);
+                           text-transform:uppercase;letter-spacing:0.05em;">
+                Telegram kanal
+              </span>
+              <span v-if="!form.telegram_channel_id"
+                    style="font-size:10px;color:#f59e0b;font-weight:600;margin-left:auto;
+                           padding:2px 7px;background:rgba(245,158,11,.12);border-radius:999px;">
+                Tanlanmagan
+              </span>
+            </div>
+            <select v-model="form.telegram_channel_id"
+                    :style="{
+                      width: '100%',
+                      padding: '9px 11px',
+                      border: '1px solid ' + (!form.telegram_channel_id ? 'rgba(245,158,11,.5)' : 'var(--border-2)'),
+                      borderRadius: '7px',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }">
+              <option :value="null">— Kanalni tanlang —</option>
+              <option v-for="ch in connectedTgChannels" :key="ch.id" :value="ch.id">
+                {{ ch.display_name || ch.username }}
+              </option>
+            </select>
+            <span v-if="!form.telegram_channel_id" style="font-size:11px;color:#92400e;line-height:1.4;">
+              ⚠ Postni e'lon qilish uchun avval kanal tanlang
+            </span>
+          </section>
+
           <!-- iPhone 16 Telegram preview — switch bilan yoqiladi -->
           <section class="pe-preview-wrap" :class="{ on: previewShown }">
             <div class="pe-preview-head">
@@ -393,6 +421,96 @@
       </div>
     </AppModal>
 
+    <!-- ─── AI rewrite modal — prompt + provider + model ─── -->
+    <AppModal v-model="showAiRewrite"
+              title="AI bilan qayta yozish"
+              subtitle="Promptni, AI provayderini va modelni tanlang"
+              width="560px">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <!-- Prompt -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text);">1. Prompt</span>
+          <div v-if="!aiPromptGroups.length"
+               style="padding:14px;text-align:center;border:1px dashed var(--border-2);border-radius:8px;
+                      display:flex;flex-direction:column;gap:8px;align-items:center;font-size:12.5px;">
+            <span style="color:var(--text);">Hali prompt yo'q. Avval Sozlamalar → AI prompt'da yarating.</span>
+            <button type="button" @click="showAiRewrite = false; $router.push('/client/settings?tab=ai-prompt')"
+                    style="padding:7px 14px;border-radius:6px;background:var(--accent);color:#fff;
+                           border:none;cursor:pointer;font-size:12px;font-weight:500;">
+              AI prompt →
+            </button>
+          </div>
+          <select v-else v-model="aiRewriteForm.groupId" :disabled="aiShortening"
+                  style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
+                         background:var(--bg);color:var(--text);font-size:13px;">
+            <option value="" disabled>Promptni tanlang…</option>
+            <option v-for="g in aiPromptGroups" :key="g.id" :value="g.id">
+              {{ g.name }} · {{ g.prompts.length }} bo'lim{{ anyApplyBaseInGroup(g) ? ' · BASE' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Provider -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text);">2. AI provayder</span>
+          <div style="display:flex;gap:8px;">
+            <label v-for="p in aiProviders" :key="p.id"
+                   :style="{
+                     flex: '1', display: 'flex', alignItems: 'center', gap: '8px',
+                     padding: '10px 12px', cursor: 'pointer',
+                     border: '1px solid ' + (aiRewriteForm.provider === p.id ? 'var(--accent)' : 'var(--border-2)'),
+                     borderRadius: '7px',
+                     background: aiRewriteForm.provider === p.id ? 'rgba(99,102,241,.06)' : 'var(--bg)',
+                   }">
+              <input v-model="aiRewriteForm.provider" type="radio" :value="p.id" :disabled="aiShortening"
+                     style="margin:0;cursor:pointer;"/>
+              <div style="display:flex;flex-direction:column;gap:1px;">
+                <span style="font-size:12.5px;font-weight:600;color:var(--text);">{{ p.label }}</span>
+                <span style="font-size:10.5px;color:var(--muted);">{{ p.note }}</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Model -->
+        <label style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text);">3. Model</span>
+          <select v-model="aiRewriteForm.model" :disabled="aiShortening"
+                  style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
+                         background:var(--bg);color:var(--text);font-size:13px;
+                         font-family:'JetBrains Mono',monospace;">
+            <option v-for="m in aiAvailableModels" :key="m.id" :value="m.id">
+              {{ m.label }} {{ m.note ? '— ' + m.note : '' }}
+            </option>
+          </select>
+        </label>
+
+        <div v-if="aiError" style="padding:10px 12px;border-radius:7px;background:rgba(239,68,68,.08);
+                     border:1px solid rgba(239,68,68,.25);color:#ef4444;font-size:12.5px;">
+          {{ aiError }}
+        </div>
+      </div>
+
+      <template #footer>
+        <button type="button" @click="showAiRewrite = false" :disabled="aiShortening"
+                style="padding:8px 14px;border-radius:6px;background:transparent;color:var(--muted);
+                       border:1px solid var(--border-2);cursor:pointer;font-size:12.5px;">
+          Bekor qilish
+        </button>
+        <button type="button" @click="runAiRewrite"
+                :disabled="aiShortening || !aiRewriteForm.groupId"
+                :style="{
+                  padding: '8px 16px', borderRadius: '6px',
+                  background: (aiShortening || !aiRewriteForm.groupId) ? 'var(--bg-2,rgba(0,0,0,.05))' : 'var(--accent)',
+                  color: (aiShortening || !aiRewriteForm.groupId) ? 'var(--muted)' : '#fff',
+                  border: 'none', cursor: (aiShortening || !aiRewriteForm.groupId) ? 'default' : 'pointer',
+                  fontSize: '12.5px', fontWeight: 600,
+                }">
+          {{ aiShortening ? 'Yozilmoqda…' : '✨ Qayta yozish' }}
+        </button>
+      </template>
+    </AppModal>
+
     <!-- ─── Video yuklab olinmoqda — sahifani yopmang ─── -->
     <transition name="pe-vp-fade">
       <div v-if="post?.video_processing" class="pe-vp-overlay">
@@ -466,6 +584,47 @@ const aiShortening = ref(false)
 const aiTagging = ref(false)
 const aiError = ref('')
 const lastSavedAt = ref(null)
+
+// AI rewrite modal — oxirgi tanlov localStorage'da saqlanadi
+const AI_REWRITE_LS_KEY = 'muxbir.ai-rewrite.preferences'
+const showAiRewrite = ref(false)
+const aiPromptGroups = ref([])
+const aiSavedPrefs = (() => {
+  try { return JSON.parse(localStorage.getItem(AI_REWRITE_LS_KEY) || '{}') }
+  catch { return {} }
+})()
+const aiRewriteForm = reactive({
+  groupId:  aiSavedPrefs.groupId  || '',
+  provider: aiSavedPrefs.provider || 'openai',
+  model:    aiSavedPrefs.model    || 'gpt-4o-mini',
+})
+const aiProviders = [
+  { id: 'openai', label: 'OpenAI', note: 'GPT-4o, mini' },
+  { id: 'gemini', label: 'Google Gemini', note: '2.5 Pro/Flash' },
+]
+const aiModelsByProvider = {
+  openai: [
+    { id: 'gpt-4o-mini',   label: 'gpt-4o-mini',   note: 'tezkor (default)' },
+    { id: 'gpt-4o',        label: 'gpt-4o',        note: 'eng kuchli' },
+    { id: 'gpt-4-turbo',   label: 'gpt-4-turbo',   note: 'oldingi avlod' },
+    { id: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo', note: 'eng arzon' },
+  ],
+  gemini: [
+    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'default' },
+    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'eng kuchli' },
+    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon' },
+    { id: 'gemini-2.0-flash',      label: 'gemini-2.0-flash',      note: 'barqaror' },
+    { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'eng yangi Flash' },
+    { id: 'gemini-pro-latest',     label: 'gemini-pro-latest',     note: 'eng yangi Pro' },
+  ],
+}
+const aiAvailableModels = computed(() => aiModelsByProvider[aiRewriteForm.provider] || [])
+watch(() => aiRewriteForm.provider, (p) => {
+  const list = aiModelsByProvider[p] || []
+  if (list.length && !list.some(m => m.id === aiRewriteForm.model)) {
+    aiRewriteForm.model = list[0].id
+  }
+})
 
 const company = ref(null)
 const allChannels = ref([])
@@ -1029,7 +1188,8 @@ async function onDelete() {
 async function onPublishClick() {
   if (!isEdit.value || !post.value) return
   if (!form.telegram_channel_id) {
-    formError.value = tt('pe.tg.noConnected')
+    formError.value = 'Telegram kanal tanlanmagan — o\'ng tomondagi panel orqali kanalni tanlang'
+    alert('⚠ Telegram kanal tanlanmagan!\n\nO\'ng tomondagi panel orqali kanalni tanlang va qaytadan urinib ko\'ring.')
     return
   }
   if (post.value.status === 'draft') {
@@ -1121,6 +1281,88 @@ async function aiShortenContent() {
   } finally {
     aiShortening.value = false
   }
+}
+
+// AI rewrite modal'ni ochish
+async function openAiRewrite() {
+  aiError.value = ''
+  if (!await ensurePostSaved()) {
+    aiError.value = formError.value || 'Avval postni saqlash kerak'
+    return
+  }
+
+  // localStorage'dan oxirgi tanlovni qayta o'qiymiz (ko'p tab/sessiyalar
+  // o'rtasida ham ishonchli sinxronizatsiya uchun).
+  try {
+    const saved = JSON.parse(localStorage.getItem(AI_REWRITE_LS_KEY) || '{}')
+    if (saved.provider && aiModelsByProvider[saved.provider]) {
+      aiRewriteForm.provider = saved.provider
+    }
+    if (saved.model && (aiModelsByProvider[aiRewriteForm.provider] || [])
+        .some(m => m.id === saved.model)) {
+      aiRewriteForm.model = saved.model
+    }
+    if (saved.groupId) {
+      aiRewriteForm.groupId = saved.groupId
+    }
+  } catch { /* ignore */ }
+
+  // Promptlarni yuklab olamiz (har gal modal ochilganda — eng yangi)
+  try {
+    const r = await companiesApi.getAiPromptGroups(company.value.id)
+    aiPromptGroups.value = r.groups || []
+    // Saqlangan groupId hali ham mavjudmi tekshiramiz — yo'q bo'lsa birinchi
+    // mavjud promptga tushiramiz (lekin localStorage'ni o'zgartirmaymiz —
+    // foydalanuvchi qaytadan promptni yaratsa saqlangan tanlov ishlaydi).
+    if (aiRewriteForm.groupId && !aiPromptGroups.value.some(g => g.id === aiRewriteForm.groupId)) {
+      aiRewriteForm.groupId = aiPromptGroups.value[0]?.id || ''
+    } else if (!aiRewriteForm.groupId && aiPromptGroups.value.length) {
+      aiRewriteForm.groupId = aiPromptGroups.value[0].id
+    }
+  } catch (e) {
+    aiError.value = e?.response?.data?.message ?? e.message
+  }
+  showAiRewrite.value = true
+}
+
+// Foydalanuvchining tanlovlarini saqlash (har o'zgarishda)
+watch(
+  () => ({ groupId: aiRewriteForm.groupId, provider: aiRewriteForm.provider, model: aiRewriteForm.model }),
+  (v) => {
+    try { localStorage.setItem(AI_REWRITE_LS_KEY, JSON.stringify(v)) } catch {}
+  },
+  { deep: true },
+)
+
+async function runAiRewrite() {
+  if (!aiRewriteForm.groupId) {
+    aiError.value = 'Promptni tanlang'
+    return
+  }
+  aiError.value = ''
+  aiShortening.value = true
+  try {
+    const res = await postsApi.aiRewrite(company.value.id, postId.value, {
+      lang: activeLang.value,
+      prompt_group_id: aiRewriteForm.groupId,
+      provider: aiRewriteForm.provider,
+      model: aiRewriteForm.model,
+    })
+    if (res?.content_json) {
+      activeTr.value.content_json = res.content_json
+    }
+    aiUsageStore.refresh()
+    showAiRewrite.value = false
+  } catch (e) {
+    const msg = e?.response?.data?.message || 'Qayta yozishda xato'
+    aiError.value = Array.isArray(msg) ? msg.join('. ') : msg
+  } finally {
+    aiShortening.value = false
+  }
+}
+
+function anyApplyBaseInGroup(g) {
+  return (g.prompts || []).some((p) => !!p.apply_base)
 }
 
 async function aiGenerateTags() {

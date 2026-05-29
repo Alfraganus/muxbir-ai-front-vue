@@ -25,9 +25,12 @@
           <StorageQuotaBanner v-if="store.workspace === 'client'"/>
           <main style="flex:1;overflow-y:auto;">
             <RouterView v-slot="{ Component, route: r }">
-              <Transition name="page" mode="out-in">
-                <component :is="Component" :key="r.fullPath"/>
+              <!-- Settings sahifasi uchun animatsiya yo'q (mode=out-in
+                   nested unmount muammosi sababli). Boshqa sahifalarda fade. -->
+              <Transition v-if="!isSettings(r.path)" name="page" mode="out-in">
+                <component :is="Component" :key="r.path"/>
               </Transition>
+              <component v-else :is="Component" :key="r.path"/>
             </RouterView>
           </main>
         </div>
@@ -89,6 +92,16 @@ watch(() => authStore.accessToken, async (tok) => {
 const isOnboarding = computed(() =>
   route.path === '/signup' || route.path === '/signin' || route.path === '/auth/magic'
 )
+
+/**
+ * Sozlamalar sahifasida transition'siz navigatsiya qilamiz —
+ * nested komponentlar (Telegram API, AI prompt, Mening manbalarim)
+ * unmount paytida transition'ning `out-in` rejimi bilan to'qnashib,
+ * keyingi sahifa renderini bloklab qo'yardi.
+ */
+function isSettings(p) {
+  return p === '/client/settings'
+}
 
 const langLabel = computed(() => {
   const map = { uz: "O'zbek tiliga o'tilmoqda…", ru: 'Переключаем на русский…', en: 'Switching to English…' }

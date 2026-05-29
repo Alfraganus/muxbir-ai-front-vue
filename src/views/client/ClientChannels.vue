@@ -588,6 +588,22 @@
                     <div class="cc-field-hint">Vergul bilan ajrating — kamida bittasi matnda bo'lsa o'tadi</div>
                   </div>
                 </div>
+
+                <!-- Test rejim -->
+                <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
+                  <label class="cc-toggle-row">
+                    <input type="checkbox" v-model="autoTestShowOriginal"/>
+                    <span>
+                      <b>Test rejim</b> — manba (ORIGINAL) postni ham yuborish
+                    </span>
+                  </label>
+                  <div class="cc-field-hint">
+                    Yoqilsa: har bir AI postdan oldin manba post ham kanalga yuboriladi
+                    (<span style="color:#d97706;">🟡 TEST · ORIGINAL</span> +
+                    <span style="color:#16a34a;">🟢 TEST · AI VERSION</span>) —
+                    AI sifatini qiyoslash uchun. O'chirilsa: faqat tayyor AI versiyasi yuboriladi.
+                  </div>
+                </div>
               </div>
 
               <div v-if="autoSaveError" class="cc-modal-error">
@@ -678,6 +694,7 @@ const LANG_OPTIONS = [
 const categories = ref([])
 const autoInterval = ref(60)
 const autoCategoryIds = ref([])         // []
+const autoTestShowOriginal = ref(false) // test rejim toggle
 const autoFilters = ref({
   time_range: '7d',
   per_channel: 3,
@@ -940,6 +957,7 @@ function openAutoSettings(channel, opts = {}) {
   // Kanal sozlamalari bilan oldindan to'ldiramiz
   autoInterval.value = channel.auto_interval_minutes || 60
   autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
+  autoTestShowOriginal.value = !!channel.test_show_original
   const f = channel.auto_filters || {}
   autoFilters.value = {
     time_range: f.time_range || '7d',
@@ -990,6 +1008,7 @@ async function saveAutoSettings() {
         keywords: (autoFilters.value.keywords || '')
           .split(',').map(s => s.trim()).filter(Boolean),
       },
+      test_show_original: autoTestShowOriginal.value,
     })
 
     const idx = channels.value.findIndex(x => x.id === updated.id)

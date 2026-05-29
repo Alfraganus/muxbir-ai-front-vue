@@ -5,4 +5,74 @@ export const companiesApi = {
   getMy: () => http.get('/companies/my').then(r => r.data),
   getOne: (id) => http.get(`/companies/${id}`).then(r => r.data),
   update: (id, data) => http.patch(`/companies/${id}`, data).then(r => r.data),
+
+  // Kompaniya darajasidagi AI prompt (qayta yozish uslubi va misol)
+  getAiPrompt: (id) =>
+    http.get(`/companies/${id}/ai-prompt`).then(r => r.data),
+  setAiPrompt: (id, value) =>
+    http.put(`/companies/${id}/ai-prompt`, { value }).then(r => r.data),
+
+  // Multi-block prompt
+  getAiPromptBlocks: (id) =>
+    http.get(`/companies/${id}/ai-prompt-blocks`).then(r => r.data),
+  setAiPromptBlocks: (id, blocks) =>
+    http.put(`/companies/${id}/ai-prompt-blocks`, { blocks }).then(r => r.data),
+
+  // Nomli prompt to'plamlari (yangi tizim)
+  getAiPromptGroups: (id) =>
+    http.get(`/companies/${id}/ai-prompt-groups`).then(r => r.data),
+  setAiPromptGroups: (id, groups) =>
+    http.put(`/companies/${id}/ai-prompt-groups`, { groups }).then(r => r.data),
+
+  // Telegram API credentials (my.telegram.org)
+  getTelegramApi: (id) =>
+    http.get(`/companies/${id}/telegram-api`).then(r => r.data),
+  setTelegramApi: (id, payload) =>
+    http.put(`/companies/${id}/telegram-api`, payload).then(r => r.data),
+  clearTelegramApi: (id) =>
+    http.delete(`/companies/${id}/telegram-api`).then(r => r.data),
+
+  // Telegram MTProto session (telefon + kod + 2FA)
+  getTelegramSessionStatus: (id) =>
+    http.get(`/companies/${id}/telegram-session/status`).then(r => r.data),
+  sendTelegramCode: (id, phone) =>
+    http.post(`/companies/${id}/telegram-session/send-code`, { phone }).then(r => r.data),
+  signInTelegramCode: (id, code) =>
+    http.post(`/companies/${id}/telegram-session/sign-in`, { code }).then(r => r.data),
+  signInTelegram2FA: (id, password) =>
+    http.post(`/companies/${id}/telegram-session/2fa`, { password }).then(r => r.data),
+  revokeTelegramSession: (id) =>
+    http.delete(`/companies/${id}/telegram-session`).then(r => r.data),
+
+  // Kompaniya o'z manbalari (Telegram kanal username'lari)
+  listOwnedSources: (id) =>
+    http.get(`/companies/${id}/owned-sources`).then(r => r.data),
+  addOwnedSource: (id, username) =>
+    http.post(`/companies/${id}/owned-sources`, { username }).then(r => r.data),
+  updateOwnedSource: (id, sourceId, patch) =>
+    http.patch(`/companies/${id}/owned-sources/${sourceId}`, patch).then(r => r.data),
+  removeOwnedSource: (id, sourceId) =>
+    http.delete(`/companies/${id}/owned-sources/${sourceId}`).then(r => r.data),
+  scanOwnedSource: (id, sourceId) =>
+    http.post(`/companies/${id}/owned-sources/${sourceId}/scan`).then(r => r.data),
+
+  // Havoladan AI maqola yaratish — URL fetch + AI complete uzoq vaqt olishi mumkin
+  createPostFromUrl: (id, payload) =>
+    http.post(`/companies/${id}/posts/from-url`, payload, { timeout: 120000 })
+      .then(r => r.data),
+
+  // AI prompt namunalari (foydalanuvchining .pdf/.docx fayli — eng ustun)
+  getAiPromptAttachment: (id) =>
+    http.get(`/companies/${id}/ai-prompt-attachment`).then(r => r.data),
+  uploadAiPromptAttachment: (id, file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return http
+      .post(`/companies/${id}/ai-prompt-attachment`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then(r => r.data)
+  },
+  removeAiPromptAttachment: (id) =>
+    http.delete(`/companies/${id}/ai-prompt-attachment`).then(r => r.data),
 }

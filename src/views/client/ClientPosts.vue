@@ -5,6 +5,10 @@
         <AppButton variant="secondary" size="md" @click="loadAll" :loading="loading">
           {{ tt('cc.refresh') }}
         </AppButton>
+        <AppButton variant="secondary" size="md" @click="showFromUrl = true">
+          <template #icon><AppIcon name="Globe2" :size="13"/></template>
+          Havoladan maqola
+        </AppButton>
         <AppButton variant="primary" size="md" @click="$router.push('/client/posts/new')">
           <template #icon><AppIcon name="Plus" :size="13"/></template>
           {{ tt('posts.new') }}
@@ -118,6 +122,16 @@
         </tbody>
       </table>
     </AppPanel>
+    <!-- Havoladan maqola modal -->
+    <AppModal v-model="showFromUrl"
+              title="Havoladan maqola yozish"
+              subtitle="URL → AI → tahrir uchun editor"
+              width="600px">
+      <ArticleFromUrlForm
+        @created="onArticleCreated"
+        @goto="(p) => { showFromUrl = false; router.push(p) }"
+      />
+    </AppModal>
   </div>
 </template>
 
@@ -130,12 +144,20 @@ import AppPanel from '@/components/ui/AppPanel.vue'
 import AppTabs from '@/components/ui/AppTabs.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
+import AppModal from '@/components/ui/AppModal.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import ArticleFromUrlForm from '@/components/posts/ArticleFromUrlForm.vue'
 import { useAppStore } from '@/stores/app.js'
 import { companiesApi } from '@/api/companies.js'
 import { postsApi } from '@/api/posts.js'
 
 const router = useRouter()
+const showFromUrl = ref(false)
+
+function onArticleCreated(postId) {
+  showFromUrl.value = false
+  router.push(`/client/posts/${postId}/edit`)
+}
 const store = useAppStore()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }

@@ -22,8 +22,15 @@
           <div v-if="loading" style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;">
             Manbalar yuklanmoqda...
           </div>
-          <div v-else-if="!sources.length" style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;">
-            Hech qanday manba topilmadi. Avval admin source kanallarni qo'shsin.
+          <div v-else-if="!sources.length"
+               style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;
+                      display:flex;flex-direction:column;gap:10px;align-items:center;">
+            <span>Hech qanday manba yo'q. Avval "Mening manbalarim" sahifasida kanal qo'shing.</span>
+            <a href="#/client/owned-sources"
+               style="padding:7px 14px;border-radius:6px;background:var(--accent);color:#fff;
+                      text-decoration:none;font-size:12.5px;font-weight:500;">
+              Manba qo'shish →
+            </a>
           </div>
           <div v-else style="display:flex;flex-direction:column;gap:6px;">
             <button v-for="s in sources" :key="s.id"
@@ -106,23 +113,6 @@
           </div>
         </AppPanel>
 
-        <!-- 6. Min score -->
-        <AppPanel title="5. Minimal AI sifat balli"
-          subtitle="Pastroq ball — ko'proq variantlar; yuqoriroq — sifatliroq">
-          <div style="display:flex;align-items:center;gap:16px;">
-            <input type="range" min="0" max="100" step="5" v-model.number="config.minScore"
-              style="flex:1;accent-color:var(--accent);"/>
-            <div class="ds-score-box">
-              <span class="tabular ds-score-val" :style="{ color: scoreColor(config.minScore) }">{{ config.minScore }}</span>
-              <span class="ds-score-of">/ 100</span>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10.5px;color:var(--muted);">
-            <span>0 — barchasini ko'rsatish</span>
-            <span>50 — o'rta</span>
-            <span>85+ — faqat ajoyib postlar</span>
-          </div>
-        </AppPanel>
       </div>
 
       <!-- RIGHT: sticky summary -->
@@ -152,12 +142,6 @@
               :detail="currentRange?.hint">
               <template #icon><AppIcon name="Calendar" :size="12"/></template>
             </SummaryRow>
-            <SummaryRow label="Min AI bal"
-              :value="`${config.minScore}/100`"
-              :detail="config.minScore >= 85 ? 'Faqat ajoyib postlar' : config.minScore >= 70 ? 'Sifatli postlar' : 'Keng filtr'">
-              <template #icon><AppIcon name="Shield" :size="12"/></template>
-            </SummaryRow>
-
             <div style="height:1px;background:var(--border-2);margin:4px 0;"/>
 
             <AppButton variant="primary" size="lg"

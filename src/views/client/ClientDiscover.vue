@@ -67,19 +67,38 @@
         </button>
       </div>
       <div style="flex:1"/>
-      <div class="cd-min-score">
-        <span style="font-size:11.5px;color:var(--muted);">Min AI bal:</span>
-        <span class="tabular" :style="{ fontSize:'11.5px',fontWeight:600,width:'24px',color: scoreColor(minScore) }">{{ minScore }}</span>
-        <input type="range" min="0" max="100" step="5" v-model.number="minScore" class="cd-range"/>
-      </div>
       <div class="cd-search-wrap">
         <AppIcon name="Search" :size="12" :style="{ color:'var(--muted)' }"/>
         <input v-model="query" placeholder="Sarlavha, hashtag..." class="cd-search"/>
       </div>
     </div>
 
+    <!-- Telegram session yo'q xato -->
+    <div v-if="scanError && scanError.actionPath"
+         style="padding:24px;border-radius:10px;border:1px solid rgba(239,68,68,.3);
+                background:rgba(239,68,68,.06);display:flex;flex-direction:column;gap:12px;
+                align-items:flex-start;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;">🔒</span>
+        <strong style="font-size:14px;color:#ef4444;">Skanerlash uchun Telegram ulanishi kerak</strong>
+      </div>
+      <p style="margin:0;font-size:13px;color:var(--text);line-height:1.55;">{{ scanError.message }}</p>
+      <button @click="$router.push(scanError.actionPath)"
+              style="padding:9px 18px;border-radius:6px;background:var(--accent);color:#fff;
+                     border:none;cursor:pointer;font-size:13px;font-weight:500;">
+        {{ scanError.actionLabel }} →
+      </button>
+    </div>
+
+    <!-- Boshqa xato -->
+    <div v-else-if="scanError"
+         style="padding:16px;border-radius:8px;border:1px solid rgba(239,68,68,.3);
+                background:rgba(239,68,68,.06);color:#ef4444;font-size:13px;">
+      {{ scanError.message }}
+    </div>
+
     <!-- Empty state -->
-    <div v-if="totalPostsCount === 0" class="cd-empty">
+    <div v-else-if="totalPostsCount === 0" class="cd-empty">
       <span style="font-size:14px;color:var(--text);font-weight:500;">Hech qanday post topilmadi</span>
       <span style="font-size:12.5px;color:var(--muted);margin-top:4px;">
         Tanlangan kanal va davr uchun yangi postlar yo'q yoki barchasi DB'da mavjud bo'lib chiqdi.
@@ -204,7 +223,6 @@ const config = reactive({
   perChannel: 5,
   timeRange: '24h',
   categories: ['all'],
-  minScore: 60,
   customSource: '',
   includeVideos: false,
 })
@@ -233,22 +251,27 @@ function pickName(name_i18n, fallback) {
 async function loadSources() {
   loadingSources.value = true
   try {
-    const [src, comps] = await Promise.all([
-      discoverApi.listSources().catch(() => []),
-      companiesApi.getMy().catch(() => []),
-    ])
+    const comps = await companiesApi.getMy().catch(() => [])
     const list = Array.isArray(comps) ? comps : [comps].filter(Boolean)
     company.value = list[0] || null
-    availableSources.value = (src || []).map((s, i) => ({
-      id: s.id,
-      name: pickName(s.name_i18n, s.username),
-      username: s.username,
-      handle: '@' + s.username,
-      color: colorFor(i),
-      category: s.category?.name_i18n ? pickName(s.category.name_i18n, '') : '',
-      subs: 0,
-    }))
-    // Default selection: barcha sources
+    if (!company.value) {
+      availableSources.value = []
+      return
+    }
+    // Faqat kompaniyaning O'Z qo'shgan manbalari (admin defaults aralashmaydi).
+    const owned = await companiesApi.listOwnedSources(company.value.id).catch(() => [])
+    availableSources.value = (owned || [])
+      .filter(s => s.source_channel_id)
+      .map((s, i) => ({
+        id: s.source_channel_id,
+        name: s.title || s.username_normalized,
+        username: s.username_normalized,
+        handle: '@' + s.username_normalized,
+        color: colorFor(i),
+        category: '',
+        subs: s.subscriber_count || 0,
+      }))
+    // Default selection: barcha owned sources
     config.sources = availableSources.value.map(s => s.id)
   } finally {
     loadingSources.value = false
@@ -259,6 +282,7 @@ onMounted(loadSources)
 // ── Discovery ────────────────────────────────────────────
 const discovered = ref({ channels: [], total: 0 })
 const liveCounts = ref({}) // { source_id: count } - skanerlash davomida real-time
+const scanError = ref(null) // { message, actionLabel, actionPath }
 let scanAnimationDone = false
 let scanRequestDone = false
 
@@ -286,8 +310,19 @@ async function startScan() {
   try {
     const result = await discoverApi.run(company.value.id, payload)
     discovered.value = result || { channels: [], total: 0 }
+    scanError.value = null
   } catch (err) {
     discovered.value = { channels: [], total: 0 }
+    const body = err?.response?.data
+    if (body?.code === 'NO_TELEGRAM_SESSION' || err?.response?.status === 403) {
+      scanError.value = {
+        message: body?.message || 'Telegram ulanish yo\'q. Avval API + session ulang.',
+        actionLabel: body?.action?.label || 'Telegram ulanish',
+        actionPath: body?.action?.path || '/client/telegram-api',
+      }
+    } else {
+      scanError.value = { message: body?.message || err?.message || 'Xato yuz berdi', actionLabel: null, actionPath: null }
+    }
     console.error('discover failed', err)
   }
   scanRequestDone = true
@@ -356,7 +391,6 @@ const discoveredSources = computed(() => {
 
 // ── Results filtering ───────────────────────────────────
 const filter = ref('all')
-const minScore = ref(60)
 const query = ref('')
 const selected = ref({})
 const previewing = ref(null)
@@ -373,26 +407,22 @@ function matchesQuery(p) {
   return false
 }
 /**
- * Soft minScore filter — agar minScore'dan hech qaysi post o'tmasa,
- * baribir backend qaytargan top'ni (perChannel) ko'rsatamiz. Aks holda
- * faqat sifatli postlar ko'rinadi.
+ * Backend allaqachon `per_channel` soni bo'yicha score desc tartibida
+ * eng yuqori postlarni qaytaradi. Bu yerda faqat qidiruv va kanal filtri.
  */
 function postsForSource(id) {
-  const all = mappedPosts.value
+  return mappedPosts.value
     .filter(p => p.src === id && matchesQuery(p))
     .sort((a, b) => b.ai.total - a.ai.total)
-  const passing = all.filter(p => p.ai.total >= minScore.value)
-  return passing.length > 0 ? passing : all
 }
 function countBySource(id) {
   return mappedPosts.value.filter(p => p.src === id).length
 }
-const filtered = computed(() => {
-  const all = mappedPosts.value
+const filtered = computed(() =>
+  mappedPosts.value
     .filter(p => (filter.value === 'all' || p.src === filter.value) && matchesQuery(p))
-  const passing = all.filter(p => p.ai.total >= minScore.value)
-  return passing.length > 0 ? passing : all
-})
+    .sort((a, b) => b.ai.total - a.ai.total)
+)
 const totalPostsCount = computed(() => mappedPosts.value.length)
 const averageScore = computed(() => {
   if (!mappedPosts.value.length) return 0

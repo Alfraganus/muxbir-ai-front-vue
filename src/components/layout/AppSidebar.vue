@@ -19,13 +19,16 @@
       </template>
       <template v-else-if="workspace === 'client'">
         <NavSection>
-          <NavItem v-for="n in clientNav.slice(0,7)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
+          <NavItem v-for="n in clientMain" :key="n.id" v-bind="n"
+                   :active="isActive(n.path)" @click="navigate(n.path)" />
         </NavSection>
         <NavSection label="Insights">
-          <NavItem v-for="n in clientNav.slice(7,9)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
+          <NavItem v-for="n in clientInsights" :key="n.id" v-bind="n"
+                   :active="isActive(n.path)" @click="navigate(n.path)" />
         </NavSection>
         <NavSection label="Hisob">
-          <NavItem v-for="n in clientNav.slice(9)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
+          <NavItem v-for="n in clientAccount" :key="n.id" v-bind="n"
+                   :active="isActive(n.path)" @click="navigate(n.path)" />
         </NavSection>
       </template>
     </div>
@@ -78,8 +81,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import axios from 'axios'
 import BrandLogo from './BrandLogo.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppProgress from '@/components/ui/AppProgress.vue'
@@ -141,6 +145,7 @@ function refreshAll() {
   storage.refresh()
   ai.refresh()
   postsUsage.refresh()
+  loadChannelsCount()
 }
 
 onMounted(() => {
@@ -164,20 +169,55 @@ const adminNav = computed(() => [
   { id: 'support',   icon: 'Life',     label: t.value('nav.admin.support'),    path: null, count: 7 },
   { id: 'references', icon: 'List',    label: 'Spravochniklar',                path: '/admin/references' },
   { id: 'worker',    icon: 'Server',   label: 'Bot worker',                    path: '/admin/worker-settings' },
+  { id: 'ai-prompt', icon: 'Sparkle',  label: 'AI base prompt',                path: '/admin/ai-prompt' },
   { id: 'system',    icon: 'Server',   label: t.value('nav.admin.system'),     path: null },
 ])
 
-const clientNav = computed(() => [
+// Real kanal soni — backend'dan onMounted'da yuklanadi
+const channelsCount = ref(null)
+
+async function loadChannelsCount() {
+  try {
+    const list = await axios.get('http://localhost:4001/companies/my', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token') || ''}` },
+    }).then(r => r.data).catch(() => [])
+    const arr = Array.isArray(list) ? list : [list].filter(Boolean)
+    const companyId = arr[0]?.id
+    if (!companyId) { channelsCount.value = 0; return }
+    const channels = await axios.get(`http://localhost:4001/companies/${companyId}/channels`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token') || ''}` },
+    }).then(r => r.data).catch(() => [])
+    channelsCount.value = Array.isArray(channels) ? channels.length : 0
+  } catch { channelsCount.value = 0 }
+}
+
+const clientMain = computed(() => [
   { id: 'overview',   icon: 'Home',     label: t.value('nav.client.overview'),  path: '/client/overview' },
-  { id: 'channels',   icon: 'Telegram', label: t.value('nav.client.channels'),  path: '/client/channels', count: 6 },
-  { id: 'posts',      icon: 'Send',     label: t.value('nav.client.posts'),     path: '/client/posts', count: 124 },
+  { id: 'channels',   icon: 'Telegram', label: t.value('nav.client.channels'),  path: '/client/channels', count: channelsCount.value ?? undefined },
+  { id: 'posts',      icon: 'Send',     label: t.value('nav.client.posts'),     path: '/client/posts', count: postsUsage.used || undefined },
   { id: 'discover',   icon: 'Sparkle',  label: 'Post ovlash',                   path: '/client/discover' },
   { id: 'categories', icon: 'Tag',      label: 'Kategoriyalar',                 path: '/client/categories' },
+  { id: 'settings',   icon: 'Settings', label: 'Sozlamalar',                    path: '/client/settings' },
+])
+
+const clientInsights = computed(() => [
   { id: 'schedule',   icon: 'Calendar', label: t.value('nav.client.schedule'),  path: null },
   { id: 'sources',    icon: 'Globe2',   label: t.value('nav.client.sources'),   path: null },
   { id: 'analytics',  icon: 'Chart',    label: t.value('nav.client.analytics'), path: null },
-  { id: 'team',       icon: 'Users',    label: t.value('nav.client.team'),      path: '/client/team', count: 4 },
-  { id: 'billing',    icon: 'Coin',     label: t.value('nav.client.billing'),   path: '/client/billing' },
-  { id: 'settings',   icon: 'Settings', label: t.value('nav.client.settings'),  path: null },
 ])
+
+const clientAccount = computed(() => [
+  { id: 'team',       icon: 'Users',    label: t.value('nav.client.team'),      path: '/client/team' },
+  { id: 'billing',    icon: 'Coin',     label: t.value('nav.client.billing'),   path: '/client/billing' },
+])
+
+// Sozlamalar nav item — tab parametri bilan keladigan barcha sub-route'lar uchun ham faol
+function isActive(path) {
+  if (!path) return false
+  if (path === '/client/settings') {
+    return currentPath.value === '/client/settings'
+      || ['/client/telegram-api', '/client/ai-prompt', '/client/owned-sources'].includes(currentPath.value)
+  }
+  return currentPath.value === path
+}
 </script>

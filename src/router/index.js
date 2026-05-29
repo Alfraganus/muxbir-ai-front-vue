@@ -6,6 +6,7 @@ import AdminTariffBuilder from '@/views/admin/AdminTariffBuilder.vue'
 import AdminUsers from '@/views/admin/AdminUsers.vue'
 import AdminReferences from '@/views/admin/AdminReferences.vue'
 import AdminWorkerSettings from '@/views/admin/AdminWorkerSettings.vue'
+import AdminAiPrompt from '@/views/admin/AdminAiPrompt.vue'
 import ClientOverview from '@/views/client/ClientOverview.vue'
 import ClientChannels from '@/views/client/ClientChannels.vue'
 import ClientPosts from '@/views/client/ClientPosts.vue'
@@ -14,6 +15,10 @@ import ClientBilling from '@/views/client/ClientBilling.vue'
 import ClientTeam from '@/views/client/ClientTeam.vue'
 import ClientCategories from '@/views/client/ClientCategories.vue'
 import ClientDiscover from '@/views/client/ClientDiscover.vue'
+import ClientAiPrompt from '@/views/client/ClientAiPrompt.vue'
+import ClientTelegramApi from '@/views/client/ClientTelegramApi.vue'
+import ClientOwnedSources from '@/views/client/ClientOwnedSources.vue'
+import ClientSettings from '@/views/client/ClientSettings.vue'
 import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
 import MagicAuth from '@/views/MagicAuth.vue'
@@ -31,6 +36,7 @@ const routes = [
   { path: '/admin/users',      component: AdminUsers },
   { path: '/admin/references', component: AdminReferences },
   { path: '/admin/worker-settings', component: AdminWorkerSettings },
+  { path: '/admin/ai-prompt',  component: AdminAiPrompt },
   { path: '/client/overview',  component: ClientOverview },
   { path: '/client/channels',  component: ClientChannels },
   { path: '/client/posts',     component: ClientPosts },
@@ -40,6 +46,10 @@ const routes = [
   { path: '/client/billing',   component: ClientBilling },
   { path: '/client/team',      component: ClientTeam },
   { path: '/client/categories', component: ClientCategories },
+  { path: '/client/ai-prompt',  component: ClientAiPrompt },
+  { path: '/client/telegram-api', component: ClientTelegramApi },
+  { path: '/client/owned-sources', component: ClientOwnedSources },
+  { path: '/client/settings', component: ClientSettings },
   { path: '/signup',           component: Onboarding },
 ]
 

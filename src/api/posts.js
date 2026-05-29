@@ -42,6 +42,11 @@ export const postsApi = {
   aiShorten: (companyId, postId, lang = 'uz') =>
     http.post(`/companies/${companyId}/posts/${postId}/ai/shorten`, { lang }).then(r => r.data),
 
+  /** AI: prompt + provider + model tanlash bilan qayta yozish. payload: {lang, prompt_group_id, provider, model} */
+  aiRewrite: (companyId, postId, payload) =>
+    http.post(`/companies/${companyId}/posts/${postId}/ai/rewrite`, payload, { timeout: 120000 })
+      .then(r => r.data),
+
   /** AI: post mazmunidan tag'lar generatsiya qiladi. apply=true → DB ga ham yozadi. */
   aiTags: (companyId, postId, lang = 'uz', apply = false) =>
     http.post(`/companies/${companyId}/posts/${postId}/ai/tags`, { lang, apply }).then(r => r.data),
