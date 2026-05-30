@@ -51,7 +51,7 @@
               <svg v-if="step > s.id" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.8">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
-              <span v-else style="font-size:11px;font-weight:600">{{ s.id }}</span>
+              <span v-else style="font-size:11px;font-weight:600">{{ i + 1 }}</span>
             </div>
             <span class="oz-step-label">{{ s.label }}</span>
           </div>
@@ -73,7 +73,7 @@
               </div>
               <div>
                 <h1 class="oz-h1">Hisob yarating</h1>
-                <p class="oz-sub">14 kunlik trial — karta talab qilinmaydi</p>
+                <p class="oz-sub">3 kunlik bepul sinash — karta talab qilinmaydi</p>
               </div>
             </div>
 
@@ -113,16 +113,6 @@
                 <ApiError :msg="apiError"/>
                 <AppButton variant="primary" size="lg" :loading="submitting" @click="submitStep1" style="width:100%">
                   Davom etish
-                </AppButton>
-                <div class="oz-or"><span>yoki</span></div>
-                <AppButton variant="secondary" size="lg" style="width:100%">
-                  <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  Google bilan kirish
                 </AppButton>
               </div>
             </AppPanel>
@@ -598,7 +588,7 @@
             <div style="text-align:center;margin-bottom:28px">
               <h1 class="oz-h1" style="margin:0 0 6px">Sizga mos tarifni tanlang</h1>
               <p style="margin:0;color:var(--muted);font-size:13.5px">
-                Barcha tariflarda <strong style="color:var(--text)">1 kun bepul sinab ko'rish</strong> · istalgan vaqtda o'zgartirish mumkin
+                Barcha tariflarda <strong style="color:var(--text)">3 kun bepul sinab ko'rish</strong> · istalgan vaqtda o'zgartirish mumkin
               </p>
               <!-- Billing toggle -->
               <div style="display:inline-flex;margin-top:18px;padding:3px;background:var(--panel);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow-sm)">
@@ -645,7 +635,7 @@
                 </div>
                 <div v-if="!p.free" style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:color-mix(in oklab,var(--success) 10%,transparent);border:1px solid color-mix(in oklab,var(--success) 22%,transparent);border-radius:999px;width:fit-content">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span style="font-size:10px;font-weight:600;color:var(--success)">1 kun bepul sinash</span>
+                  <span style="font-size:10px;font-weight:600;color:var(--success)">3 kun bepul sinash</span>
                 </div>
                 <div style="height:1px;background:var(--border-2)"/>
                 <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px">
@@ -671,9 +661,9 @@
                 </div>
               </div>
               <div style="flex:1;font-size:11.5px;color:var(--muted)">
-                <template v-if="!currentPlan.free">1 kun bepul sinash · sinash tugagandan keyin to'lov olinadi</template>
+                <template v-if="!currentPlan.free">3 kun bepul sinash · sinash tugagandan keyin to'lov olinadi</template>
               </div>
-              <AppButton variant="secondary" size="lg" @click="step=4">
+              <AppButton variant="secondary" size="lg" @click="goToStep(2)">
                 <template #icon><AppIcon name="ChevronL" :size="14"/></template>Orqaga
               </AppButton>
               <AppButton v-if="currentPlan.free" variant="primary" size="lg" :loading="submitting" @click="submitStep5">
@@ -712,7 +702,7 @@
                       <AppIcon name="Bolt" :size="16" :stroke-width="1.8" style="color:var(--success)"/>
                     </div>
                     <div style="flex:1">
-                      <div style="font-size:13px;font-weight:600">1 kun bepul sinash</div>
+                      <div style="font-size:13px;font-weight:600">3 kun bepul sinash</div>
                       <div style="font-size:11px;color:var(--muted);margin-top:1px">Hech qanday to'lov talab qilinmaydi</div>
                     </div>
                     <span :style="{
@@ -749,7 +739,7 @@
                     style="margin-top:6px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:flex-start;gap:8px">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
                     <span style="font-size:11.5px;color:var(--muted);line-height:1.5">
-                      Bugun hech qanday to'lov olinmaydi. 1 kun sinashdan keyin
+                      Bugun hech qanday to'lov olinmaydi. 3 kun sinashdan keyin
                       <strong style="color:var(--text)">{{ fmtSom(finalPrice) }} so'm</strong>
                       to'lov olinadi.
                     </span>
@@ -783,7 +773,7 @@
                 </div>
                 <p style="font-size:11px;color:var(--muted);margin:4px 0 0;line-height:1.5">
                   <template v-if="currentPlan.free">Hech qanday to'lov olinmaydi.</template>
-                  <template v-else>1 kun sinashdan keyin {{ fmtSom(finalPrice) }} so'm yechib olinadi.</template>
+                  <template v-else>3 kun sinashdan keyin {{ fmtSom(finalPrice) }} so'm yechib olinadi.</template>
                 </p>
               </div>
             </AppPanel>
@@ -964,7 +954,9 @@ async function submitStep1() {
       accept_terms: f1.value.accept_terms,
     })
     submitting.value = false
-    const resumeStep = Math.min(Math.max(res?.onboarding?.current_step ?? 2, 2), 6)
+    let resumeStep = Math.min(Math.max(res?.onboarding?.current_step ?? 2, 2), 6)
+    // 3,4 olib tashlangan — bularda qolib ketgan user'larni 5 (Tarif)ga ko'taramiz
+    if (resumeStep === 3 || resumeStep === 4) resumeStep = 5
     await goToStep(resumeStep)
     loadReferences()
     if (resumeStep > 2) await loadOnboardingState()
@@ -1009,7 +1001,8 @@ async function submitStep2() {
     companyId.value = company.id
     await onboardingApi.updateStep(2, { company_id: company.id })
     submitting.value = false
-    await goToStep(3)
+    // Step 3 (Tarmoqlar) va 4 (Manbalar) olib tashlandi — to'g'ridan-to'g'ri tarifga
+    await goToStep(5)
   } catch (err) {
     const msg = err.response?.data?.message
     apiError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Xatolik yuz berdi')
@@ -1375,7 +1368,7 @@ const orderRows = computed(() => {
     { label: 'Tarif', value: p.name },
     { label: 'Davr', value: billingCycle.value === 'monthly' ? 'Oylik' : 'Yillik' },
     { label: 'Asosiy narx', value: fmtSom(p.price) + " so'm/oy" },
-    { label: 'Bepul sinash', value: '1 kun', tone: 'success' },
+    { label: 'Bepul sinash', value: '3 kun', tone: 'success' },
   ]
 })
 async function submitStep6() {
@@ -1389,11 +1382,12 @@ async function submitStep6() {
 }
 
 // ── Steps meta ────────────────────────────────────────────────
+// Step ID'lar saqlanadi (1,2,5,6) — bu submitStepN funksiyalar va backend
+// step tracking bilan mos. Lekin "Tarmoqlar" (3) va "Manbalar" (4) qadamlari
+// olib tashlandi — endi user step 2 dan to'g'ridan-to'g'ri 5 (Tarif)ga o'tadi.
 const steps = [
   { id: 1, label: 'Hisob' },
   { id: 2, label: 'Kompaniya' },
-  { id: 3, label: 'Tarmoqlar' },
-  { id: 4, label: 'Manbalar' },
   { id: 5, label: 'Tarif' },
   { id: 6, label: "To'lov" },
 ]
@@ -1421,7 +1415,8 @@ onMounted(async () => {
     try {
       const s = await onboardingApi.getSession()
       if (s?.completed_at) return
-      const resumeStep = Math.min(Math.max(s?.current_step ?? 2, 2), 6)
+      let resumeStep = Math.min(Math.max(s?.current_step ?? 2, 2), 6)
+      if (resumeStep === 3 || resumeStep === 4) resumeStep = 5
       if (s?.step_data?.step_2?.company_id) companyId.value = s.step_data.step_2.company_id
       await goToStep(resumeStep)
     } catch { /* not started — stay on step 1 */ }

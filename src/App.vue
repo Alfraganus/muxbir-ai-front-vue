@@ -45,7 +45,6 @@ import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { companiesApi } from '@/api/companies.js'
-import { getUserRole, isAdminRole } from '@/utils/authRole.js'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import AiQuotaBanner from '@/components/layout/AiQuotaBanner.vue'
@@ -55,12 +54,9 @@ const store = useAppStore()
 const authStore = useAuthStore()
 const route = useRoute()
 
-// Workspace'ni JWT role'iga qarab avtomatik o'rnatamiz
-function syncWorkspaceFromRole() {
-  const role = getUserRole()
-  if (!role) return
-  store.setWorkspace(isAdminRole(role) ? 'super' : 'client')
-}
+// workspace endi store.workspace ichidagi computed orqali JWT role'dan
+// avtomatik kelib chiqadi — manual sync kerak emas. Lekin login/logout'da
+// computed'ni qayta hisoblash uchun refreshAuthDerivedState chaqiriladi.
 
 async function loadCompanyForClient() {
   if (store.workspace !== 'client') return
@@ -74,18 +70,16 @@ async function loadCompanyForClient() {
 
 onMounted(async () => {
   if (authStore.accessToken && !authStore.user) authStore.fetchMe()
-  syncWorkspaceFromRole()
+  store.refreshAuthDerivedState()
   await loadCompanyForClient()
 })
 
-// Login bo'lganda ham qayta sinxronlash
+// Login/logout — derived workspace'ni refresh qilamiz va eski company'ni tozalaymiz
 watch(() => authStore.accessToken, async (tok) => {
-  if (!tok) {
-    store.setCompany(null)
-    return
-  }
+  store.setCompany(null)
+  store.refreshAuthDerivedState()
+  if (!tok) return
   if (!authStore.user) await authStore.fetchMe()
-  syncWorkspaceFromRole()
   await loadCompanyForClient()
 })
 
