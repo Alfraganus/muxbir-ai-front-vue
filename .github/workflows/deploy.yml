@@ -47,7 +47,7 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
           REMOTE_DIR: ${{ secrets.FRONTEND_REMOTE_DIR }}
         run: |
-          TARGET="${REMOTE_DIR:-/var/www/muxbir-ai-vue/dist}"
+          TARGET="${REMOTE_DIR:-/var/www/muxbir-ai-front-vue/dist}"
           STAGING="${TARGET}.new"
           BACKUP="${TARGET}.old"
 
