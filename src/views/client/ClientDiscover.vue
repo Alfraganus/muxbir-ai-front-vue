@@ -98,11 +98,50 @@
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="totalPostsCount === 0" class="cd-empty">
-      <span style="font-size:14px;color:var(--text);font-weight:500;">Hech qanday post topilmadi</span>
-      <span style="font-size:12.5px;color:var(--muted);margin-top:4px;">
-        Tanlangan kanal va davr uchun yangi postlar yo'q yoki barchasi DB'da mavjud bo'lib chiqdi.
-      </span>
+    <div v-else-if="totalPostsCount === 0" class="cd-empty" style="display:flex;flex-direction:column;align-items:stretch;gap:14px;max-width:640px;margin:0 auto;">
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;">
+        <span style="font-size:14px;color:var(--text);font-weight:500;">Hech qanday post topilmadi</span>
+        <span style="font-size:12.5px;color:var(--muted);">
+          Tanlangan kanal va davr uchun yangi postlar yo'q yoki barchasi DB'da mavjud bo'lib chiqdi.
+        </span>
+      </div>
+
+      <!-- Per-source diagnostic -->
+      <div v-if="selectedSourcesWithStatus.length" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">
+          Tanlangan manbalar holati
+        </div>
+        <div v-for="s in selectedSourcesWithStatus" :key="s.id"
+             style="display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--panel);">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="cd-src-avatar" :style="{ background: s.color, width:'24px', height:'24px', fontSize:'11px' }">{{ (s.name || '?').charAt(0) }}</span>
+            <span style="font-size:13px;font-weight:600;">{{ s.name }}</span>
+            <span class="mono" style="font-size:11px;color:var(--muted);">@{{ s.username }}</span>
+            <div style="flex:1"></div>
+            <button @click="scanFromEmpty(s)" :disabled="scanningOwnedId === s.ownedId"
+                    style="padding:5px 10px;border-radius:5px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-size:11.5px;">
+              {{ scanningOwnedId === s.ownedId ? 'Scan qilinmoqda…' : 'Hoziroq scan qil' }}
+            </button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted);">
+            <span>Obunachilar: <strong style="color:var(--text);">{{ s.subs.toLocaleString('uz-UZ').replace(/,/g, ' ') }}</strong></span>
+            <span>Oxirgi scan: <strong style="color:var(--text);">{{ s.lastScannedAt ? formatRelative(s.lastScannedAt) : 'hali yo\'q' }}</strong></span>
+          </div>
+          <div v-if="s.lastError"
+               style="padding:6px 8px;border-radius:5px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);font-size:11.5px;color:#dc2626;line-height:1.4;">
+            ⚠ {{ s.lastError }}
+          </div>
+          <div v-else-if="s.subs > 0 && !s.lastScannedAt"
+               style="font-size:11.5px;color:var(--muted);font-style:italic;">
+            Bu manba hali scan qilinmagan — yuqoridagi tugmani bosing.
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">
+        Maslahat: agar kanalda postlar bor, lekin scan 0 qaytarsa — kanal Telegram session'ingiz uchun yopiq.
+        <br/>Telegram'da o'sha kanalga obuna bo'ling, keyin qayta scan qiling.
+      </div>
     </div>
 
     <!-- Channel sections -->
@@ -264,12 +303,15 @@ async function loadSources() {
       .filter(s => s.source_channel_id)
       .map((s, i) => ({
         id: s.source_channel_id,
+        ownedId: s.id,
         name: s.title || s.username_normalized,
         username: s.username_normalized,
         handle: '@' + s.username_normalized,
         color: colorFor(i),
         category: '',
         subs: s.subscriber_count || 0,
+        lastError: s.last_error || null,
+        lastScannedAt: s.last_scanned_at || null,
       }))
     // Default selection: barcha owned sources
     config.sources = availableSources.value.map(s => s.id)
@@ -283,8 +325,42 @@ onMounted(loadSources)
 const discovered = ref({ channels: [], total: 0 })
 const liveCounts = ref({}) // { source_id: count } - skanerlash davomida real-time
 const scanError = ref(null) // { message, actionLabel, actionPath }
+const scanningOwnedId = ref(null)
 let scanAnimationDone = false
 let scanRequestDone = false
+
+// Empty state'da ko'rsatish uchun: hozir tanlangan manbalar + ularning oxirgi
+// scan holati (last_error, last_scanned_at, subscriber_count).
+const selectedSourcesWithStatus = computed(() => {
+  const ids = new Set(config.sources || [])
+  return availableSources.value.filter(s => ids.has(s.id))
+})
+
+function formatRelative(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const diff = (Date.now() - d.getTime()) / 1000
+  if (diff < 60) return 'hozirgina'
+  if (diff < 3600) return `${Math.floor(diff / 60)} daqiqa oldin`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} soat oldin`
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} kun oldin`
+  return d.toLocaleDateString('uz-UZ', { dateStyle: 'medium' })
+}
+
+async function scanFromEmpty(s) {
+  if (!company.value || !s?.ownedId) return
+  scanningOwnedId.value = s.ownedId
+  try {
+    await companiesApi.scanOwnedSource(company.value.id, s.ownedId)
+    // Bir necha soniya kutib, sources'ni qayta yuklaymiz (last_scanned_at yangilanadi)
+    await new Promise(r => setTimeout(r, 3000))
+    await loadSources()
+  } catch (e) {
+    alert(e?.response?.data?.message ?? e.message)
+  } finally {
+    scanningOwnedId.value = null
+  }
+}
 
 async function startScan() {
   if (!company.value || config.sources.length === 0) return
