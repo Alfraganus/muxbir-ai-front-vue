@@ -1,18 +1,32 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { createTranslator } from '@/i18n/index.js'
+import { getUserRole, isAdminRole } from '@/utils/authRole.js'
 
 export const useAppStore = defineStore('app', () => {
   const lang = ref('uz')
   const darkMode = ref(false)
   const accentColor = ref('#2F6FED')
-  const workspace = ref('client')
   const currentPage = ref('overview')
   const companyName = ref('')
   const companyId = ref(null)
   const langSwitching = ref(false)
+  // workspace'ni manual saqlamaymiz — token o'zgargani sayin reactive
+  // o'zgarish kerak. Manual override uchun (kelajakda super admin client
+  // workspace'iga "impersonate" qilib o'tishi mumkin) opt-in field.
+  const _workspaceOverride = ref(null)
+  const _authTick = ref(0) // login/logout'da increment qilinadi, computed refresh uchun
 
   const t = computed(() => createTranslator(lang.value))
+
+  // workspace endi JWT role'dan derive bo'ladi — har render'da JWT
+  // o'qiladi, eski sessiyadan "carry-over" bo'lmaydi.
+  const workspace = computed(() => {
+    if (_workspaceOverride.value) return _workspaceOverride.value
+    // eslint-disable-next-line no-unused-vars
+    const _ = _authTick.value // reactivity dependency
+    return isAdminRole(getUserRole()) ? 'super' : 'client'
+  })
 
   function setLang(l) {
     if (lang.value === l) return
@@ -30,8 +44,15 @@ export const useAppStore = defineStore('app', () => {
     document.documentElement.style.setProperty('--accent', color)
   }
   function setWorkspace(ws) {
-    workspace.value = ws
+    // Backward-compat: override sifatida saqlanadi. App.vue ham syncWorkspaceFromRole
+    // chaqirishda davom etadi, lekin endi computed JWT'dan kelganda override yo'q bo'lsa.
+    _workspaceOverride.value = ws
     currentPage.value = 'overview'
+  }
+  // Login/logout'da chaqiriladi — workspace computed'ini refresh qiladi.
+  function refreshAuthDerivedState() {
+    _workspaceOverride.value = null
+    _authTick.value++
   }
   function setPage(page) { currentPage.value = page }
   function setCompany(c) {
@@ -40,5 +61,5 @@ export const useAppStore = defineStore('app', () => {
     companyId.value = c.id || null
   }
 
-  return { lang, langSwitching, darkMode, accentColor, workspace, companyName, companyId, currentPage, t, setLang, setDarkMode, setAccent, setWorkspace, setPage, setCompany }
+  return { lang, langSwitching, darkMode, accentColor, workspace, companyName, companyId, currentPage, t, setLang, setDarkMode, setAccent, setWorkspace, setPage, setCompany, refreshAuthDerivedState }
 })
