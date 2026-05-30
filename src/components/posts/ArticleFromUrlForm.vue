@@ -138,14 +138,30 @@ const modelsByProvider = {
   ],
 }
 
+// localStorage'da oxirgi tanlov saqlanadi (URL tashqarida — chunki har gal yangi)
+const LS_KEY = 'muxbir.article-from-url.preferences'
+const savedPrefs = (() => {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') }
+  catch { return {} }
+})()
+
 const form = reactive({
   url: '',
-  groupId: '',
-  provider: 'openai',
-  model: 'gpt-4o-mini',
+  groupId:  savedPrefs.groupId  || '',
+  provider: savedPrefs.provider || 'openai',
+  model:    savedPrefs.model    || 'gpt-4o-mini',
 })
 
 const availableModels = computed(() => modelsByProvider[form.provider] || [])
+
+// Tanlov o'zgarganda — localStorage'ga avtomatik yozish (url'siz)
+watch(
+  () => ({ groupId: form.groupId, provider: form.provider, model: form.model }),
+  (v) => {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(v)) } catch {}
+  },
+  { deep: true },
+)
 
 watch(() => form.provider, (p) => {
   const list = modelsByProvider[p] || []
@@ -166,7 +182,12 @@ onMounted(async () => {
     if (!company.value) return
     const r = await companiesApi.getAiPromptGroups(company.value.id)
     groups.value = r.groups || []
-    if (groups.value.length === 1) form.groupId = groups.value[0].id
+    // Saqlangan groupId DB'da mavjudmi tekshirish, yo'q bo'lsa birinchisini tanlash
+    if (form.groupId && !groups.value.some(g => g.id === form.groupId)) {
+      form.groupId = groups.value[0]?.id || ''
+    } else if (!form.groupId && groups.value.length) {
+      form.groupId = groups.value[0].id
+    }
   } catch (e) {
     error.value = e?.response?.data?.message ?? e.message
   } finally {

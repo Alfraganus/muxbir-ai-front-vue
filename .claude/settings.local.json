@@ -67,7 +67,11 @@
       "Bash(Get-Content .env)",
       "Bash(Select-String \"DB_|REDIS_\")",
       "Bash(Select-Object -First 10)",
-      "PowerShell(Get-Content \"E:/work projects/personal projects/backend-ai-muxbir/.env\" | Select-String -Pattern \"^\\(DB_|REDIS_|TELEGRAM_\\)\" | Where-Object { $_ -notmatch \"SESSION|HASH|PASSWORD\" } | Select-Object -First 15)"
+      "PowerShell(Get-Content \"E:/work projects/personal projects/backend-ai-muxbir/.env\" | Select-String -Pattern \"^\\(DB_|REDIS_|TELEGRAM_\\)\" | Where-Object { $_ -notmatch \"SESSION|HASH|PASSWORD\" } | Select-Object -First 15)",
+      "Bash(where pg_dump)",
+      "Bash(pg_dump --version)",
+      "PowerShell($dumpFile = \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\\\\muxbir_db_dump.sql\"; $env:PGPASSWORD = \"postgres\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\pg_dump.exe\" -h localhost -p 5432 -U postgres -d muxbir_db -F p --no-owner --no-privileges --clean --if-exists -f $dumpFile; if \\($LASTEXITCODE -eq 0\\) { $size = \\(Get-Item $dumpFile\\).Length; Write-Output \"OK: $dumpFile \\($\\([math]::Round\\($size/1KB,1\\)\\) KB\\)\" } else { Write-Output \"FAILED exit=$LASTEXITCODE\" })",
+      "Bash(mkdir -p \"E:/work projects/personal projects/backend-ai-muxbir/.github/workflows\")"
     ]
   }
 }

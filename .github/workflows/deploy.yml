@@ -1,0 +1,65 @@
+name: Deploy frontend
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        run: npm run build
+
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H -p ${{ secrets.SSH_PORT || 22 }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload dist to server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
+          REMOTE_DIR: ${{ secrets.FRONTEND_REMOTE_DIR }}
+        run: |
+          TARGET="${REMOTE_DIR:-/var/www/muxbir-ai-vue/dist}"
+          STAGING="${TARGET}.new"
+          BACKUP="${TARGET}.old"
+
+          echo "→ Uploading dist/ to $STAGING"
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "rm -rf '$STAGING' && mkdir -p '$STAGING'"
+          rsync -az -e "ssh -p $SSH_PORT" --delete ./dist/ "$SSH_USER@$SSH_HOST:$STAGING/"
+
+          echo "→ Atomic swap"
+          ssh -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash -s <<REMOTE
+          set -euo pipefail
+          rm -rf "$BACKUP"
+          if [ -d "$TARGET" ]; then mv "$TARGET" "$BACKUP"; fi
+          mv "$STAGING" "$TARGET"
+          echo "Frontend deployed: \$(date)"
+          REMOTE

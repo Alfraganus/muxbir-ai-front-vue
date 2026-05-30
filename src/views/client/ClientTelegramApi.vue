@@ -226,7 +226,7 @@
           <h3 style="margin:0;font-size:15px;">Telegram'dan kelgan kodni kiriting</h3>
           <p style="margin:0;font-size:12.5px;color:var(--text);line-height:1.6;">
             <strong>{{ maskPhoneFront(form.phone) }}</strong> raqamiga kod yuborildi.
-            Telegram ilovangizni oching va kelgan 5 raqamli kodni kiriting.
+            <span v-if="deliveryHint">{{ deliveryHint }}</span>
           </p>
           <label style="display:flex;flex-direction:column;gap:5px;">
             <span style="font-size:12px;font-weight:600;">Tasdiqlash kodi</span>
@@ -236,11 +236,18 @@
                           background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;
                           font-size:20px;letter-spacing:6px;text-align:center;"/>
           </label>
-          <button type="button" @click="resendCode" :disabled="saving"
-                  style="align-self:flex-start;background:none;border:none;color:var(--accent);
-                         font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;">
-            Boshqa raqamga qayta yuborish
-          </button>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+            <button type="button" @click="resendCode" :disabled="saving"
+                    style="background:none;border:none;color:var(--accent);
+                           font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;">
+              Kodni qayta yuborish
+            </button>
+            <button type="button" @click="resendCodeSms" :disabled="saving"
+                    style="background:none;border:none;color:var(--accent);
+                           font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;">
+              SMS bilan yuborish
+            </button>
+          </div>
         </div>
 
         <!-- Step 5: 2FA (conditional) -->
@@ -337,6 +344,15 @@ const saving = ref(false)
 const error = ref(null)
 const company = ref(null)
 const needs2FA = ref(false)
+const delivery = ref(null)
+const deliveryHint = computed(() => {
+  const d = (delivery.value || '').toLowerCase()
+  if (d.includes('app')) return 'Kod Telegram ilovangizdagi "Telegram" rasmiy chatiga yuborildi (mobil yoki desktop).'
+  if (d.includes('sms')) return 'Kod SMS orqali yuborildi.'
+  if (d.includes('call')) return 'Telefonga qisqa qo\'ng\'iroq keladi — raqamning oxirgi 5 ta raqami kod bo\'ladi.'
+  if (d.includes('missedcall')) return 'Telefonga "missed call" keladi — qo\'ng\'iroq raqamining oxirgi 5 ta raqami kod.'
+  return ''
+})
 
 const state = reactive({
   is_saved: false,
@@ -471,7 +487,8 @@ async function saveCredsAndSendCode() {
     })
     await loadState()
     // Shu zahoti kod yuboramiz
-    await companiesApi.sendTelegramCode(company.value.id, phone)
+    const r = await companiesApi.sendTelegramCode(company.value.id, phone)
+    delivery.value = r?.delivery || null
     form.phone = phone
     step.value = 4
   } catch (e) {
@@ -538,7 +555,23 @@ async function resendCode() {
   error.value = null
   saving.value = true
   try {
-    await companiesApi.sendTelegramCode(company.value.id, form.phone)
+    const r = await companiesApi.sendTelegramCode(company.value.id, form.phone)
+    delivery.value = r?.delivery || null
+    form.code = ''
+  } catch (e) {
+    error.value = e?.response?.data?.message ?? e.message
+  } finally {
+    saving.value = false
+  }
+}
+
+async function resendCodeSms() {
+  if (!company.value) return
+  error.value = null
+  saving.value = true
+  try {
+    const r = await companiesApi.resendTelegramCodeSms(company.value.id)
+    delivery.value = r?.delivery || null
     form.code = ''
   } catch (e) {
     error.value = e?.response?.data?.message ?? e.message
