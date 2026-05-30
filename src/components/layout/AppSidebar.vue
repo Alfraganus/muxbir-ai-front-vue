@@ -33,6 +33,24 @@
       </template>
     </div>
 
+    <!-- Logout for admin -->
+    <div v-if="workspace === 'super'" style="padding:0 12px 12px;border-top:1px solid var(--border-2);padding-top:12px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);">
+        <AppAvatar :name="adminName" :size="28" />
+        <div style="display:flex;flex-direction:column;min-width:0;flex:1;">
+          <span style="font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ adminName }}</span>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ adminEmail }}</span>
+        </div>
+      </div>
+      <button @click="onAdminLogout"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:#ef4444;cursor:pointer;font-size:12.5px;font-weight:500;transition:background 0.15s;"
+              onmouseover="this.style.background='rgba(239,68,68,0.08)'"
+              onmouseout="this.style.background='transparent'">
+        <AppIcon name="Close" :size="13" />
+        Chiqish
+      </button>
+    </div>
+
     <!-- Usage card for client -->
     <div v-if="workspace === 'client'" style="padding:0 12px 12px;">
       <div style="padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;flex-direction:column;gap:10px;">
@@ -87,6 +105,9 @@ import axios from 'axios'
 import BrandLogo from './BrandLogo.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppProgress from '@/components/ui/AppProgress.vue'
+import AppAvatar from '@/components/ui/AppAvatar.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
+import { useAuthStore } from '@/stores/auth.js'
 import WorkspaceSwitcher from './WorkspaceSwitcher.vue'
 import NavItem from './NavItem.vue'
 import NavSection from './NavSection.vue'
@@ -100,10 +121,22 @@ const props = defineProps({ workspace: String })
 defineEmits(['workspace-change'])
 
 const store = useAppStore()
+const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const t = computed(() => store.t)
 const currentPath = computed(() => route.path)
+
+const adminName = computed(() => {
+  const u = authStore.user
+  return u?.full_name || u?.fullName || u?.name || u?.email || 'Admin'
+})
+const adminEmail = computed(() => authStore.user?.email || '')
+
+async function onAdminLogout() {
+  try { await authStore.logout() } catch {}
+  router.push('/signin')
+}
 
 function navigate(path) {
   if (path) router.push(path)
