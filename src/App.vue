@@ -10,7 +10,7 @@
       </div>
     </Transition>
 
-    <!-- Onboarding: full-screen, no shell -->
+    <!-- Onboarding: full-screen, no shelll -->
     <template v-if="isOnboarding">
       <RouterView/>
     </template>
