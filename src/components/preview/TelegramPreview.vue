@@ -97,6 +97,7 @@ const props = defineProps({
   coverUrl: { type: String, default: '' },
   gallery: { type: Array, default: () => [] },
   tags: { type: Array, default: () => [] },
+  signature: { type: String, default: '' },
 })
 
 function formatCount(n) {
@@ -120,12 +121,16 @@ const albumClass = computed(() => {
 const hasMedia = computed(() => !!props.coverUrl || galleryPhotos.value.length > 0)
 
 const renderedHtml = computed(() => {
-  const html = buildTelegramHtml({
+  let html = buildTelegramHtml({
     title: props.title,
     short_description: props.shortDescription,
     content_json: props.contentJson,
     tags: props.tags,
   })
+  // Kanal imzosi (signature) — backend telegram-publisher bilan bir xil tarzda
+  // postning eng oxiriga 2 ta yangi qator bilan qo'shiladi.
+  const sig = (props.signature || '').trim()
+  if (sig) html = html ? `${html}\n\n${sig}` : sig
   return telegramHtmlToBrowserHtml(html)
 })
 

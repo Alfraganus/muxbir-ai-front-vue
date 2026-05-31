@@ -86,7 +86,8 @@
       "Bash(curl -s \"http://localhost:5173/src/views/client/ClientArticleFromUrl.vue\")",
       "Bash(grep -oE \"\\(error|message|frame\\).{0,300}\")",
       "Bash(curl -s \"http://localhost:5173/src/components/posts/ArticleFromUrlForm.vue\")",
-      "Bash(grep -oE 'message\":\"[^\"]{0,250}')"
+      "Bash(grep -oE 'message\":\"[^\"]{0,250}')",
+      "Bash(node -e ' *)"
     ]
   }
 }

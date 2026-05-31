@@ -100,6 +100,10 @@
             ID: <span class="mono" style="color:var(--text-2);">{{ c.telegram_chat_id || '—' }}</span>
           </span>
           <div style="display:flex;gap:6px;">
+            <AppButton variant="ghost" size="sm" @click="openSignature(c)" title="Kanal imzosi (post oxiriga qo'shiladi)">
+              <template #icon><AppIcon name="Edit" :size="12"/></template>
+              Imzo
+            </AppButton>
             <AppButton v-if="(c.posting_mode||'auto')==='auto'" variant="ghost" size="sm" @click="openAutoSettings(c)" title="Avto-post sozlamalari">
               <template #icon><AppIcon name="Sparkle" :size="12"/></template>
               Sozlash
@@ -589,6 +593,104 @@
                   </div>
                 </div>
 
+                <!-- ── AI sozlamalari (prompt + provider + model + recommended) ── -->
+                <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
+                  <label class="cc-field-label">
+                    <AppIcon name="Sparkle" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                    AI rewrite — prompt, provayder va model
+                  </label>
+
+                  <!-- Tavsiya etilgan prompt checkbox — faqat admin shu turdagi prompt yaratgan bo'lsa -->
+                  <label v-if="autoRecommended.exists" class="cc-recommend"
+                         :class="{ on: autoUseRecommended }">
+                    <input type="checkbox" v-model="autoUseRecommended"/>
+                    <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+                      <span style="font-size:13px;font-weight:600;color:var(--text);">
+                        ✨ Tavsiya etilgan promptdan foydalanish
+                        <span v-if="autoRecommended.name" style="color:var(--muted);font-weight:400;">
+                          — {{ autoRecommended.name }}
+                        </span>
+                      </span>
+                      <span style="font-size:11px;color:var(--muted);">
+                        Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi.
+                      </span>
+                    </div>
+                  </label>
+                  <div v-else-if="autoRecommended.loaded"
+                       style="padding:9px 11px;border-radius:7px;background:rgba(245,158,11,.08);
+                              border:1px solid rgba(245,158,11,.25);color:#92400e;font-size:11.5px;
+                              line-height:1.5;margin-bottom:8px;">
+                    ⚠️ Tavsiya etilgan autopost prompti hali admin tomonidan yaratilmagan.
+                  </div>
+
+                  <!-- Prompt to'plami -->
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+                    <span style="font-size:12px;font-weight:500;color:var(--muted);">Prompt to'plami</span>
+                    <div v-if="!aiPromptGroups.length && !autoUseRecommended"
+                         style="padding:10px 12px;border:1px dashed var(--border-2);border-radius:7px;
+                                font-size:12px;color:var(--muted);text-align:center;">
+                      Hali prompt to'plami yo'q.
+                      <a href="#/client/ai-prompt" class="cc-modal-link" style="display:inline;padding:0;">
+                        AI prompt sahifasida yarating
+                      </a>
+                    </div>
+                    <select v-else v-model="autoPromptGroupId"
+                            :disabled="autoUseRecommended"
+                            :style="{
+                              padding: '9px 12px',
+                              border: '1px solid var(--border-2)',
+                              borderRadius: '7px',
+                              background: autoUseRecommended ? 'var(--panel-2, rgba(99,102,241,.04))' : 'var(--bg)',
+                              color: autoUseRecommended ? 'var(--muted)' : 'var(--text)',
+                              opacity: autoUseRecommended ? 0.5 : 1,
+                              cursor: autoUseRecommended ? 'not-allowed' : 'pointer',
+                              fontSize: '13px',
+                            }">
+                      <option value="">— tanlanmagan (default AI sozlamalari) —</option>
+                      <option v-for="g in aiPromptGroups" :key="g.id" :value="g.id">
+                        {{ g.name }} · {{ g.prompts.length }} bo'lim{{ anyApplyBaseInGroup(g) ? ' · BASE' : '' }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Provider radio -->
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+                    <span style="font-size:12px;font-weight:500;color:var(--muted);">AI provayder</span>
+                    <div style="display:flex;gap:8px;">
+                      <label v-for="p in AI_PROVIDERS" :key="p.id"
+                             :style="{
+                               flex: '1', display: 'flex', alignItems: 'center', gap: '8px',
+                               padding: '9px 11px', cursor: 'pointer',
+                               border: '1px solid ' + (autoProvider === p.id ? 'var(--accent)' : 'var(--border-2)'),
+                               borderRadius: '7px',
+                               background: autoProvider === p.id ? 'rgba(99,102,241,.06)' : 'var(--bg)',
+                             }">
+                        <input type="radio" :value="p.id" v-model="autoProvider"
+                               @change="onAutoProviderChange"
+                               style="margin:0;cursor:pointer;"/>
+                        <div style="display:flex;flex-direction:column;gap:1px;">
+                          <span style="font-size:12.5px;font-weight:600;color:var(--text);">{{ p.label }}</span>
+                          <span style="font-size:10.5px;color:var(--muted);">{{ p.note }}</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Model dropdown -->
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+                    <span style="font-size:12px;font-weight:500;color:var(--muted);">AI model</span>
+                    <select v-model="autoModel"
+                            style="padding:9px 12px;border:1px solid var(--border-2);border-radius:7px;
+                                   background:var(--bg);color:var(--text);font-size:13px;
+                                   font-family:'JetBrains Mono',Menlo,Consolas,monospace;">
+                      <option v-for="m in autoAvailableModels" :key="m.id" :value="m.id">
+                        {{ m.label }} {{ m.note ? '— ' + m.note : '' }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+
                 <!-- Test rejim -->
                 <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
                   <label class="cc-toggle-row">
@@ -623,6 +725,14 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ─── Kanal imzosi modal ─── -->
+    <SignatureModal
+      v-model="sigModalOpen"
+      :channel="sigChannel"
+      :initial-signature="sigInitial"
+      @save="saveSignature"
+    />
   </div>
 </template>
 
@@ -635,10 +745,12 @@ import AppPanel from '@/components/ui/AppPanel.vue'
 import AppTabs from '@/components/ui/AppTabs.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import SignatureModal from '@/components/channels/SignatureModal.vue'
 import { companiesApi } from '@/api/companies.js'
 import { channelsApi } from '@/api/channels.js'
 import { referencesApi } from '@/api/references.js'
 import { categoriesApi } from '@/api/categories.js'
+import { aiApi } from '@/api/ai.js'
 import { useAppStore } from '@/stores/app.js'
 
 const router = useRouter()
@@ -706,6 +818,45 @@ const autoFilters = ref({
   keywords: '',
 })
 
+// ── AI sozlamalari (prompt + provider + model + recommended) ──
+const AI_PROVIDERS = [
+  { id: 'openai', label: 'OpenAI',         note: 'GPT-4o, mini' },
+  { id: 'gemini', label: 'Google Gemini',  note: '2.5 Pro / Flash' },
+]
+const AI_MODELS_BY_PROVIDER = {
+  openai: [
+    { id: 'gpt-4o-mini',   label: 'gpt-4o-mini',   note: 'tezkor (default)' },
+    { id: 'gpt-4o',        label: 'gpt-4o',        note: 'eng kuchli' },
+    { id: 'gpt-4-turbo',   label: 'gpt-4-turbo',   note: 'oldingi avlod' },
+    { id: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo', note: 'eng arzon' },
+  ],
+  gemini: [
+    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
+    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'eng kuchli' },
+    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon' },
+    { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'eng yangi Flash' },
+  ],
+}
+
+const aiPromptGroups = ref([])
+const autoPromptGroupId = ref('')
+const autoProvider = ref('openai')
+const autoModel = ref('gpt-4o-mini')
+const autoUseRecommended = ref(false)
+const autoRecommended = ref({ exists: false, name: null, loaded: false })
+
+const autoAvailableModels = computed(() =>
+  AI_MODELS_BY_PROVIDER[autoProvider.value] || [],
+)
+
+// Provider o'zgarsa, modelni provayderning birinchi modeliga tushiramiz
+function onAutoProviderChange() {
+  const list = AI_MODELS_BY_PROVIDER[autoProvider.value] || []
+  if (list.length && !list.some(m => m.id === autoModel.value)) {
+    autoModel.value = list[0].id
+  }
+}
+
 async function loadCategories() {
   if (!company.value) return
   try {
@@ -737,6 +888,14 @@ function resetAutoSettings() {
     languages: [],
     keywords: '',
   }
+  autoPromptGroupId.value = ''
+  autoProvider.value = 'openai'
+  autoModel.value = 'gpt-4o-mini'
+  autoUseRecommended.value = false
+}
+
+function anyApplyBaseInGroup(g) {
+  return (g?.prompts || []).some((p) => !!p.apply_base)
 }
 
 // ── Status helperlari ─────────────────────────────────────────────
@@ -942,6 +1101,35 @@ async function togglePostingMode(c) {
   } catch {}
 }
 
+// ── Imzo (signature) modal ─────────────────────────────────
+const sigModalOpen = ref(false)
+const sigChannel = ref(null)
+const sigInitial = ref('')
+
+function openSignature(channel) {
+  sigChannel.value = channel
+  sigInitial.value = channel.signature || ''
+  sigModalOpen.value = true
+}
+
+async function saveSignature(htmlOrNull) {
+  if (!sigChannel.value || !company.value) return
+  try {
+    const updated = await channelsApi.setSignature(
+      company.value.id,
+      sigChannel.value.id,
+      htmlOrNull,
+    )
+    // Channels ro'yxatida yangilangan kanalni almashtiramiz
+    const idx = channels.value.findIndex(x => x.id === updated.id)
+    if (idx >= 0) channels.value.splice(idx, 1, updated)
+    sigModalOpen.value = false
+  } catch (e) {
+    const msg = e?.response?.data?.message
+    alert(Array.isArray(msg) ? msg.join('. ') : (msg || "Imzoni saqlab bo'lmadi"))
+  }
+}
+
 // ── Mavjud kanal uchun "Avto-post sozlamalari" modal ─────────
 const autoModalOpen = ref(false)
 const autoModalChannel = ref(null)
@@ -949,7 +1137,7 @@ const autoModalSwitching = ref(false)   // manualdan auto'ga o'tish bayrog'i
 const autoSaving = ref(false)
 const autoSaveError = ref('')
 
-function openAutoSettings(channel, opts = {}) {
+async function openAutoSettings(channel, opts = {}) {
   autoModalChannel.value = channel
   autoModalSwitching.value = !!opts.switchFromManual
   autoSaveError.value = ''
@@ -970,8 +1158,38 @@ function openAutoSettings(channel, opts = {}) {
     keywords: Array.isArray(f.keywords) ? f.keywords.join(', ') : (f.keywords || ''),
   }
 
+  // AI sozlamalari — kanaldan o'qib qabul qilamiz (NULL bo'lsa default)
+  autoPromptGroupId.value = channel.auto_prompt_group_id || ''
+  autoProvider.value = channel.auto_provider || 'openai'
+  autoModel.value = channel.auto_model || (AI_MODELS_BY_PROVIDER[autoProvider.value]?.[0]?.id || 'gpt-4o-mini')
+  autoUseRecommended.value = !!channel.auto_use_admin_recommended
+
   loadCategories()
   autoModalOpen.value = true
+
+  // Parallel: prompt to'plamlari + admin tavsiya etgan prompt
+  try {
+    if (company.value) {
+      const r = await companiesApi.getAiPromptGroups(company.value.id)
+      aiPromptGroups.value = r.groups || []
+      // Saqlangan groupId DB'da yo'q bo'lsa — birinchisini tanlash
+      if (autoPromptGroupId.value && !aiPromptGroups.value.some(g => g.id === autoPromptGroupId.value)) {
+        autoPromptGroupId.value = aiPromptGroups.value[0]?.id || ''
+      }
+    }
+  } catch { aiPromptGroups.value = [] }
+
+  try {
+    const r = await aiApi.getRecommendedPrompt('autopost')
+    autoRecommended.value = { exists: !!r?.exists, name: r?.name || null, loaded: true }
+  } catch (e) {
+    autoRecommended.value = { exists: false, name: null, loaded: true }
+    console.warn('[Autopost] recommended prompt fetch failed:', e?.response?.data || e?.message)
+  }
+  // Tavsiya etilgan prompt yo'q bo'lsa — flagni majburan o'chiramiz
+  if (!autoRecommended.value.exists && autoUseRecommended.value) {
+    autoUseRecommended.value = false
+  }
 }
 
 function closeAutoModal() {
@@ -1009,6 +1227,11 @@ async function saveAutoSettings() {
           .split(',').map(s => s.trim()).filter(Boolean),
       },
       test_show_original: autoTestShowOriginal.value,
+      // AI sozlamalari — kanal DB qatorida saqlanadi
+      auto_prompt_group_id: autoUseRecommended.value ? null : (autoPromptGroupId.value || null),
+      auto_provider: autoProvider.value,
+      auto_model: autoModel.value || null,
+      auto_use_admin_recommended: autoUseRecommended.value,
     })
 
     const idx = channels.value.findIndex(x => x.id === updated.id)
@@ -1623,6 +1846,33 @@ onBeforeUnmount(() => {
   padding: 6px 0;
 }
 .cc-toggle-row input { accent-color: var(--accent); width: 14px; height: 14px; }
+
+/* Tavsiya etilgan promptdan foydalanish — autopost modal'i */
+.cc-recommend {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.cc-recommend:hover { border-color: var(--accent); }
+.cc-recommend.on {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+}
+.cc-recommend input[type="checkbox"] {
+  margin: 2px 0 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 
 .cc-modal-error {
   display: flex;

@@ -254,7 +254,8 @@
                 :content-json="activeTr.content_json"
                 :cover-url="form.cover_image_url"
                 :gallery="galleryArr"
-                :tags="tagsArr"/>
+                :tags="tagsArr"
+                :signature="previewSignature"/>
               <div class="pe-preview-hint">Bu — kanalingizdagi taxminiy ko'rinish. Til almashtirsangiz preview ham yangilanadi.</div>
             </div>
           </section>
@@ -988,6 +989,10 @@ const previewChannelName = computed(() => {
 const previewSubscriberCount = computed(() => {
   const ch = connectedTgChannels.value.find(c => c.id === form.telegram_channel_id)
   return typeof ch?.subscriber_count === 'number' ? ch.subscriber_count : null
+})
+const previewSignature = computed(() => {
+  const ch = connectedTgChannels.value.find(c => c.id === form.telegram_channel_id)
+  return ch?.signature || ''
 })
 
 function platformIcon(p) {

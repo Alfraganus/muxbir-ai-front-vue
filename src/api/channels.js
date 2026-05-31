@@ -13,6 +13,11 @@ export const channelsApi = {
   updateAutoSettings: (companyId, channelId, payload) =>
     http.patch(`/companies/${companyId}/channels/${channelId}/auto-settings`, payload).then(r => r.data),
 
+  /** Kanal imzosini saqlash (har post oxiriga qo'shiladigan HTML matn) */
+  setSignature: (companyId, channelId, signature) =>
+    http.patch(`/companies/${companyId}/channels/${channelId}/signature`, { signature })
+      .then(r => r.data),
+
   getStatus: (companyId, channelId) =>
     http.get(`/companies/${companyId}/channels/${channelId}/status`).then(r => r.data),
 

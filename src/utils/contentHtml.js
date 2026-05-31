@@ -65,7 +65,10 @@ export function tiptapHtmlToTelegramHtml(html) {
     return `\n${items.trim()}\n\n`
   })
 
-  s = s.replace(/<\/p>/gi, '\n\n').replace(/<p[^>]*>/gi, '')
+  // <p> — har ikki tomonda yangi qator
+  s = s.replace(/<p[^>]*>/gi, '\n').replace(/<\/p>/gi, '\n\n')
+  // <div> — contenteditable Enter bosilganda hosil bo'ladi
+  s = s.replace(/<div[^>]*>/gi, '\n').replace(/<\/div>/gi, '\n')
   s = s.replace(/<br\s*\/?>(\s*)/gi, '\n')
 
   s = s.replace(/<strong[^>]*>/gi, '<b>').replace(/<\/strong>/gi, '</b>')
@@ -130,7 +133,9 @@ export function buildTelegramHtml({ title, short_description, content_json, tags
       .filter(Boolean)
       .map(tg => '#' + tg.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_Ѐ-ӿԀ-ԯ]/g, ''))
       .filter(t => t.length > 1)
-      .join(' ')
+      // Teglar orasida 2 ta bo'sh joy (regular + non-breaking space) —
+      // backend telegram-publisher bilan bir xil; preview real natijaga mos chiqsin.
+      .join('  ')
     if (tagLine) parts.push(tagLine)
   }
 

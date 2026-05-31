@@ -1,26 +1,49 @@
 <template>
   <div class="rich-editor-wrap">
     <div v-if="!readOnly" class="rich-toolbar">
-      <button type="button" class="rt-btn" :class="{ on: isActive('bold') }" @click="run(c => c.toggleBold())" title="Qalin (Ctrl+B)"><b>B</b></button>
-      <button type="button" class="rt-btn" :class="{ on: isActive('italic') }" @click="run(c => c.toggleItalic())" title="Kursiv (Ctrl+I)"><i>I</i></button>
-      <button type="button" class="rt-btn" :class="{ on: isActive('underline') }" @click="run(c => c.toggleUnderline())" title="Tag ostida"><u>U</u></button>
-      <button type="button" class="rt-btn" :class="{ on: isActive('strike') }" @click="run(c => c.toggleStrike())" title="Chizilgan"><s>S</s></button>
-      <span class="rt-sep"/>
-      <button type="button" class="rt-btn" :class="{ on: isActive('heading', { level: 2 }) }" @click="run(c => c.toggleHeading({ level: 2 }))" title="H2">H2</button>
-      <button type="button" class="rt-btn" :class="{ on: isActive('heading', { level: 3 }) }" @click="run(c => c.toggleHeading({ level: 3 }))" title="H3">H3</button>
-      <span class="rt-sep"/>
-      <button type="button" class="rt-btn" :class="{ on: isActive('bulletList') }" @click="run(c => c.toggleBulletList())" title="Belgi ro'yxat">• List</button>
-      <button type="button" class="rt-btn" :class="{ on: isActive('orderedList') }" @click="run(c => c.toggleOrderedList())" title="Raqamli ro'yxat">1. List</button>
-      <button type="button" class="rt-btn" :class="{ on: isActive('blockquote') }" @click="run(c => c.toggleBlockquote())" title="Iqtibos">❝</button>
-      <button type="button" class="rt-btn" :class="{ on: isActive('code') }" @click="run(c => c.toggleCode())" title="Inline code"><code>&lt;/&gt;</code></button>
-      <span class="rt-sep"/>
-      <button type="button" class="rt-btn" :class="{ on: isActive('link') }" @click="onLinkClick" title="Havola">🔗</button>
-      <button type="button" class="rt-btn" @click="onImageClick" title="Rasm">🖼</button>
-      <span class="rt-sep"/>
-      <button type="button" class="rt-btn" @click="run(c => c.undo())" title="Bekor qilish (Ctrl+Z)">↶</button>
-      <button type="button" class="rt-btn" @click="run(c => c.redo())" title="Qaytarish (Ctrl+Shift+Z)">↷</button>
+      <template v-if="!sourceMode">
+        <button type="button" class="rt-btn" :class="{ on: isActive('bold') }" @click="run(c => c.toggleBold())" title="Qalin (Ctrl+B)"><b>B</b></button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('italic') }" @click="run(c => c.toggleItalic())" title="Kursiv (Ctrl+I)"><i>I</i></button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('underline') }" @click="run(c => c.toggleUnderline())" title="Tag ostida"><u>U</u></button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('strike') }" @click="run(c => c.toggleStrike())" title="Chizilgan"><s>S</s></button>
+        <span class="rt-sep"/>
+        <button type="button" class="rt-btn" :class="{ on: isActive('heading', { level: 2 }) }" @click="run(c => c.toggleHeading({ level: 2 }))" title="H2">H2</button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('heading', { level: 3 }) }" @click="run(c => c.toggleHeading({ level: 3 }))" title="H3">H3</button>
+        <span class="rt-sep"/>
+        <button type="button" class="rt-btn" :class="{ on: isActive('bulletList') }" @click="run(c => c.toggleBulletList())" title="Belgi ro'yxat">• List</button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('orderedList') }" @click="run(c => c.toggleOrderedList())" title="Raqamli ro'yxat">1. List</button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('blockquote') }" @click="run(c => c.toggleBlockquote())" title="Iqtibos">❝</button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('code') }" @click="run(c => c.toggleCode())" title="Inline code"><code>&lt;/&gt;</code></button>
+        <span class="rt-sep"/>
+        <button type="button" class="rt-btn" :class="{ on: isActive('link') }" @click="onLinkClick" title="Havola">🔗</button>
+        <button type="button" class="rt-btn" @click="onImageClick" title="Rasm">🖼</button>
+        <span class="rt-sep"/>
+        <button type="button" class="rt-btn" @click="run(c => c.undo())" title="Bekor qilish (Ctrl+Z)">↶</button>
+        <button type="button" class="rt-btn" @click="run(c => c.redo())" title="Qaytarish (Ctrl+Shift+Z)">↷</button>
+      </template>
+      <template v-else>
+        <span class="rt-source-label">HTML manba — to'g'ridan-to'g'ri tag yozing</span>
+      </template>
+      <span class="rt-spacer"/>
+      <button
+        type="button"
+        class="rt-btn rt-btn-source"
+        :class="{ on: sourceMode }"
+        @click="toggleSource"
+        :title="sourceMode ? 'Vizual rejimga qaytish' : 'HTML manbasini ko\'rish/tahrirlash'"
+      >&lt;/&gt; {{ sourceMode ? 'Vizual' : 'HTML' }}</button>
     </div>
-    <editor-content :editor="editor" class="rich-editor-holder"/>
+
+    <editor-content v-show="!sourceMode" :editor="editor" class="rich-editor-holder"/>
+
+    <textarea
+      v-if="sourceMode"
+      v-model="sourceHtml"
+      class="rich-editor-source"
+      spellcheck="false"
+      :placeholder="placeholder"
+      @input="onSourceInput"
+    />
   </div>
 </template>
 
@@ -44,6 +67,31 @@ const emit = defineEmits(['update:modelValue'])
 
 const editor = shallowRef(null)
 let isSelfChange = false
+
+const sourceMode = ref(false)
+const sourceHtml = ref('')
+
+function toggleSource() {
+  if (!editor.value) return
+  if (!sourceMode.value) {
+    // Vizual → HTML: editorning hozirgi HTML'ini textarea'ga ko'chiramiz
+    sourceHtml.value = editor.value.getHTML()
+    sourceMode.value = true
+  } else {
+    // HTML → Vizual: textareadagi HTML'ni editorga yuklaymiz
+    editor.value.commands.setContent(sourceHtml.value || '', false)
+    sourceMode.value = false
+    // Parent ham yangilansin
+    isSelfChange = true
+    emit('update:modelValue', { html: editor.value.getHTML() })
+  }
+}
+
+function onSourceInput() {
+  // HTML manba rejimida ham tahrir qilinishi bilan parent yangilanadi
+  isSelfChange = true
+  emit('update:modelValue', { html: sourceHtml.value || '' })
+}
 
 function extractHtml(v) {
   if (!v) return ''
@@ -127,6 +175,8 @@ watch(
     const next = extractHtml(val)
     if (next === editor.value.getHTML()) return
     editor.value.commands.setContent(next, false)
+    // HTML manba rejimi ochiq bo'lsa textareani ham sinxronlaymiz
+    if (sourceMode.value) sourceHtml.value = next
   },
   { deep: true },
 )
@@ -185,6 +235,44 @@ onBeforeUnmount(() => {
   height: 18px;
   background: var(--border);
   margin: 0 4px;
+}
+.rt-spacer { flex: 1; }
+.rt-source-label {
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 2px 6px;
+}
+.rt-btn-source {
+  font-family: ui-monospace, monospace;
+  font-size: 11.5px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+}
+.rt-btn-source.on {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.rich-editor-source {
+  display: block;
+  width: 100%;
+  min-height: 220px;
+  padding: 14px 18px;
+  background: var(--panel);
+  color: var(--text);
+  border: none;
+  outline: none;
+  resize: vertical;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre;
+  tab-size: 2;
+}
+.rich-editor-source::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
 }
 
 .rich-editor-holder {
