@@ -76,7 +76,13 @@
       "Bash(curl -s -X POST \"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDJOKl3j1V-of9I092guxDqHzWPf6qEUng\" -H \"Content-Type: application/json\" -d '{\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"Toshkentdagi yangi metro stansiyasi ochilishi haqida 3 abzasli post yoz. Style: rasmiy yangiliklar uslubida.\"}]}],\"generationConfig\":{\"temperature\":0.6,\"maxOutputTokens\":800}}')",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('finishReason:', d.get\\('candidates',[{}]\\)[0].get\\('finishReason'\\)\\); print\\('parts:', d.get\\('candidates',[{}]\\)[0].get\\('content',{}\\).get\\('parts'\\)\\); print\\('usage:', d.get\\('usageMetadata'\\)\\)\")",
       "Bash(curl -s -X POST \"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDJOKl3j1V-of9I092guxDqHzWPf6qEUng\" -H \"Content-Type: application/json\" -d '{\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"Toshkentdagi yangi metro stansiyasi ochilishi haqida 3 abzasli post yoz. Style: rasmiy yangiliklar uslubida.\"}]}],\"generationConfig\":{\"temperature\":0.6,\"maxOutputTokens\":8000,\"thinkingConfig\":{\"thinkingBudget\":1024}}}')",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); c=d.get\\('candidates',[{}]\\)[0]; print\\('finishReason:', c.get\\('finishReason'\\)\\); print\\('text len:', len\\(\\(c.get\\('content',{}\\).get\\('parts'\\) or [{}]\\)[0].get\\('text',''\\)\\)\\); print\\('text preview:', \\(\\(c.get\\('content',{}\\).get\\('parts'\\) or [{}]\\)[0].get\\('text',''\\)[:200]\\)\\); print\\('usage:', d.get\\('usageMetadata'\\)\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); c=d.get\\('candidates',[{}]\\)[0]; print\\('finishReason:', c.get\\('finishReason'\\)\\); print\\('text len:', len\\(\\(c.get\\('content',{}\\).get\\('parts'\\) or [{}]\\)[0].get\\('text',''\\)\\)\\); print\\('text preview:', \\(\\(c.get\\('content',{}\\).get\\('parts'\\) or [{}]\\)[0].get\\('text',''\\)[:200]\\)\\); print\\('usage:', d.get\\('usageMetadata'\\)\\)\")",
+      "Bash(ls -la \"E:\\\\work projects\\\\personal projects\" | grep -i mux)",
+      "Bash(xargs grep -l \"class Post\")",
+      "Bash(grep -E \"\\\\.ts$\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:5173/src/views/admin/AdminTelegramSessions.vue\")",
+      "Bash(curl -s \"http://localhost:5173/src/views/admin/AdminTelegramSessions.vue\")",
+      "Bash(curl -s \"http://localhost:5173/src/components/ui/AppToast.vue\")"
     ]
   }
 }

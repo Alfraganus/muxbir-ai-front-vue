@@ -1,148 +1,245 @@
 <template>
   <div class="rich-editor-wrap">
-    <div ref="holder" class="rich-editor-holder"/>
+    <div v-if="!readOnly" class="rich-toolbar">
+      <button type="button" class="rt-btn" :class="{ on: isActive('bold') }" @click="run(c => c.toggleBold())" title="Qalin (Ctrl+B)"><b>B</b></button>
+      <button type="button" class="rt-btn" :class="{ on: isActive('italic') }" @click="run(c => c.toggleItalic())" title="Kursiv (Ctrl+I)"><i>I</i></button>
+      <button type="button" class="rt-btn" :class="{ on: isActive('underline') }" @click="run(c => c.toggleUnderline())" title="Tag ostida"><u>U</u></button>
+      <button type="button" class="rt-btn" :class="{ on: isActive('strike') }" @click="run(c => c.toggleStrike())" title="Chizilgan"><s>S</s></button>
+      <span class="rt-sep"/>
+      <button type="button" class="rt-btn" :class="{ on: isActive('heading', { level: 2 }) }" @click="run(c => c.toggleHeading({ level: 2 }))" title="H2">H2</button>
+      <button type="button" class="rt-btn" :class="{ on: isActive('heading', { level: 3 }) }" @click="run(c => c.toggleHeading({ level: 3 }))" title="H3">H3</button>
+      <span class="rt-sep"/>
+      <button type="button" class="rt-btn" :class="{ on: isActive('bulletList') }" @click="run(c => c.toggleBulletList())" title="Belgi ro'yxat">• List</button>
+      <button type="button" class="rt-btn" :class="{ on: isActive('orderedList') }" @click="run(c => c.toggleOrderedList())" title="Raqamli ro'yxat">1. List</button>
+      <button type="button" class="rt-btn" :class="{ on: isActive('blockquote') }" @click="run(c => c.toggleBlockquote())" title="Iqtibos">❝</button>
+      <button type="button" class="rt-btn" :class="{ on: isActive('code') }" @click="run(c => c.toggleCode())" title="Inline code"><code>&lt;/&gt;</code></button>
+      <span class="rt-sep"/>
+      <button type="button" class="rt-btn" :class="{ on: isActive('link') }" @click="onLinkClick" title="Havola">🔗</button>
+      <button type="button" class="rt-btn" @click="onImageClick" title="Rasm">🖼</button>
+      <span class="rt-sep"/>
+      <button type="button" class="rt-btn" @click="run(c => c.undo())" title="Bekor qilish (Ctrl+Z)">↶</button>
+      <button type="button" class="rt-btn" @click="run(c => c.redo())" title="Qaytarish (Ctrl+Shift+Z)">↷</button>
+    </div>
+    <editor-content :editor="editor" class="rich-editor-holder"/>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
-import EditorJS from '@editorjs/editorjs'
-import Header from '@editorjs/header'
-import List from '@editorjs/list'
-import Paragraph from '@editorjs/paragraph'
-import ImageTool from '@editorjs/image'
-import Embed from '@editorjs/embed'
-import Quote from '@editorjs/quote'
-import Marker from '@editorjs/marker'
-import InlineCode from '@editorjs/inline-code'
-import Code from '@editorjs/code'
+import { onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import { Editor, EditorContent } from '@tiptap/vue-3'
+import StarterKit from '@tiptap/starter-kit'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import Underline from '@tiptap/extension-underline'
+import Placeholder from '@tiptap/extension-placeholder'
 import { uploadsApi } from '@/api/uploads.js'
 
 const props = defineProps({
-  modelValue: { type: Object, default: () => ({ blocks: [] }) },
+  // content_json: { html: "..." } shaklida — backwards compat: agar string kelsa, html sifatida qabul qilamiz
+  modelValue: { type: [Object, String], default: () => ({ html: '' }) },
   placeholder: { type: String, default: 'Bu yerga yozing...' },
   readOnly: { type: Boolean, default: false },
 })
 const emit = defineEmits(['update:modelValue'])
 
-const holder = ref(null)
-let editor = null
+const editor = shallowRef(null)
 let isSelfChange = false
 
-async function initEditor() {
-  if (!holder.value) return
-  editor = new EditorJS({
-    holder: holder.value,
-    placeholder: props.placeholder,
-    readOnly: props.readOnly,
-    data: props.modelValue && Object.keys(props.modelValue || {}).length ? props.modelValue : { blocks: [] },
-    tools: {
-      header: { class: Header, inlineToolbar: true, config: { levels: [2, 3, 4], defaultLevel: 2 } },
-      paragraph: { class: Paragraph, inlineToolbar: true },
-      list: { class: List, inlineToolbar: true },
-      quote: { class: Quote, inlineToolbar: true },
-      embed: Embed,
-      // Image tool — backend upload kerakligi sababli hozircha URL'dan ham qabul qiladigan rejimda
-      image: {
-        class: ImageTool,
-        config: {
-          uploader: {
-            uploadByUrl: (url) => Promise.resolve({ success: 1, file: { url } }),
-            uploadByFile: async (file) => {
-              try {
-                const res = await uploadsApi.uploadImage(file)
-                return { success: 1, file: { url: res.url } }
-              } catch (e) {
-                return { success: 0 }
-              }
-            },
-          },
-        },
-      },
-      marker: Marker,
-      inlineCode: InlineCode,
-      code: Code,
-    },
-    onChange: async () => {
-      if (!editor) return
-      try {
-        const out = await editor.save()
-        isSelfChange = true
-        emit('update:modelValue', out)
-      } catch (e) {
-        /* ignore */
-      }
-    },
-  })
+function extractHtml(v) {
+  if (!v) return ''
+  if (typeof v === 'string') return v
+  if (typeof v === 'object') return v.html || ''
+  return ''
 }
 
-onMounted(initEditor)
+function isActive(name, attrs) {
+  return editor.value ? editor.value.isActive(name, attrs) : false
+}
+
+function run(fn) {
+  if (!editor.value) return
+  fn(editor.value.chain().focus()).run()
+}
+
+function onLinkClick() {
+  if (!editor.value) return
+  const prev = editor.value.getAttributes('link')?.href || ''
+  const url = window.prompt('Havola URL (bo\'sh — olib tashlash):', prev)
+  if (url === null) return
+  if (url === '') {
+    editor.value.chain().focus().unsetLink().run()
+    return
+  }
+  const safe = /^https?:\/\//i.test(url) ? url : `https://${url}`
+  editor.value.chain().focus().extendMarkRange('link').setLink({ href: safe }).run()
+}
+
+async function onImageClick() {
+  if (!editor.value) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    try {
+      const res = await uploadsApi.uploadImage(file)
+      if (res?.url) {
+        editor.value.chain().focus().setImage({ src: res.url }).run()
+      }
+    } catch (e) { /* ignore */ }
+  }
+  input.click()
+}
+
+onMounted(() => {
+  editor.value = new Editor({
+    editable: !props.readOnly,
+    content: extractHtml(props.modelValue),
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [2, 3, 4] },
+        codeBlock: { HTMLAttributes: { class: 'rt-code-block' } },
+      }),
+      Underline,
+      Link.configure({
+        openOnClick: true,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: { rel: 'noopener nofollow', target: '_blank' },
+      }),
+      Image.configure({ inline: false, HTMLAttributes: { class: 'rt-img' } }),
+      Placeholder.configure({ placeholder: props.placeholder }),
+    ],
+    onUpdate: ({ editor: ed }) => {
+      const html = ed.getHTML()
+      isSelfChange = true
+      emit('update:modelValue', { html })
+    },
+  })
+})
 
 watch(
   () => props.modelValue,
-  async (val) => {
-    if (isSelfChange) {
-      isSelfChange = false
-      return
-    }
-    if (!editor) return
-    // Tashqaridan o'zgargan — qayta render
-    try {
-      await editor.isReady
-      await editor.render(val && Object.keys(val).length ? val : { blocks: [] })
-    } catch {}
+  (val) => {
+    if (isSelfChange) { isSelfChange = false; return }
+    if (!editor.value) return
+    const next = extractHtml(val)
+    if (next === editor.value.getHTML()) return
+    editor.value.commands.setContent(next, false)
   },
   { deep: true },
 )
 
+watch(() => props.readOnly, (ro) => {
+  if (editor.value) editor.value.setEditable(!ro)
+})
+
 onBeforeUnmount(() => {
-  if (editor?.destroy) {
-    try { editor.destroy() } catch {}
+  if (editor.value) {
+    try { editor.value.destroy() } catch {}
+    editor.value = null
   }
-  editor = null
 })
 </script>
 
 <style>
-/* Editor.js global stillarini biroz moslab qo'yamiz */
 .rich-editor-wrap {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 16px 18px;
   min-height: 220px;
   transition: border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
 }
 .rich-editor-wrap:focus-within {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
 }
+
+.rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2, var(--panel));
+}
+.rt-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.2;
+  min-width: 28px;
+}
+.rt-btn:hover { background: color-mix(in oklab, var(--text) 8%, transparent); }
+.rt-btn.on { background: color-mix(in oklab, var(--accent) 18%, transparent); color: var(--accent); }
+.rt-btn code { font-family: ui-monospace, monospace; font-size: 11px; }
+.rt-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
 .rich-editor-holder {
   min-height: 180px;
   color: var(--text);
   font-size: 14.5px;
   line-height: 1.6;
+  padding: 14px 18px 20px;
 }
-.codex-editor__redactor {
-  padding-bottom: 60px !important;
+.rich-editor-holder .ProseMirror {
+  outline: none;
+  min-height: 180px;
 }
-.ce-paragraph[data-placeholder]:empty::before {
+.rich-editor-holder .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
   color: var(--muted);
   opacity: 0.7;
+  float: left;
+  pointer-events: none;
+  height: 0;
 }
-.ce-toolbar__plus,
-.ce-toolbar__settings-btn {
+.rich-editor-holder .ProseMirror p { margin: 0 0 0.6em; }
+.rich-editor-holder .ProseMirror h2 { font-size: 1.3em; margin: 0.8em 0 0.4em; font-weight: 700; }
+.rich-editor-holder .ProseMirror h3 { font-size: 1.15em; margin: 0.7em 0 0.3em; font-weight: 600; }
+.rich-editor-holder .ProseMirror h4 { font-size: 1.05em; margin: 0.6em 0 0.3em; font-weight: 600; }
+.rich-editor-holder .ProseMirror ul,
+.rich-editor-holder .ProseMirror ol { margin: 0.4em 0 0.8em; padding-left: 1.4em; }
+.rich-editor-holder .ProseMirror li { margin: 0.2em 0; }
+.rich-editor-holder .ProseMirror blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
   color: var(--text-2);
+  margin: 0.6em 0;
 }
-.ce-popover, .ce-conversion-toolbar, .ce-inline-toolbar {
-  background: var(--panel) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text) !important;
+.rich-editor-holder .ProseMirror code {
+  background: color-mix(in oklab, var(--text) 8%, transparent);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.92em;
 }
-.ce-popover-item:hover {
-  background: var(--panel-2) !important;
+.rich-editor-holder .ProseMirror pre {
+  background: color-mix(in oklab, var(--text) 8%, transparent);
+  padding: 10px 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  margin: 0.6em 0;
 }
-[data-theme="dark"] .ce-block__content {
-  color: var(--text);
+.rich-editor-holder .ProseMirror pre code { background: transparent; padding: 0; }
+.rich-editor-holder .ProseMirror a { color: var(--accent); text-decoration: underline; }
+.rich-editor-holder .ProseMirror img.rt-img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 0.4em 0;
 }
 </style>

@@ -1,5 +1,17 @@
 <template>
   <div style="display:flex;flex-direction:column;gap:14px;">
+    <AiFullPageLoader
+      :model-value="busy"
+      title="Havoladan maqola yaratilmoqda"
+      subtitle="AI sahifani o'qib, sizning uslubingizda maqola yozmoqda"
+      :steps="[
+        'Havola yuklanmoqda',
+        'Sahifa matni tahlil qilinmoqda',
+        'AI yangi maqola yozmoqda',
+        'Editor tayyorlanmoqda',
+      ]"
+      hint="Bu jarayon odatda 15–40 soniya davom etadi. Sahifani yopmang yoki boshqa joyga o'tib ketmang."
+    />
     <!-- URL -->
     <label style="display:flex;flex-direction:column;gap:6px;">
       <span style="font-size:12px;font-weight:600;color:var(--text);">1. Maqola havolasi</span>
@@ -108,6 +120,7 @@
 <script setup>
 import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { companiesApi } from '@/api/companies.js'
+import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
 
 const emit = defineEmits(['created', 'goto'])
 
@@ -119,7 +132,7 @@ const company = ref(null)
 
 const providers = [
   { id: 'openai', label: 'OpenAI', note: 'GPT-4o, mini' },
-  { id: 'gemini', label: 'Gemini', note: '2.5 Pro/Flash' },
+  { id: 'gemini', label: 'Gemini', note: '2.5 Pro / Flash / Flash-Lite' },
 ]
 const modelsByProvider = {
   openai: [
@@ -129,12 +142,10 @@ const modelsByProvider = {
     { id: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo', note: 'eng arzon' },
   ],
   gemini: [
-    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'default' },
+    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
     { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'eng kuchli' },
     { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon' },
-    { id: 'gemini-2.0-flash',      label: 'gemini-2.0-flash',      note: 'barqaror' },
     { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'eng yangi Flash' },
-    { id: 'gemini-pro-latest',     label: 'gemini-pro-latest',     note: 'eng yangi Pro' },
   ],
 }
 

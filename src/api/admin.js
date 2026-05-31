@@ -13,4 +13,12 @@ export const adminApi = {
     http.get('/admin/ai-base-prompt').then((r) => r.data),
   setAiBasePrompt: (value) =>
     http.put('/admin/ai-base-prompt', { value }).then((r) => r.data),
+
+  // Telegram user API sessionlari (admin-only)
+  listTelegramSessions: () =>
+    http.get('/admin/telegram-sessions').then((r) => r.data),
+  revokeTelegramSession: (companyId) =>
+    http.delete(`/admin/telegram-sessions/${companyId}`).then((r) => r.data),
+  revokeAllTelegramSessions: () =>
+    http.delete('/admin/telegram-sessions').then((r) => r.data),
 }

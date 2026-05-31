@@ -7,6 +7,7 @@ import AdminUsers from '@/views/admin/AdminUsers.vue'
 import AdminReferences from '@/views/admin/AdminReferences.vue'
 import AdminWorkerSettings from '@/views/admin/AdminWorkerSettings.vue'
 import AdminAiPrompt from '@/views/admin/AdminAiPrompt.vue'
+import AdminTelegramSessions from '@/views/admin/AdminTelegramSessions.vue'
 import ClientOverview from '@/views/client/ClientOverview.vue'
 import ClientChannels from '@/views/client/ClientChannels.vue'
 import ClientPosts from '@/views/client/ClientPosts.vue'
@@ -37,6 +38,7 @@ const routes = [
   { path: '/admin/references', component: AdminReferences },
   { path: '/admin/worker-settings', component: AdminWorkerSettings },
   { path: '/admin/ai-prompt',  component: AdminAiPrompt },
+  { path: '/admin/telegram-sessions', component: AdminTelegramSessions },
   { path: '/client/overview',  component: ClientOverview },
   { path: '/client/channels',  component: ClientChannels },
   { path: '/client/posts',     component: ClientPosts },

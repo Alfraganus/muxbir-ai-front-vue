@@ -511,6 +511,19 @@
       </template>
     </AppModal>
 
+    <!-- ─── AI rewrite / shorten — sahifa bo'ylab loader ─── -->
+    <AiFullPageLoader
+      :model-value="aiShortening"
+      title="AI maqolani qayta yozmoqda"
+      subtitle="Tanlangan prompt va model bo'yicha matn qayta ishlanmoqda"
+      :steps="[
+        'Mavjud matn tahlil qilinmoqda',
+        'AI yangi versiyani yozmoqda',
+        'Natija tayyorlanmoqda',
+      ]"
+      hint="Bu jarayon odatda 10–30 soniya davom etadi. Sahifani yopmang."
+    />
+
     <!-- ─── Video yuklab olinmoqda — sahifani yopmang ─── -->
     <transition name="pe-vp-fade">
       <div v-if="post?.video_processing" class="pe-vp-overlay">
@@ -546,6 +559,7 @@ import TelegramPreview from '@/components/preview/TelegramPreview.vue'
 import DateTimePicker from '@/components/ui/DateTimePicker.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import MediaGallery from '@/components/media/MediaGallery.vue'
+import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
 import { categoriesApi } from '@/api/categories.js'
 import { useAppStore } from '@/stores/app.js'
 import { useStorageStore } from '@/stores/storage.js'
@@ -610,12 +624,10 @@ const aiModelsByProvider = {
     { id: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo', note: 'eng arzon' },
   ],
   gemini: [
-    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'default' },
+    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
     { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'eng kuchli' },
     { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon' },
-    { id: 'gemini-2.0-flash',      label: 'gemini-2.0-flash',      note: 'barqaror' },
     { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'eng yangi Flash' },
-    { id: 'gemini-pro-latest',     label: 'gemini-pro-latest',     note: 'eng yangi Pro' },
   ],
 }
 const aiAvailableModels = computed(() => aiModelsByProvider[aiRewriteForm.provider] || [])
@@ -901,9 +913,9 @@ async function removeGallery(i) {
 }
 
 const translations = reactive({
-  uz: { title: '', short_description: '', content_json: { blocks: [] }, is_complete: false },
-  ru: { title: '', short_description: '', content_json: { blocks: [] }, is_complete: false },
-  en: { title: '', short_description: '', content_json: { blocks: [] }, is_complete: false },
+  uz: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
+  ru: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
+  en: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
 })
 const activeLang = ref(
   (typeof route.query.lang === 'string' && route.query.lang in translations)
@@ -943,7 +955,10 @@ function langState(l) {
   return 'empty'
 }
 function hasContent(json) {
-  return !!(json && Array.isArray(json.blocks) && json.blocks.length)
+  if (!json) return false
+  const html = typeof json === 'string' ? json : (json.html || '')
+  if (!html) return false
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').trim().length > 0
 }
 function hasAnyContent(l) { return langState(l) !== 'empty' }
 function firstNonEmptyTitle() {
@@ -1013,7 +1028,7 @@ async function loadInitial() {
         if (tr) {
           translations[l].title = tr.title || ''
           translations[l].short_description = tr.short_description || ''
-          translations[l].content_json = tr.content_json || { blocks: [] }
+          translations[l].content_json = tr.content_json || { html: '' }
           translations[l].is_complete = !!tr.is_complete
         }
       }

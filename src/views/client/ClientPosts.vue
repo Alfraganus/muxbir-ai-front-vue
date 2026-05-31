@@ -86,6 +86,35 @@
                 {{ tt('pe.platform.' + p.platform) }}
               </span>
             </td>
+
+            <!-- Manba (qaerdan olingan: qalampir.uz, daryo.uz, t.me/...) -->
+            <td style="padding:10px 14px;vertical-align:middle;" @click.stop>
+              <a v-if="p.ai_source_url"
+                 :href="p.ai_source_url"
+                 target="_blank"
+                 rel="noopener"
+                 class="cp-source-chip"
+                 :title="p.ai_source_url">
+                <img v-if="sourceHostOf(p)" :src="faviconUrl(sourceHostOf(p))" alt="" class="cp-source-fav"/>
+                <span class="cp-source-text">{{ sourceHostOf(p) || tt('posts.col.source.unknown') || 'manba' }}</span>
+              </a>
+              <span v-else class="cp-source-empty">—</span>
+            </td>
+
+            <!-- Asl manba (matn ichidagi tashqi link: dxx.uz, original sayt) -->
+            <td style="padding:10px 14px;vertical-align:middle;" @click.stop>
+              <a v-if="p.original_source_url"
+                 :href="p.original_source_url"
+                 target="_blank"
+                 rel="noopener"
+                 class="cp-source-chip cp-source-original"
+                 :title="p.original_source_url">
+                <img v-if="hostOf(p.original_source_url)" :src="faviconUrl(hostOf(p.original_source_url))" alt="" class="cp-source-fav"/>
+                <span class="cp-source-text">{{ hostOf(p.original_source_url) }}</span>
+              </a>
+              <span v-else class="cp-source-empty">—</span>
+            </td>
+
             <td style="padding:10px 14px;vertical-align:middle;">
               <div style="display:flex;gap:4px;">
                 <span v-for="l in ['uz','ru','en']" :key="l"
@@ -205,11 +234,30 @@ const filtered = computed(() => {
 const headers = computed(() => [
   { key: 'title',    label: tt('posts.col.title') },
   { key: 'platform', label: tt('posts.col.platform') },
+  { key: 'source',   label: 'Manba' },
+  { key: 'original', label: 'Asl manba' },
   { key: 'langs',    label: tt('posts.col.langs') },
   { key: 'time',     label: tt('posts.col.publishAt') },
   { key: 'status',   label: tt('posts.col.status') },
   { key: 'actions',  label: '' },
 ])
+
+// Manba URL'idan host ajratish (qalampir.uz, daryo.uz, t.me)
+function hostOf(url) {
+  if (!url) return ''
+  try {
+    return new URL(url).hostname.replace(/^www\./i, '').toLowerCase()
+  } catch { return '' }
+}
+function faviconUrl(host) {
+  if (!host) return ''
+  return `https://www.google.com/s2/favicons?sz=32&domain=${encodeURIComponent(host)}`
+}
+function sourceHostOf(p) {
+  // ai_source_slug ustunlik beradi (manba nomi: 'kunuz', 'daryo')
+  // lekin host (qalampir.uz) ko'rsatkichi ko'proq foydali — URL bo'lsa undan olamiz.
+  return hostOf(p.ai_source_url) || (p.ai_source_slug || '')
+}
 
 // ── Helpers ────────────────────────────────────────────────
 function titleOf(p) {
@@ -406,5 +454,54 @@ async function removePost(p) {
   transform: translateY(-50%) rotate(-90deg);
   opacity: 0.55;
   pointer-events: none;
+}
+
+/* Manba / Asl manba — favicon + host chip */
+.cp-source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px 0 6px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--panel-2, rgba(99, 102, 241, 0.06));
+  border: 1px solid var(--border-2);
+  text-decoration: none;
+  max-width: 160px;
+  transition: border-color .15s, background .15s, transform .12s;
+}
+.cp-source-chip:hover {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+  transform: translateY(-1px);
+}
+.cp-source-original {
+  background: color-mix(in oklab, #f59e0b 8%, transparent);
+  border-color: color-mix(in oklab, #f59e0b 25%, transparent);
+}
+.cp-source-original:hover {
+  border-color: #f59e0b;
+  background: color-mix(in oklab, #f59e0b 14%, transparent);
+}
+.cp-source-fav {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: #fff;
+}
+.cp-source-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-source-empty {
+  color: var(--muted);
+  font-size: 12px;
+  opacity: 0.5;
 }
 </style>

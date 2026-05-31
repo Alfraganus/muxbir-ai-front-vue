@@ -86,14 +86,14 @@
 
 <script setup>
 import { computed } from 'vue'
-import { buildTelegramHtml, telegramHtmlToBrowserHtml } from '@/utils/editorjsToHtml.js'
+import { buildTelegramHtml, telegramHtmlToBrowserHtml } from '@/utils/contentHtml.js'
 
 const props = defineProps({
   channelName: { type: String, default: 'Mening kanalim' },
   subscriberCount: { type: Number, default: null },
   title: { type: String, default: '' },
   shortDescription: { type: String, default: '' },
-  contentJson: { type: Object, default: () => ({ blocks: [] }) },
+  contentJson: { type: [Object, String], default: () => ({ html: '' }) },
   coverUrl: { type: String, default: '' },
   gallery: { type: Array, default: () => [] },
   tags: { type: Array, default: () => [] },

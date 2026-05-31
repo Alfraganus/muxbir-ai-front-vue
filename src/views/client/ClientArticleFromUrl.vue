@@ -1,5 +1,17 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;max-width:880px;">
+    <AiFullPageLoader
+      :model-value="busy"
+      title="Havoladan maqola yaratilmoqda"
+      subtitle="AI sahifani o'qib, sizning uslubingizda maqola yozmoqda"
+      :steps="[
+        'Havola yuklanmoqda',
+        'Sahifa matni tahlil qilinmoqda',
+        'AI yangi maqola yozmoqda',
+        'Editor tayyorlanmoqda',
+      ]"
+      hint="Bu jarayon odatda 15–40 soniya davom etadi. Sahifani yopmang yoki boshqa joyga o'tib ketmang."
+    />
     <PageHeader
       title="Havoladan maqola yozish"
       subtitle="Yangilik saytidan havolani yopishtiring, prompt to'plamini tanlang — AI sizning uslubingizda maqola yozib beradi."
@@ -136,6 +148,7 @@ import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
 import { companiesApi } from '@/api/companies.js'
 
 const router = useRouter()
@@ -147,7 +160,7 @@ const company = ref(null)
 
 const providers = [
   { id: 'openai', label: 'OpenAI', note: 'GPT-4o, GPT-4o-mini' },
-  { id: 'gemini', label: 'Google Gemini', note: '2.5 Pro/Flash, 2.0 Flash' },
+  { id: 'gemini', label: 'Google Gemini', note: '2.5 Pro / Flash / Flash-Lite' },
 ]
 const modelsByProvider = {
   openai: [
@@ -157,13 +170,10 @@ const modelsByProvider = {
     { id: 'gpt-3.5-turbo',   label: 'gpt-3.5-turbo',   note: 'eng arzon' },
   ],
   gemini: [
-    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor, default' },
+    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
     { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'eng kuchli Gemini modeli' },
     { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon, juda tezkor' },
-    { id: 'gemini-2.0-flash',      label: 'gemini-2.0-flash',      note: 'barqaror, oldingi avlod' },
-    { id: 'gemini-2.0-flash-lite', label: 'gemini-2.0-flash-lite', note: 'eng arzon 2.0' },
     { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'doim eng yangi Flash' },
-    { id: 'gemini-pro-latest',     label: 'gemini-pro-latest',     note: 'doim eng yangi Pro' },
   ],
 }
 
