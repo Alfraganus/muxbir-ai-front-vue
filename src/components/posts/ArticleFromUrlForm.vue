@@ -64,10 +64,29 @@
     </label>
 
     <!-- Prompt -->
-    <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
       <span style="font-size:12px;font-weight:600;color:var(--text);">4. Prompt</span>
+
+      <!-- Tavsiya etilgan promptdan foydalanish — faqat admin shu turdagi
+           prompt yaratgan bo'lsa ko'rinadi -->
+      <label v-if="recommended.exists" class="afu-recommend" :class="{ on: form.useRecommended }">
+        <input type="checkbox" v-model="form.useRecommended" :disabled="busy"/>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+          <span style="font-size:13px;font-weight:600;color:var(--text);">
+            ✨ Tavsiya etilgan promptdan foydalanish
+            <span v-if="recommended.name" style="color:var(--muted);font-weight:400;">
+              — {{ recommended.name }}
+            </span>
+          </span>
+          <span style="font-size:11px;color:var(--muted);">
+            Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi.
+            Ushbu rejimda quyidagi ro'yxat o'chiriladi.
+          </span>
+        </div>
+      </label>
+
       <div v-if="loadingGroups" style="font-size:12.5px;color:var(--muted);">Yuklanmoqda…</div>
-      <div v-else-if="!groups.length"
+      <div v-else-if="!groups.length && !form.useRecommended"
            style="padding:14px;text-align:center;border:1px dashed var(--border-2);border-radius:8px;
                   display:flex;flex-direction:column;gap:8px;align-items:center;font-size:12.5px;">
         <span style="color:var(--text);">Hali prompt yo'q. Avval AI prompt sahifasida yarating.</span>
@@ -77,9 +96,17 @@
           AI prompt →
         </button>
       </div>
-      <select v-else v-model="form.groupId" :disabled="busy"
-              style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
-                     background:var(--bg);color:var(--text);font-size:13px;">
+      <select v-else v-model="form.groupId" :disabled="busy || form.useRecommended"
+              :style="{
+                padding: '9px 12px',
+                border: '1px solid var(--border-2)',
+                borderRadius: '6px',
+                background: form.useRecommended ? 'var(--panel-2, rgba(99,102,241,.04))' : 'var(--bg)',
+                color: form.useRecommended ? 'var(--muted)' : 'var(--text)',
+                fontSize: '13px',
+                opacity: form.useRecommended ? 0.5 : 1,
+                cursor: form.useRecommended ? 'not-allowed' : 'pointer',
+              }">
         <option value="" disabled>Promptni tanlang…</option>
         <option v-for="g in groups" :key="g.id" :value="g.id">
           {{ g.name }} · {{ g.prompts.length }} bo'lim{{ anyApplyBase(g) ? ' · BASE' : '' }}
@@ -99,12 +126,12 @@
       <button
         type="button"
         @click="generate"
-        :disabled="busy || !form.url || !form.groupId"
+        :disabled="canSubmit === false"
         :style="{
           padding: '10px 20px', borderRadius: '7px',
-          background: (busy || !form.url || !form.groupId) ? 'var(--bg-2,rgba(0,0,0,.05))' : 'var(--accent)',
-          color: (busy || !form.url || !form.groupId) ? 'var(--muted)' : '#fff',
-          border: 'none', cursor: (busy || !form.url || !form.groupId) ? 'default' : 'pointer',
+          background: canSubmit ? 'var(--accent)' : 'var(--bg-2,rgba(0,0,0,.05))',
+          color: canSubmit ? '#fff' : 'var(--muted)',
+          border: 'none', cursor: canSubmit ? 'pointer' : 'default',
           fontSize: '13px', fontWeight: 600,
         }"
       >
@@ -120,6 +147,7 @@
 <script setup>
 import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { companiesApi } from '@/api/companies.js'
+import { aiApi } from '@/api/ai.js'
 import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
 
 const emit = defineEmits(['created', 'goto'])
@@ -161,13 +189,30 @@ const form = reactive({
   groupId:  savedPrefs.groupId  || '',
   provider: savedPrefs.provider || 'openai',
   model:    savedPrefs.model    || 'gpt-4o-mini',
+  // Default: yoqilgan — admin tavsiya etgan prompt ishlatiladi.
+  // Lekin admin tavsiya etgan prompt mavjud bo'lmasa, onMounted'da false ga tushiriladi.
+  useRecommended: savedPrefs.useRecommended === undefined ? true : !!savedPrefs.useRecommended,
 })
+
+// Admin tomonidan tavsiya etilgan prompt mavjudmi? null — hali tekshirilmagan.
+const recommended = ref({ exists: false, name: null, loaded: false })
 
 const availableModels = computed(() => modelsByProvider[form.provider] || [])
 
+const canSubmit = computed(() => {
+  if (busy.value) return false
+  if (!form.url) return false
+  // useRecommended yoqilgan bo'lsa — prompt tanlash shart emas
+  if (form.useRecommended) return true
+  return !!form.groupId
+})
+
 // Tanlov o'zgarganda — localStorage'ga avtomatik yozish (url'siz)
 watch(
-  () => ({ groupId: form.groupId, provider: form.provider, model: form.model }),
+  () => ({
+    groupId: form.groupId, provider: form.provider, model: form.model,
+    useRecommended: form.useRecommended,
+  }),
   (v) => {
     try { localStorage.setItem(LS_KEY, JSON.stringify(v)) } catch {}
   },
@@ -204,18 +249,34 @@ onMounted(async () => {
   } finally {
     loadingGroups.value = false
   }
+
+  // Admin tomonidan tavsiya etilgan prompt mavjudligini tekshirish
+  try {
+    const r = await aiApi.getRecommendedPrompt('article_from_url')
+    recommended.value = { exists: !!r?.exists, name: r?.name || null, loaded: true }
+  } catch {
+    recommended.value = { exists: false, name: null, loaded: true }
+  }
+  // Tavsiya etilgan prompt yo'q bo'lsa, foydalanuvchining tanlovini majburan
+  // o'chiramiz — chunki bu rejim ishlamaydi.
+  if (!recommended.value.exists && form.useRecommended) {
+    form.useRecommended = false
+  }
 })
 
 async function generate() {
-  if (!company.value || !form.url.trim() || !form.groupId) return
+  if (!company.value || !form.url.trim()) return
+  // Tavsiya etilgan promptdan foydalanmasdan, hech qanday prompt tanlanmagan bo'lsa — to'xtatish
+  if (!form.useRecommended && !form.groupId) return
   error.value = null
   busy.value = true
   try {
     const r = await companiesApi.createPostFromUrl(company.value.id, {
       url: form.url.trim(),
-      prompt_group_id: form.groupId,
+      prompt_group_id: form.useRecommended ? undefined : form.groupId,
       provider: form.provider,
       model: form.model,
+      use_admin_recommended: form.useRecommended,
     })
     if (r?.post_id) {
       emit('created', r.post_id)
@@ -229,3 +290,30 @@ async function generate() {
   }
 }
 </script>
+
+<style scoped>
+.afu-recommend {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.afu-recommend:hover { border-color: var(--accent); }
+.afu-recommend.on {
+  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+}
+.afu-recommend input[type="checkbox"] {
+  margin: 2px 0 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+</style>

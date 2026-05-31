@@ -428,9 +428,40 @@
               width="560px">
       <div style="display:flex;flex-direction:column;gap:14px;">
         <!-- Prompt -->
-        <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
           <span style="font-size:12px;font-weight:600;color:var(--text);">1. Prompt</span>
-          <div v-if="!aiPromptGroups.length"
+
+          <!-- Tavsiya etilgan promptdan foydalanish — faqat admin shu turdagi
+               prompt yaratgan bo'lsa ko'rinadi -->
+          <label v-if="aiRecommended.exists" class="pe-aire-recommend"
+                 :class="{ on: aiRewriteForm.useRecommended }">
+            <input type="checkbox" v-model="aiRewriteForm.useRecommended" :disabled="aiShortening"/>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
+              <span style="font-size:13px;font-weight:600;color:var(--text);">
+                ✨ Tavsiya etilgan promptdan foydalanish
+                <span v-if="aiRecommended.name" style="color:var(--muted);font-weight:400;">
+                  — {{ aiRecommended.name }}
+                </span>
+              </span>
+              <span style="font-size:11px;color:var(--muted);">
+                Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi.
+                Ushbu rejimda quyidagi ro'yxat o'chiriladi.
+              </span>
+            </div>
+          </label>
+
+          <!-- Diagnostika — tavsiya etilgan prompt mavjud emasligi sababi -->
+          <div v-else-if="aiRecommended.loaded"
+               style="padding:9px 11px;border-radius:7px;background:rgba(245,158,11,.08);
+                      border:1px solid rgba(245,158,11,.25);color:#92400e;font-size:11.5px;
+                      line-height:1.5;">
+            ⚠️ <strong>Tavsiya etilgan prompt mavjud emas.</strong>
+            Admin <code>/admin/prompts</code> sahifasida <code>article_shorten</code>
+            (Maqola qisqartirish va sayqallash) toifasi belgilangan prompt yaratsin —
+            keyin shu yerda "Tavsiya etilgan promptdan foydalanish" checkbox ko'rinadi.
+          </div>
+
+          <div v-if="!aiPromptGroups.length && !aiRewriteForm.useRecommended"
                style="padding:14px;text-align:center;border:1px dashed var(--border-2);border-radius:8px;
                       display:flex;flex-direction:column;gap:8px;align-items:center;font-size:12.5px;">
             <span style="color:var(--text);">Hali prompt yo'q. Avval Sozlamalar → AI prompt'da yarating.</span>
@@ -440,9 +471,18 @@
               AI prompt →
             </button>
           </div>
-          <select v-else v-model="aiRewriteForm.groupId" :disabled="aiShortening"
-                  style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
-                         background:var(--bg);color:var(--text);font-size:13px;">
+          <select v-else v-model="aiRewriteForm.groupId"
+                  :disabled="aiShortening || aiRewriteForm.useRecommended"
+                  :style="{
+                    padding: '9px 12px',
+                    border: '1px solid var(--border-2)',
+                    borderRadius: '6px',
+                    background: aiRewriteForm.useRecommended ? 'var(--panel-2, rgba(99,102,241,.04))' : 'var(--bg)',
+                    color: aiRewriteForm.useRecommended ? 'var(--muted)' : 'var(--text)',
+                    fontSize: '13px',
+                    opacity: aiRewriteForm.useRecommended ? 0.5 : 1,
+                    cursor: aiRewriteForm.useRecommended ? 'not-allowed' : 'pointer',
+                  }">
             <option value="" disabled>Promptni tanlang…</option>
             <option v-for="g in aiPromptGroups" :key="g.id" :value="g.id">
               {{ g.name }} · {{ g.prompts.length }} bo'lim{{ anyApplyBaseInGroup(g) ? ' · BASE' : '' }}
@@ -498,12 +538,12 @@
           Bekor qilish
         </button>
         <button type="button" @click="runAiRewrite"
-                :disabled="aiShortening || !aiRewriteForm.groupId"
+                :disabled="!canRunAiRewrite"
                 :style="{
                   padding: '8px 16px', borderRadius: '6px',
-                  background: (aiShortening || !aiRewriteForm.groupId) ? 'var(--bg-2,rgba(0,0,0,.05))' : 'var(--accent)',
-                  color: (aiShortening || !aiRewriteForm.groupId) ? 'var(--muted)' : '#fff',
-                  border: 'none', cursor: (aiShortening || !aiRewriteForm.groupId) ? 'default' : 'pointer',
+                  background: canRunAiRewrite ? 'var(--accent)' : 'var(--bg-2,rgba(0,0,0,.05))',
+                  color: canRunAiRewrite ? '#fff' : 'var(--muted)',
+                  border: 'none', cursor: canRunAiRewrite ? 'pointer' : 'default',
                   fontSize: '12.5px', fontWeight: 600,
                 }">
           {{ aiShortening ? 'Yozilmoqda…' : '✨ Qayta yozish' }}
@@ -569,6 +609,7 @@ import { companiesApi } from '@/api/companies.js'
 import { channelsApi } from '@/api/channels.js'
 import { postsApi } from '@/api/posts.js'
 import { uploadsApi } from '@/api/uploads.js'
+import { aiApi } from '@/api/ai.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -611,6 +652,18 @@ const aiRewriteForm = reactive({
   groupId:  aiSavedPrefs.groupId  || '',
   provider: aiSavedPrefs.provider || 'openai',
   model:    aiSavedPrefs.model    || 'gpt-4o-mini',
+  // Default: yoqilgan — lekin admin tavsiya etgan prompt mavjud bo'lmasa
+  // openAiRewrite ichida false ga tushiriladi.
+  useRecommended: aiSavedPrefs.useRecommended === undefined ? true : !!aiSavedPrefs.useRecommended,
+})
+
+// Admin tavsiya etgan prompt mavjudligi — modal har ochilganda yangilanadi.
+const aiRecommended = ref({ exists: false, name: null, loaded: false })
+
+const canRunAiRewrite = computed(() => {
+  if (aiShortening.value) return false
+  if (aiRewriteForm.useRecommended) return true
+  return !!aiRewriteForm.groupId
 })
 const aiProviders = [
   { id: 'openai', label: 'OpenAI', note: 'GPT-4o, mini' },
@@ -1320,6 +1373,9 @@ async function openAiRewrite() {
     if (saved.groupId) {
       aiRewriteForm.groupId = saved.groupId
     }
+    if (saved.useRecommended !== undefined) {
+      aiRewriteForm.useRecommended = !!saved.useRecommended
+    }
   } catch { /* ignore */ }
 
   // Promptlarni yuklab olamiz (har gal modal ochilganda — eng yangi)
@@ -1337,12 +1393,44 @@ async function openAiRewrite() {
   } catch (e) {
     aiError.value = e?.response?.data?.message ?? e.message
   }
+
+  // Admin tavsiya etgan prompt mavjudligini tekshiramiz (article_shorten)
+  try {
+    const r = await aiApi.getRecommendedPrompt('article_shorten')
+    aiRecommended.value = { exists: !!r?.exists, name: r?.name || null, loaded: true }
+    if (!r?.exists) {
+      console.warn(
+        "[AI rewrite] Admin tavsiya etgan prompt topilmadi (usage='article_shorten'). " +
+        "Backend javobi:", r,
+        " — Admin → Promptlar bo'limida usage='article_shorten' bilan prompt yarating.",
+      )
+    } else {
+      console.log("[AI rewrite] Tavsiya etilgan prompt topildi:", r.name)
+    }
+  } catch (e) {
+    aiRecommended.value = { exists: false, name: null, loaded: true }
+    console.error(
+      "[AI rewrite] Tavsiya etilgan promptni tekshirish xatosi:",
+      e?.response?.status, e?.response?.data || e?.message,
+      " — Endpoint /ai-prompts/recommended/article_shorten ishlamayotgan bo'lishi mumkin. " +
+      "Backend qayta ishga tushirilganmi?",
+    )
+  }
+  // Tavsiya etilgan prompt yo'q bo'lsa, foydalanuvchining tanlovi qanday bo'lishidan
+  // qat'iy nazar — flagni o'chiramiz, chunki bu rejim ishlamaydi.
+  if (!aiRecommended.value.exists && aiRewriteForm.useRecommended) {
+    aiRewriteForm.useRecommended = false
+  }
+
   showAiRewrite.value = true
 }
 
 // Foydalanuvchining tanlovlarini saqlash (har o'zgarishda)
 watch(
-  () => ({ groupId: aiRewriteForm.groupId, provider: aiRewriteForm.provider, model: aiRewriteForm.model }),
+  () => ({
+    groupId: aiRewriteForm.groupId, provider: aiRewriteForm.provider, model: aiRewriteForm.model,
+    useRecommended: aiRewriteForm.useRecommended,
+  }),
   (v) => {
     try { localStorage.setItem(AI_REWRITE_LS_KEY, JSON.stringify(v)) } catch {}
   },
@@ -1350,8 +1438,8 @@ watch(
 )
 
 async function runAiRewrite() {
-  if (!aiRewriteForm.groupId) {
-    aiError.value = 'Promptni tanlang'
+  if (!aiRewriteForm.useRecommended && !aiRewriteForm.groupId) {
+    aiError.value = 'Promptni tanlang yoki tavsiya etilgandan foydalaning'
     return
   }
   aiError.value = ''
@@ -1359,9 +1447,10 @@ async function runAiRewrite() {
   try {
     const res = await postsApi.aiRewrite(company.value.id, postId.value, {
       lang: activeLang.value,
-      prompt_group_id: aiRewriteForm.groupId,
+      prompt_group_id: aiRewriteForm.useRecommended ? undefined : aiRewriteForm.groupId,
       provider: aiRewriteForm.provider,
       model: aiRewriteForm.model,
+      use_admin_recommended: aiRewriteForm.useRecommended,
     })
     if (res?.content_json) {
       activeTr.value.content_json = res.content_json
@@ -1409,6 +1498,32 @@ async function aiGenerateTags() {
   gap: 22px;
   padding: 0 0 80px;
   min-height: 100%;
+}
+
+/* AI rewrite modal — tavsiya etilgan promptdan foydalanish checkbox */
+.pe-aire-recommend {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.pe-aire-recommend:hover { border-color: var(--accent); }
+.pe-aire-recommend.on {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+}
+.pe-aire-recommend input[type="checkbox"] {
+  margin: 2px 0 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* ────────── Hero ────────── */

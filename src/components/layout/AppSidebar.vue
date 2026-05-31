@@ -203,6 +203,7 @@ const adminNav = computed(() => [
   { id: 'references', icon: 'List',    label: 'Spravochniklar',                path: '/admin/references' },
   { id: 'worker',    icon: 'Server',   label: 'Bot worker',                    path: '/admin/worker-settings' },
   { id: 'ai-prompt', icon: 'Sparkle',  label: 'AI base prompt',                path: '/admin/ai-prompt' },
+  { id: 'prompts',   icon: 'Edit',     label: 'Promptlar kutubxonasi',         path: '/admin/prompts' },
   { id: 'tg-sessions', icon: 'Telegram', label: 'Telegram sessionlari',        path: '/admin/telegram-sessions' },
   { id: 'system',    icon: 'Server',   label: t.value('nav.admin.system'),     path: null },
 ])

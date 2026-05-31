@@ -74,11 +74,29 @@
       </div>
     </AppPanel>
 
-    <AppPanel title="3. Prompt to'plamini tanlang"
-              :subtitle="groups.length ? groups.length + ` ta to'plam mavjud — maqola uslubini belgilang` : null">
-      <div v-if="loadingGroups" style="font-size:12.5px;color:var(--muted);">Yuklanmoqda…</div>
-      <div v-else-if="!groups.length"
-           style="padding:18px;text-align:center;border:1px dashed var(--border-2);border-radius:8px;
+    <AppPanel title="3. Prompt to'plamini tanlang" :subtitle="promptPanelSubtitle">
+      <!-- Tavsiya etilgan promptdan foydalanish — faqat admin shu turdagi
+           prompt yaratgan bo'lsa ko'rinadi -->
+      <label v-if="recommended.exists" class="cafu-recommend" :class="{ on: form.useRecommended }">
+        <input type="checkbox" v-model="form.useRecommended" :disabled="busy"/>
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;">
+          <span style="font-size:13.5px;font-weight:600;color:var(--text);">
+            ✨ Tavsiya etilgan promptdan foydalanish
+            <span v-if="recommended.name" style="color:var(--muted);font-weight:400;">
+              — {{ recommended.name }}
+            </span>
+          </span>
+          <span style="font-size:12px;color:var(--muted);line-height:1.5;">
+            Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi —
+            shaxsiy to'plam tanlash shart emas. Boshqa prompt tanlamoqchi bo'lsangiz,
+            ushbu belgini olib tashlang.
+          </span>
+        </div>
+      </label>
+
+      <div v-if="loadingGroups" style="font-size:12.5px;color:var(--muted);margin-top:10px;">Yuklanmoqda…</div>
+      <div v-else-if="!groups.length && !form.useRecommended"
+           style="margin-top:10px;padding:18px;text-align:center;border:1px dashed var(--border-2);border-radius:8px;
                   display:flex;flex-direction:column;gap:8px;align-items:center;">
         <span style="font-size:13px;color:var(--text);">
           Hali prompt to'plami yo'q. Avval AI prompt sahifasida to'plam yarating.
@@ -89,24 +107,25 @@
           AI prompt →
         </button>
       </div>
-      <div v-else style="display:flex;flex-direction:column;gap:8px;">
+      <div v-else :class="{ 'cafu-disabled': form.useRecommended }"
+           style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
         <label v-for="g in groups" :key="g.id"
                :style="{
                  display: 'flex',
                  alignItems: 'center',
                  gap: '10px',
                  padding: '10px 12px',
-                 border: '1px solid ' + (form.groupId === g.id ? 'var(--accent)' : 'var(--border-2)'),
+                 border: '1px solid ' + (form.groupId === g.id && !form.useRecommended ? 'var(--accent)' : 'var(--border-2)'),
                  borderRadius: '8px',
-                 cursor: 'pointer',
-                 background: form.groupId === g.id ? 'rgba(99,102,241,.06)' : 'var(--bg)',
+                 cursor: form.useRecommended ? 'not-allowed' : 'pointer',
+                 background: form.groupId === g.id && !form.useRecommended ? 'rgba(99,102,241,.06)' : 'var(--bg)',
                }">
           <input
             v-model="form.groupId"
             type="radio"
             :value="g.id"
-            :disabled="busy"
-            style="margin:0;cursor:pointer;"
+            :disabled="busy || form.useRecommended"
+            style="margin:0;cursor:inherit;"
           />
           <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
             <span style="font-size:13px;font-weight:600;color:var(--text);">{{ g.name }}</span>
@@ -129,10 +148,16 @@
       <button
         type="button"
         @click="generate"
-        :disabled="busy || !form.url || !form.groupId"
-        style="padding:11px 22px;border-radius:7px;background:var(--accent);color:#fff;
-               border:none;cursor:pointer;font-size:13.5px;font-weight:500;
-               disabled:opacity-50"
+        :disabled="!canSubmit"
+        :style="{
+          padding: '11px 22px',
+          borderRadius: '7px',
+          background: canSubmit ? 'var(--accent)' : 'var(--bg-2,rgba(0,0,0,.05))',
+          color: canSubmit ? '#fff' : 'var(--muted)',
+          border: 'none',
+          cursor: canSubmit ? 'pointer' : 'not-allowed',
+          fontSize: '13.5px', fontWeight: 500,
+        }"
       >
         {{ busy ? 'Yaratilmoqda…' : '✨ AI orqali maqola yaratish' }}
       </button>
@@ -150,6 +175,7 @@ import AppPanel from '@/components/ui/AppPanel.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
 import { companiesApi } from '@/api/companies.js'
+import { aiApi } from '@/api/ai.js'
 
 const router = useRouter()
 const busy = ref(false)
@@ -182,9 +208,28 @@ const form = reactive({
   groupId: '',
   provider: 'openai',
   model: 'gpt-4o-mini',
+  useRecommended: true, // default: yoqilgan (lekin onMounted'da prompt yo'q bo'lsa false ga tushadi)
 })
 
+const recommended = ref({ exists: false, name: null, loaded: false })
+
 const availableModels = computed(() => modelsByProvider[form.provider] || [])
+
+const canSubmit = computed(() => {
+  if (busy.value) return false
+  if (!form.url) return false
+  if (form.useRecommended) return true
+  return !!form.groupId
+})
+
+const promptPanelSubtitle = computed(() => {
+  if (form.useRecommended) {
+    return "Tavsiya etilgan prompt yoqilgan — quyidagi ro'yxat o'chiriladi"
+  }
+  return groups.value.length
+    ? `${groups.value.length} ta to'plam mavjud — maqola uslubini belgilang`
+    : null
+})
 
 // Provider o'zgarsa default modelni tanlash
 watch(() => form.provider, (p) => {
@@ -212,18 +257,31 @@ onMounted(async () => {
   } finally {
     loadingGroups.value = false
   }
+
+  // Admin tomonidan tavsiya etilgan prompt mavjudmi?
+  try {
+    const r = await aiApi.getRecommendedPrompt('article_from_url')
+    recommended.value = { exists: !!r?.exists, name: r?.name || null, loaded: true }
+  } catch {
+    recommended.value = { exists: false, name: null, loaded: true }
+  }
+  if (!recommended.value.exists && form.useRecommended) {
+    form.useRecommended = false
+  }
 })
 
 async function generate() {
-  if (!company.value || !form.url.trim() || !form.groupId) return
+  if (!company.value || !form.url.trim()) return
+  if (!form.useRecommended && !form.groupId) return
   error.value = null
   busy.value = true
   try {
     const r = await companiesApi.createPostFromUrl(company.value.id, {
       url: form.url.trim(),
-      prompt_group_id: form.groupId,
+      prompt_group_id: form.useRecommended ? undefined : form.groupId,
       provider: form.provider,
       model: form.model,
+      use_admin_recommended: form.useRecommended,
     })
     if (r?.post_id) {
       router.push(`/client/posts/${r.post_id}/edit`)
@@ -237,3 +295,36 @@ async function generate() {
   }
 }
 </script>
+
+<style scoped>
+.cafu-recommend {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-2);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.cafu-recommend:hover { border-color: var(--accent); }
+.cafu-recommend.on {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 7%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 10%, transparent);
+}
+.cafu-recommend input[type="checkbox"] {
+  margin: 3px 0 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cafu-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: grayscale(0.4);
+}
+</style>

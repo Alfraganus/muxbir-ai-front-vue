@@ -21,4 +21,16 @@ export const adminApi = {
     http.delete(`/admin/telegram-sessions/${companyId}`).then((r) => r.data),
   revokeAllTelegramSessions: () =>
     http.delete('/admin/telegram-sessions').then((r) => r.data),
+
+  // Admin promptlari kutubxonasi (CRUD)
+  listPrompts: () =>
+    http.get('/admin/prompts').then((r) => r.data),
+  getPrompt: (id) =>
+    http.get(`/admin/prompts/${id}`).then((r) => r.data),
+  createPrompt: (payload) =>
+    http.post('/admin/prompts', payload).then((r) => r.data),
+  updatePrompt: (id, payload) =>
+    http.patch(`/admin/prompts/${id}`, payload).then((r) => r.data),
+  deletePrompt: (id) =>
+    http.delete(`/admin/prompts/${id}`).then((r) => r.data),
 }
