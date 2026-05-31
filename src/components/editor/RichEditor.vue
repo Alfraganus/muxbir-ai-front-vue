@@ -66,7 +66,10 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const editor = shallowRef(null)
-let isSelfChange = false
+// Editor'ning oxirgi emit qilgan HTML qiymati — watch shu bilan solishtirib,
+// haqiqiy tashqi o'zgarishlarni o'zining emitidan ajratadi. Flag o'rniga ishlatamiz
+// chunki flag race condition'larga moyil bo'ladi.
+let lastEmittedHtml = ''
 
 const sourceMode = ref(false)
 const sourceHtml = ref('')
@@ -81,16 +84,17 @@ function toggleSource() {
     // HTML → Vizual: textareadagi HTML'ni editorga yuklaymiz
     editor.value.commands.setContent(sourceHtml.value || '', false)
     sourceMode.value = false
-    // Parent ham yangilansin
-    isSelfChange = true
-    emit('update:modelValue', { html: editor.value.getHTML() })
+    const html = editor.value.getHTML()
+    lastEmittedHtml = html
+    emit('update:modelValue', { html })
   }
 }
 
 function onSourceInput() {
   // HTML manba rejimida ham tahrir qilinishi bilan parent yangilanadi
-  isSelfChange = true
-  emit('update:modelValue', { html: sourceHtml.value || '' })
+  const html = sourceHtml.value || ''
+  lastEmittedHtml = html
+  emit('update:modelValue', { html })
 }
 
 function extractHtml(v) {
@@ -161,7 +165,7 @@ onMounted(() => {
     ],
     onUpdate: ({ editor: ed }) => {
       const html = ed.getHTML()
-      isSelfChange = true
+      lastEmittedHtml = html
       emit('update:modelValue', { html })
     },
   })
@@ -170,11 +174,14 @@ onMounted(() => {
 watch(
   () => props.modelValue,
   (val) => {
-    if (isSelfChange) { isSelfChange = false; return }
     if (!editor.value) return
     const next = extractHtml(val)
+    // Bizning o'zimiz emit qilgan qiymat qaytib kelmoqda — qayta yuklash kerak emas
+    if (next === lastEmittedHtml) return
+    // Editor'da allaqachon shu HTML bor — o'tkazib yuboramiz
     if (next === editor.value.getHTML()) return
     editor.value.commands.setContent(next, false)
+    lastEmittedHtml = next
     // HTML manba rejimi ochiq bo'lsa textareani ham sinxronlaymiz
     if (sourceMode.value) sourceHtml.value = next
   },

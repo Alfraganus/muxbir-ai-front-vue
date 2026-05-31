@@ -180,7 +180,7 @@
             </div>
 
             <div class="pe-paper-editor">
-              <RichEditor :key="activeLang" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
+              <RichEditor :key="`${activeLang}-${editorReloadKey}`" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
             </div>
           </div>
         </main>
@@ -966,6 +966,11 @@ async function removeGallery(i) {
   } catch { /* keyingi save'da diff orqali tozalanadi */ }
 }
 
+// Editor'ni AI yangilashlar / kontent qayta yuklash bilan majburiy re-mount qilish uchun counter.
+// Vue v-model + Tiptap reactivity ba'zan tashqi assignment'larni o'tkazib yuboradi —
+// bu key bump qilingan har safar editor instance qayta yaratiladi va yangi modelValue'ni oladi.
+const editorReloadKey = ref(0)
+
 const translations = reactive({
   uz: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
   ru: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
@@ -1087,6 +1092,7 @@ async function loadInitial() {
           translations[l].title = tr.title || ''
           translations[l].short_description = tr.short_description || ''
           translations[l].content_json = tr.content_json || { html: '' }
+          editorReloadKey.value++ // har yangi tarjima yuklanganda editor'ni yangi kontent bilan qayta yaratamiz
           translations[l].is_complete = !!tr.is_complete
         }
       }
@@ -1346,6 +1352,7 @@ async function aiShortenContent() {
     const res = await postsApi.aiShorten(company.value.id, postId.value, activeLang.value)
     if (res?.content_json) {
       activeTr.value.content_json = res.content_json
+      editorReloadKey.value++ // editor'ni majburiy re-mount qilamiz, yangi kontent ko'rinsin
     }
     aiUsageStore.refresh()
   } catch (e) {
@@ -1459,6 +1466,7 @@ async function runAiRewrite() {
     })
     if (res?.content_json) {
       activeTr.value.content_json = res.content_json
+      editorReloadKey.value++ // editor'ni majburiy re-mount qilamiz
     }
     aiUsageStore.refresh()
     showAiRewrite.value = false
