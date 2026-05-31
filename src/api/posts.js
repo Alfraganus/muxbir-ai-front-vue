@@ -18,9 +18,12 @@ export const postsApi = {
   create: (companyId, data) =>
     http.post(`/companies/${companyId}/posts`, data).then(r => r.data),
 
-  /** Discover'dan postni asos qilib draft yaratadi (rasm yuklab olinadi) */
+  /** Discover'dan postni asos qilib draft yaratadi (rasm yuklab olinadi).
+   *  Backend t.me sahifasini scrape qiladi + rasm/video yuklaydi —
+   *  bu 30+ soniya ketishi mumkin, shuning uchun default 10s timeout'ni oshiramiz. */
   createFromSource: (companyId, sourcePostId) =>
-    http.post(`/companies/${companyId}/posts/from-source`, { source_post_id: sourcePostId })
+    http.post(`/companies/${companyId}/posts/from-source`, { source_post_id: sourcePostId },
+              { timeout: 120000 })
       .then(r => r.data),
 
   update: (companyId, postId, data) =>
@@ -40,7 +43,8 @@ export const postsApi = {
 
   /** AI: post matnini Telegram uchun qisqartiradi va saqlaydi. Qaytaradi: { lang, content_json } */
   aiShorten: (companyId, postId, lang = 'uz') =>
-    http.post(`/companies/${companyId}/posts/${postId}/ai/shorten`, { lang }).then(r => r.data),
+    http.post(`/companies/${companyId}/posts/${postId}/ai/shorten`, { lang },
+              { timeout: 120000 }).then(r => r.data),
 
   /** AI: prompt + provider + model tanlash bilan qayta yozish. payload: {lang, prompt_group_id, provider, model} */
   aiRewrite: (companyId, postId, payload) =>
@@ -49,8 +53,10 @@ export const postsApi = {
 
   /** AI: post mazmunidan tag'lar generatsiya qiladi. apply=true → DB ga ham yozadi. */
   aiTags: (companyId, postId, lang = 'uz', apply = false) =>
-    http.post(`/companies/${companyId}/posts/${postId}/ai/tags`, { lang, apply }).then(r => r.data),
+    http.post(`/companies/${companyId}/posts/${postId}/ai/tags`, { lang, apply },
+              { timeout: 60000 }).then(r => r.data),
 
   publish: (companyId, postId) =>
-    http.post(`/companies/${companyId}/posts/${postId}/publish`).then(r => r.data),
+    http.post(`/companies/${companyId}/posts/${postId}/publish`, null,
+              { timeout: 60000 }).then(r => r.data),
 }
