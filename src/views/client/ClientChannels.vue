@@ -100,6 +100,10 @@
             ID: <span class="mono" style="color:var(--text-2);">{{ c.telegram_chat_id || '—' }}</span>
           </span>
           <div style="display:flex;gap:6px;">
+            <AppButton v-if="!isActive(c)" variant="primary" size="sm" @click="openReactivateModal(c)" title="Botni kanalga qayta admin qilish">
+              <template #icon><AppIcon name="Sparkle" :size="12"/></template>
+              Qayta faollashtirish
+            </AppButton>
             <AppButton variant="ghost" size="sm" @click="openSignature(c)" title="Kanal imzosi (post oxiriga qo'shiladi)">
               <template #icon><AppIcon name="Edit" :size="12"/></template>
               Imzo
@@ -159,6 +163,10 @@
             <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ connectedDate(c) }}</td>
             <td style="padding:10px;vertical-align:middle;"><AppBadge :tone="isActive(c) ? 'success' : 'muted'" dot>{{ statusLabel(c) }}</AppBadge></td>
             <td style="padding:10px;vertical-align:middle;text-align:right;white-space:nowrap;">
+              <AppButton v-if="!isActive(c)" variant="primary" size="sm" @click="openReactivateModal(c)">
+                <template #icon><AppIcon name="Sparkle" :size="12"/></template>
+                Qayta faollashtirish
+              </AppButton>
               <AppButton v-if="(c.posting_mode||'auto')==='auto'" variant="ghost" size="sm" @click="openAutoSettings(c)">
                 <template #icon><AppIcon name="Sparkle" :size="12"/></template>
                 Sozlash
@@ -726,6 +734,105 @@
       </Transition>
     </Teleport>
 
+    <!-- ────── Reactivate Channel Modal ────── -->
+    <Teleport to="body">
+      <Transition name="cc-modal">
+        <div v-if="reactivateModalOpen" class="cc-modal-backdrop" @click.self="closeReactivateModal">
+          <div class="cc-modal" role="dialog" aria-modal="true">
+            <button class="cc-modal-close" @click="closeReactivateModal" aria-label="Yopish">
+              <AppIcon name="Close" :size="14"/>
+            </button>
+
+            <div class="cc-modal-hero" :style="{ background: heroGradient('telegram') }">
+              <div aria-hidden class="cc-modal-hero-dots"/>
+              <div class="cc-modal-hero-inner">
+                <span class="cc-modal-hero-icon"><AppIcon name="Sparkle" :size="22"/></span>
+                <div>
+                  <div class="cc-modal-hero-title">Kanalni qayta faollashtirish</div>
+                  <div class="cc-modal-hero-sub">
+                    <b>{{ reactivateChannelData?.display_name || reactivateChannelData?.username }}</b>
+                    — botni kanalga admin qilib qayta qo'shing
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cc-modal-body">
+              <div v-if="reactivateLoading" style="display:flex;align-items:center;justify-content:center;padding:40px 0;gap:10px;color:var(--muted);font-size:13px;">
+                <span class="cc-spinner"/>
+                Tayyorlanmoqda...
+              </div>
+
+              <template v-else-if="reactivateChannelData && reactivateChannelData.status === 'connected' && (reactivateChannelData.bot_status === 'administrator' || reactivateChannelData.bot_status === 'creator')">
+                <div class="cc-success">
+                  <div class="cc-success-icon"><AppIcon name="Check" :size="28"/></div>
+                  <div style="text-align:center">
+                    <div class="cc-success-title">Kanal qayta faollashtirildi!</div>
+                    <div class="cc-success-sub">
+                      <b>{{ reactivateChannelData?.display_name || reactivateChannelData?.username }}</b>
+                      — bot endi admin sifatida ulangan
+                    </div>
+                  </div>
+                  <div class="cc-modal-actions">
+                    <AppButton variant="primary" size="md" @click="closeReactivateModal">Yopish</AppButton>
+                  </div>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="cc-pending">
+                  <div class="cc-pending-pulse">
+                    <span class="cc-pending-pulse-ring r1"/>
+                    <span class="cc-pending-pulse-ring r2"/>
+                    <span class="cc-pending-pulse-icon" :style="platformIconStyle('telegram')">
+                      <AppIcon name="Telegram" :size="18"/>
+                    </span>
+                  </div>
+                  <div style="text-align:center;">
+                    <div class="cc-pending-title">Botni qayta admin qiling</div>
+                    <div class="cc-pending-sub">
+                      <span class="mono" style="color:var(--text-2)">{{ reactivateChannelData?.username }}</span>
+                      kanalida botni admin qilib qaytadan qo'shganingizdan keyin status avtomatik faollashadi.
+                    </div>
+                  </div>
+
+                  <a v-if="reactivateDeepLink" :href="reactivateDeepLink" target="_blank" rel="noopener" class="cc-pending-cta">
+                    <AppIcon name="Telegram" :size="14"/>
+                    Telegramda ochish
+                    <AppIcon name="Arrow" :size="13"/>
+                  </a>
+
+                  <div class="cc-pending-steps">
+                    <div class="cc-step"><span class="cc-step-num">1</span> "Telegramda ochish" tugmasini bosing</div>
+                    <div class="cc-step"><span class="cc-step-num">2</span> Bot profilidan "Add to Group or Channel" → kanalingizni tanlang</div>
+                    <div class="cc-step"><span class="cc-step-num">3</span> Botga admin huquqlari bering — status avtomatik yangilanadi</div>
+                  </div>
+
+                  <div class="cc-reactivate-live">
+                    <span class="cc-live-dot"/>
+                    <span style="flex:1;">Bot kanaliga qo'shilishi avtomatik kuzatilmoqda</span>
+                    <button type="button" class="cc-live-check" :disabled="reactivateChecking" @click="checkReactivateNow">
+                      <span v-if="reactivateChecking" class="cc-spinner" style="width:11px;height:11px;border-width:1.5px;"/>
+                      <AppIcon v-else name="Sparkle" :size="11"/>
+                      Hozir tekshirish
+                    </button>
+                  </div>
+                  <div v-if="reactivateAttempts > 0" style="font-size:11px;color:var(--muted);text-align:center;margin-top:-4px;">
+                    {{ reactivateAttempts }} marta tekshirildi · bot hali admin emas
+                  </div>
+                </div>
+
+                <div v-if="reactivateError" class="cc-modal-error">
+                  <AppIcon name="Close" :size="12"/>
+                  {{ reactivateError }}
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- ─── Kanal imzosi modal ─── -->
     <SignatureModal
       v-model="sigModalOpen"
@@ -791,6 +898,8 @@ const INTERVAL_PRESETS = [
   { value: 1440, label: '24 soat' },
 ]
 const TIME_RANGE_OPTIONS = [
+  { value: '3h',  label: '3 soat' },
+  { value: '6h',  label: '6 soat' },
   { value: '24h', label: '24 soat' },
   { value: '3d',  label: '3 kun' },
   { value: '7d',  label: '7 kun' },
@@ -1245,6 +1354,90 @@ async function saveAutoSettings() {
   }
 }
 
+// ── Kanalni qayta faollashtirish modal ─────────────────────
+const reactivateModalOpen = ref(false)
+const reactivateChannelData = ref(null)
+const reactivateDeepLink = ref('')
+const reactivateLoading = ref(false)
+const reactivateError = ref('')
+const reactivateAttempts = ref(0)
+const reactivateChecking = ref(false)
+let reactivatePollTimer = null
+
+async function openReactivateModal(c) {
+  if (!company.value) return
+  reactivateChannelData.value = c
+  reactivateDeepLink.value = ''
+  reactivateError.value = ''
+  reactivateAttempts.value = 0
+  reactivateChecking.value = false
+  reactivateLoading.value = true
+  reactivateModalOpen.value = true
+  try {
+    const raw = (c.username || '').replace(/^@/, '')
+    const url = raw ? `https://t.me/${raw}` : (c.telegram_chat_id || '')
+    const res = await channelsApi.initTelegram(company.value.id, url, c.posting_mode || 'auto')
+    reactivateChannelData.value = res.channel
+    reactivateDeepLink.value = res.deep_link
+    const idx = channels.value.findIndex(x => x.id === res.channel.id)
+    if (idx >= 0) channels.value.splice(idx, 1, res.channel)
+    if (res.channel.status !== 'connected' || (res.channel.bot_status !== 'administrator' && res.channel.bot_status !== 'creator')) {
+      startReactivatePolling()
+    }
+  } catch (err) {
+    const msg = err?.response?.data?.message
+    reactivateError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('cc.modal.err.generic'))
+  } finally {
+    reactivateLoading.value = false
+  }
+}
+
+function closeReactivateModal() {
+  reactivateModalOpen.value = false
+  reactivateChannelData.value = null
+  reactivateDeepLink.value = ''
+  stopReactivatePolling()
+  loadAll()
+}
+
+function startReactivatePolling() {
+  stopReactivatePolling()
+  reactivatePollTimer = setInterval(async () => {
+    if (!reactivateChannelData.value) { stopReactivatePolling(); return }
+    try {
+      const fresh = await channelsApi.getStatus(company.value.id, reactivateChannelData.value.id)
+      reactivateChannelData.value = fresh
+      reactivateAttempts.value += 1
+      const idx = channels.value.findIndex(c => c.id === fresh.id)
+      if (idx >= 0) channels.value.splice(idx, 1, fresh)
+      if (fresh.status === 'connected' && (fresh.bot_status === 'administrator' || fresh.bot_status === 'creator')) {
+        stopReactivatePolling()
+      }
+    } catch {}
+  }, 4000)
+}
+
+async function checkReactivateNow() {
+  if (!reactivateChannelData.value || !company.value) return
+  reactivateChecking.value = true
+  try {
+    const fresh = await channelsApi.getStatus(company.value.id, reactivateChannelData.value.id)
+    reactivateChannelData.value = fresh
+    reactivateAttempts.value += 1
+    const idx = channels.value.findIndex(c => c.id === fresh.id)
+    if (idx >= 0) channels.value.splice(idx, 1, fresh)
+    if (fresh.status === 'connected' && (fresh.bot_status === 'administrator' || fresh.bot_status === 'creator')) {
+      stopReactivatePolling()
+    }
+  } catch {} finally {
+    reactivateChecking.value = false
+  }
+}
+
+function stopReactivatePolling() {
+  if (reactivatePollTimer) { clearInterval(reactivatePollTimer); reactivatePollTimer = null }
+}
+
 async function removeChannel(c) {
   if (!confirm(tt('cc.confirmRemove', { name: displayName(c) }))) return
   try {
@@ -1406,6 +1599,7 @@ function handleKey(e) {
   if (e.key !== 'Escape') return
   if (addModalOpen.value) closeAddModal()
   else if (autoModalOpen.value) closeAutoModal()
+  else if (reactivateModalOpen.value) closeReactivateModal()
 }
 
 onMounted(() => {
@@ -1415,6 +1609,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKey)
   stopAddPolling()
+  stopReactivatePolling()
 })
 </script>
 
@@ -2002,6 +2197,55 @@ onBeforeUnmount(() => {
   background: var(--panel-2);
   border-radius: 999px;
 }
+
+/* Reactivate live indicator */
+.cc-reactivate-live {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: color-mix(in oklab, #10b981 8%, var(--panel-2));
+  border: 1px solid color-mix(in oklab, #10b981 28%, var(--border-2));
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.cc-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  animation: ccLiveDot 1.6s ease-out infinite;
+  flex-shrink: 0;
+}
+@keyframes ccLiveDot {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.cc-live-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+  flex-shrink: 0;
+}
+.cc-live-check:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cc-live-check:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* Success */
 .cc-success {

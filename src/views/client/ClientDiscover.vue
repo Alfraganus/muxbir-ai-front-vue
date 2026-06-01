@@ -1,12 +1,63 @@
 <template>
-  <DiscoverSetup
-    v-if="phase === 'setup'"
-    :config="config"
-    :sources="availableSources"
-    :categories="CATEGORIES"
-    :time-ranges="TIME_RANGES"
-    :loading="loadingSources"
-    @run="startScan"/>
+  <div v-if="phase === 'setup'" class="cd-setup-wrap">
+    <!-- ─── Oxirgi qidiruvlar (tarix) ─── -->
+    <div v-if="history.length" class="cd-history">
+      <div class="cd-history-head">
+        <div class="cd-history-head-left">
+          <span class="cd-history-ic"><AppIcon name="Calendar" :size="13"/></span>
+          <div>
+            <div class="cd-history-title">Oxirgi qidiruvlar</div>
+            <div class="cd-history-sub">Ilgari topilgan postlar — istalganini ochib qayta ko'rishingiz mumkin</div>
+          </div>
+        </div>
+        <button v-if="loadingHistorySnapshot" class="cd-history-refresh" disabled>
+          <span class="cd-history-spinner"/>
+          Yuklanmoqda...
+        </button>
+      </div>
+      <div class="cd-history-list">
+        <button v-for="h in history" :key="h.id"
+                class="cd-history-item"
+                :disabled="loadingHistorySnapshot"
+                @click="openHistoryItem(h)">
+          <div class="cd-history-item-when">
+            <span class="cd-history-item-time">{{ formatHistoryTime(h.created_at) }}</span>
+            <span class="cd-history-item-ago">{{ formatRelative(h.created_at) }}</span>
+          </div>
+          <div class="cd-history-item-meta">
+            <span class="cd-history-pill">
+              <AppIcon name="Layers" :size="10"/>
+              {{ h.total_posts }} ta post
+            </span>
+            <span class="cd-history-pill cd-history-pill-muted">
+              <AppIcon name="Telegram" :size="10"/>
+              {{ h.source_count }} ta kanal
+            </span>
+            <span v-if="h.request_payload?.sort_mode === 'latest'" class="cd-history-pill cd-history-pill-blue">
+              🕒 Eng oxirgi
+            </span>
+            <span v-else class="cd-history-pill cd-history-pill-accent">
+              ⭐ Eng yaxshi
+            </span>
+            <span v-if="h.request_payload?.time_range" class="cd-history-pill cd-history-pill-muted">
+              {{ rangeLabel(h.request_payload.time_range) }}
+            </span>
+          </div>
+          <span class="cd-history-item-arrow">
+            <AppIcon name="Arrow" :size="13"/>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <DiscoverSetup
+      :config="config"
+      :sources="availableSources"
+      :categories="CATEGORIES"
+      :time-ranges="TIME_RANGES"
+      :loading="loadingSources"
+      @run="startScan"/>
+  </div>
 
   <DiscoverScanning
     v-else-if="phase === 'scanning'"
@@ -247,6 +298,8 @@ const router = useRouter()
 const phase = ref('setup') // setup | scanning | results
 
 const TIME_RANGES = [
+  { id: '3h',  label: "So'nggi 3 soat",  hint: 'Yangi qaynoq postlar' },
+  { id: '6h',  label: "So'nggi 6 soat",  hint: 'Yarim kun ichidagi yangiliklar' },
   { id: '24h', label: "So'nggi 24 soat", hint: 'Bugun va kechagi postlar' },
   { id: '3d',  label: "So'nggi 3 kun",   hint: 'Eng yangi materiallar' },
   { id: '7d',  label: "So'nggi 7 kun",   hint: 'Haftalik trend', recommended: true },
@@ -264,6 +317,7 @@ const config = reactive({
   categories: ['all'],
   customSource: '',
   includeVideos: false,
+  sortMode: 'best', // 'best' — eng yaxshi postlar; 'latest' — eng yangi postlar
 })
 
 // ── Sources from backend ─────────────────────────────────
@@ -285,6 +339,55 @@ function colorFor(idx) { return PALETTE[idx % PALETTE.length] }
 function pickName(name_i18n, fallback) {
   if (!name_i18n) return fallback
   return name_i18n.uz || name_i18n.en || name_i18n.ru || fallback
+}
+
+// ── Discover history (oxirgi qidiruvlar) ────────────────
+const history = ref([])
+const loadingHistorySnapshot = ref(false)
+
+async function loadHistory() {
+  if (!company.value) { history.value = []; return }
+  try {
+    const list = await discoverApi.history(company.value.id, 5)
+    history.value = Array.isArray(list) ? list : []
+  } catch { history.value = [] }
+}
+
+function formatHistoryTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const dd = d.getDate().toString().padStart(2, '0')
+  const mm = (d.getMonth() + 1).toString().padStart(2, '0')
+  const hh = d.getHours().toString().padStart(2, '0')
+  const min = d.getMinutes().toString().padStart(2, '0')
+  return `${dd}.${mm} · ${hh}:${min}`
+}
+
+function rangeLabel(id) {
+  const r = TIME_RANGES.find(t => t.id === id)
+  return r?.label || id
+}
+
+async function openHistoryItem(h) {
+  if (!company.value || !h?.id) return
+  loadingHistorySnapshot.value = true
+  scanError.value = null
+  try {
+    const snap = await discoverApi.historyById(company.value.id, h.id)
+    discovered.value = snap?.result || { channels: [], total: 0 }
+    // Filtrlar bo'sh holatdan boshlasin
+    filter.value = 'all'
+    query.value = ''
+    selected.value = {}
+    phase.value = 'results'
+  } catch (e) {
+    scanError.value = {
+      message: e?.response?.data?.message || e?.message || 'Tarix yozuvini ochib bo\'lmadi',
+      actionLabel: null, actionPath: null,
+    }
+  } finally {
+    loadingHistorySnapshot.value = false
+  }
 }
 
 async function loadSources() {
@@ -315,6 +418,8 @@ async function loadSources() {
       }))
     // Default selection: barcha owned sources
     config.sources = availableSources.value.map(s => s.id)
+    // Sources tayyor — tarixni ham yuklab qo'yamiz (companyId kerak)
+    loadHistory()
   } finally {
     loadingSources.value = false
   }
@@ -376,6 +481,7 @@ async function startScan() {
     per_channel: config.perChannel,
     similarity_threshold: 0.5,
     include_videos: config.includeVideos,
+    sort_mode: config.sortMode,
   }
 
   // Parallel: real discover + live counts (counts return faster, drive UI)
@@ -402,6 +508,8 @@ async function startScan() {
     console.error('discover failed', err)
   }
   scanRequestDone = true
+  // Skanerlash tugadi — tarixni yangilab qo'yamiz (yangi yozuv qo'shilgan bo'lishi mumkin)
+  loadHistory()
   maybeFinishScan()
 }
 
@@ -554,6 +662,131 @@ function scoreColor(v) {
 </script>
 
 <style scoped>
+.cd-setup-wrap { display: flex; flex-direction: column; gap: 16px; padding: 20px 24px 0; }
+
+/* ─── Oxirgi qidiruvlar (history) ─── */
+.cd-history {
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.cd-history-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px dashed var(--border-2);
+}
+.cd-history-head-left { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; }
+.cd-history-ic {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.cd-history-title { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.005em; }
+.cd-history-sub { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.cd-history-refresh {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 10px;
+  background: transparent; border: 1px solid var(--border-2); border-radius: 6px;
+  font-size: 11px; color: var(--muted); cursor: pointer;
+}
+.cd-history-spinner {
+  width: 11px; height: 11px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in oklab, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: cdHistorySpin 0.8s linear infinite;
+}
+@keyframes cdHistorySpin { to { transform: rotate(360deg); } }
+
+.cd-history-list {
+  display: flex; flex-direction: column;
+}
+.cd-history-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-2);
+  cursor: pointer;
+  transition: background .12s ease;
+  text-align: left;
+  width: 100%;
+}
+.cd-history-item:first-child { border-top: none; }
+.cd-history-item:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+}
+.cd-history-item:disabled { opacity: 0.6; cursor: progress; }
+.cd-history-item-when {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+.cd-history-item-time {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  font-feature-settings: 'tnum';
+  letter-spacing: -0.005em;
+}
+.cd-history-item-ago {
+  font-size: 11px; color: var(--muted);
+}
+.cd-history-item-meta {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  flex: 1; min-width: 0;
+}
+.cd-history-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent);
+}
+.cd-history-pill-muted {
+  background: var(--panel-2);
+  color: var(--muted);
+  border-color: var(--border-2);
+}
+.cd-history-pill-blue {
+  background: color-mix(in oklab, #3b82f6 12%, transparent);
+  color: #1d4ed8;
+  border-color: color-mix(in oklab, #3b82f6 30%, transparent);
+}
+.cd-history-pill-accent {
+  background: color-mix(in oklab, #f59e0b 14%, transparent);
+  color: #b45309;
+  border-color: color-mix(in oklab, #f59e0b 32%, transparent);
+}
+.cd-history-item-arrow {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background .12s, color .12s, transform .12s;
+}
+.cd-history-item:hover:not(:disabled) .cd-history-item-arrow {
+  background: var(--accent);
+  color: #fff;
+  transform: translateX(2px);
+}
+
+@media (max-width: 640px) {
+  .cd-history-item { flex-wrap: wrap; }
+  .cd-history-item-when { min-width: 0; flex: 1; }
+}
+
 .cd-root { padding: 20px 24px 100px; display: flex; flex-direction: column; gap: 16px; }
 
 .cd-banner {

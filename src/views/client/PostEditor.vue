@@ -1,5 +1,24 @@
 <template>
   <div class="pe-root">
+    <!-- ─── AI rewrite notification banner (sahifa tepasida) ─── -->
+    <Teleport to="body">
+      <Transition name="pe-aib-slide">
+        <div v-if="aiBanner.show" class="pe-aib" :class="aiBanner.tone">
+          <span class="pe-aib-icon">
+            <AppIcon :name="aiBanner.tone === 'success' ? 'Check' : 'Close'" :size="14"/>
+          </span>
+          <span class="pe-aib-text">{{ aiBanner.message }}</span>
+          <button v-if="aiBanner.tone === 'success' && aiBanner.prev" type="button" class="pe-aib-undo" @click="undoAiRewrite">
+            <AppIcon name="Edit" :size="11"/>
+            Qaytarish
+          </button>
+          <button type="button" class="pe-aib-close" @click="dismissAiBanner" aria-label="Yopish">
+            <AppIcon name="Close" :size="12"/>
+          </button>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- ─────────── Hero header ─────────── -->
     <header class="pe-hero">
       <div aria-hidden class="pe-hero-dots"/>
@@ -25,26 +44,6 @@
             <span class="pe-hero-divider"/>
             <span class="pe-hero-saved">{{ savedLabel }}</span>
           </div>
-        </div>
-        <div class="pe-hero-right">
-          <AppButton v-if="isEdit" variant="danger" size="md" :loading="deleting" @click="onDelete">
-            <template #icon><AppIcon name="Trash" :size="13"/></template>
-            <span class="pe-hide-sm">{{ tt('pe.delete') }}</span>
-          </AppButton>
-          <AppButton variant="secondary" size="md" @click="$router.back()">
-            <AppIcon name="ChevronL" :size="13"/>
-            {{ tt('pe.back') }}
-          </AppButton>
-          <AppButton variant="success" size="md" :loading="saving" @click="saveAll">
-            <template #icon><AppIcon name="Check" :size="13"/></template>
-            {{ isEdit ? tt('pe.savePostEdit') : tt('pe.savePost') }}
-          </AppButton>
-          <AppButton v-if="isEdit && form.platform === 'telegram'" variant="primary" size="md"
-            :loading="publishing || activating"
-            @click="onPublishClick">
-            <template #icon><AppIcon name="Send" :size="13"/></template>
-            {{ tt('pe.publish') }}
-          </AppButton>
         </div>
       </div>
     </header>
@@ -181,6 +180,66 @@
 
             <div class="pe-paper-editor">
               <RichEditor :key="`${activeLang}-${editorReloadKey}`" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
+            </div>
+          </div>
+
+          <!-- ─────────── Action bar (editor pastida) ─────────── -->
+          <div class="pe-actionbar">
+            <!-- Header: status + label -->
+            <div class="pe-ab-head">
+              <div class="pe-ab-head-left">
+                <span class="pe-ab-head-icon"><AppIcon name="Send" :size="13"/></span>
+                <div>
+                  <div class="pe-ab-head-title">Yakuniy amallar</div>
+                  <div class="pe-ab-head-sub">
+                    {{ isEdit && form.platform === 'telegram'
+                       ? "Postni saqlang yoki to'g'ridan-to'g'ri Telegramga e'lon qiling"
+                       : "Postingizni saqlang" }}
+                  </div>
+                </div>
+              </div>
+              <div v-if="post" class="pe-ab-head-right">
+                <span class="cp-card-status" :class="post.status">
+                  <span class="cp-card-status-dot"/>
+                  {{ tt('posts.status.' + post.status) }}
+                </span>
+                <span v-if="savedLabel" class="pe-ab-saved-pill">
+                  <AppIcon name="Check" :size="10"/>
+                  {{ savedLabel }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Primary action row -->
+            <div class="pe-ab-primary">
+              <button class="pe-ab-btn pe-ab-btn-save" :disabled="saving" @click="saveAll" type="button">
+                <span v-if="saving" class="pe-ab-spinner"/>
+                <AppIcon v-else name="Check" :size="15"/>
+                <span>{{ isEdit ? tt('pe.savePostEdit') : tt('pe.savePost') }}</span>
+              </button>
+              <button v-if="isEdit && form.platform === 'telegram'"
+                      class="pe-ab-btn pe-ab-btn-publish"
+                      :disabled="publishing || activating"
+                      @click="onPublishClick" type="button">
+                <span v-if="publishing || activating" class="pe-ab-spinner light"/>
+                <AppIcon v-else name="Send" :size="15"/>
+                <span>{{ tt('pe.publish') }}</span>
+                <span class="pe-ab-btn-arrow"><AppIcon name="Arrow" :size="13"/></span>
+              </button>
+            </div>
+
+            <!-- Secondary row: back + delete -->
+            <div class="pe-ab-secondary">
+              <button class="pe-ab-mini pe-ab-mini-ghost" @click="$router.push('/client/posts')" type="button">
+                <AppIcon name="ChevronL" :size="11"/>
+                <span>{{ tt('pe.back') }}</span>
+              </button>
+              <span v-if="isEdit" class="pe-ab-mini-sep"/>
+              <button v-if="isEdit" class="pe-ab-mini pe-ab-mini-danger" :disabled="deleting" @click="onDelete" type="button">
+                <span v-if="deleting" class="pe-ab-spinner"/>
+                <AppIcon v-else name="Trash" :size="11"/>
+                <span>{{ tt('pe.delete') }}</span>
+              </button>
             </div>
           </div>
         </main>
@@ -1232,11 +1291,16 @@ async function saveAll() {
     // Yangi post yaratilgan bo'lsa, oylik post sanog'i ham yangilansin
     if (!isEdit.value) postsUsageStore.refresh()
 
-    // Saqlangach postlar ro'yxatiga qaytamiz
-    router.push('/client/posts')
+    // Yangi post yaratilganda — URLni edit rejimiga o'zgartiramiz (sahifa qayta yuklanmaydi).
+    // Mavjud post tahrirlanganda — joyimizda qolamiz.
+    if (!isEdit.value && saved?.id) {
+      router.replace(`/client/posts/${saved.id}/edit`)
+    }
+    showAiBanner('success', isEdit.value ? 'Post saqlandi' : 'Post yaratildi')
   } catch (e) {
     const msg = e?.response?.data?.message
     formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
+    showAiBanner('error', formError.value)
   } finally {
     saving.value = false
   }
@@ -1297,9 +1361,11 @@ async function publishNow() {
     post.value = res
     if (res?.status) form.status = res.status
     lastSavedAt.value = Date.now()
+    showAiBanner('success', "Post Telegram'ga e'lon qilindi")
   } catch (e) {
     const msg = e?.response?.data?.message
     formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
+    showAiBanner('error', formError.value)
   } finally {
     publishing.value = false
   }
@@ -1323,6 +1389,7 @@ async function activatePost() {
   } catch (e) {
     const msg = e?.response?.data?.message
     formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
+    showAiBanner('error', formError.value)
   } finally {
     activating.value = false
   }
@@ -1456,26 +1523,57 @@ async function runAiRewrite() {
   }
   aiError.value = ''
   aiShortening.value = true
+  // Joriy editor content'ini saqlab qo'yamiz — "Qaytarish" tugmasi uchun
+  const prevContentJson = JSON.parse(JSON.stringify(activeTr.value.content_json || { html: '' }))
   try {
+    // DB'dagi emas, hozir editor'da ko'rinayotgan content'ni yuboramiz
+    const sourceJson = activeTr.value.content_json && typeof activeTr.value.content_json === 'object'
+      ? activeTr.value.content_json
+      : { html: '' }
     const res = await postsApi.aiRewrite(company.value.id, postId.value, {
       lang: activeLang.value,
       prompt_group_id: aiRewriteForm.useRecommended ? undefined : aiRewriteForm.groupId,
       provider: aiRewriteForm.provider,
       model: aiRewriteForm.model,
       use_admin_recommended: aiRewriteForm.useRecommended,
+      source_content_json: sourceJson,
     })
     if (res?.content_json) {
       activeTr.value.content_json = res.content_json
       editorReloadKey.value++ // editor'ni majburiy re-mount qilamiz
+      // Yuqorida banner ko'rsatamiz — "Qaytarish" imkoniyati bilan
+      showAiBanner('success', 'Matn AI yordamida qayta yozildi', prevContentJson)
     }
     aiUsageStore.refresh()
     showAiRewrite.value = false
   } catch (e) {
     const msg = e?.response?.data?.message || 'Qayta yozishda xato'
     aiError.value = Array.isArray(msg) ? msg.join('. ') : msg
+    showAiBanner('error', Array.isArray(msg) ? msg.join('. ') : msg)
   } finally {
     aiShortening.value = false
   }
+}
+
+// ── AI banner (sahifa tepasida natija notifikatsiyasi) ─────────
+const aiBanner = ref({ show: false, tone: 'success', message: '', prev: null })
+let aiBannerTimer = null
+function showAiBanner(tone, message, prev = null) {
+  aiBanner.value = { show: true, tone, message, prev }
+  if (aiBannerTimer) clearTimeout(aiBannerTimer)
+  if (tone !== 'success' || !prev) {
+    aiBannerTimer = setTimeout(() => { aiBanner.value.show = false }, 6000)
+  }
+}
+function dismissAiBanner() {
+  aiBanner.value.show = false
+  if (aiBannerTimer) { clearTimeout(aiBannerTimer); aiBannerTimer = null }
+}
+function undoAiRewrite() {
+  if (!aiBanner.value.prev) return
+  activeTr.value.content_json = aiBanner.value.prev
+  editorReloadKey.value++
+  dismissAiBanner()
 }
 
 function anyApplyBaseInGroup(g) {
@@ -1509,8 +1607,297 @@ async function aiGenerateTags() {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  padding: 0 0 80px;
+  padding: 0 0 40px;
   min-height: 100%;
+}
+
+/* ─────────── Action bar (editor pastida) ─────────── */
+.pe-actionbar {
+  margin-top: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04), 0 12px 32px -20px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+  position: relative;
+}
+.pe-actionbar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background:
+    radial-gradient(ellipse 60% 100% at 0% 0%, rgba(99,102,241,0.07), transparent 60%),
+    radial-gradient(ellipse 50% 100% at 100% 0%, rgba(16,185,129,0.06), transparent 60%);
+  pointer-events: none;
+}
+
+/* Head */
+.pe-ab-head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px dashed var(--border-2);
+}
+.pe-ab-head-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.pe-ab-head-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px -4px rgba(79, 70, 229, 0.5);
+}
+.pe-ab-head-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.pe-ab-head-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.pe-ab-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.pe-ab-saved-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, #10b981 10%, transparent);
+  border: 1px solid color-mix(in oklab, #10b981 30%, transparent);
+  color: #047857;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+/* Primary row */
+.pe-ab-primary {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px 10px;
+}
+.pe-ab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 11px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .15s ease, background .12s, border-color .12s, color .12s, filter .12s;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+.pe-ab-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pe-ab-btn:not(:disabled):active { transform: translateY(1px); }
+
+.pe-ab-btn-save {
+  flex: 1;
+  background: var(--panel);
+  border-color: color-mix(in oklab, #10b981 45%, var(--border));
+  color: #047857;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, #10b981 12%, transparent);
+}
+.pe-ab-btn-save:hover:not(:disabled) {
+  background: color-mix(in oklab, #10b981 8%, var(--panel));
+  border-color: #10b981;
+  box-shadow: 0 6px 16px -6px rgba(16, 185, 129, 0.4);
+}
+
+.pe-ab-btn-publish {
+  flex: 1.4;
+  position: relative;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #4338ca 100%);
+  border-color: #4338ca;
+  color: #fff;
+  padding-right: 14px;
+  box-shadow: 0 8px 22px -8px rgba(79, 70, 229, 0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+  overflow: hidden;
+}
+.pe-ab-btn-publish::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+.pe-ab-btn-publish:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px -8px rgba(79, 70, 229, 0.7), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.pe-ab-btn-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; height: 24px;
+  margin-left: 4px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.18);
+  transition: transform .15s ease, background .12s;
+}
+.pe-ab-btn-publish:hover:not(:disabled) .pe-ab-btn-arrow {
+  background: rgba(255,255,255,0.28);
+  transform: translateX(2px);
+}
+
+/* Secondary row */
+.pe-ab-secondary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 18px 14px;
+}
+.pe-ab-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  transition: background .12s, color .12s, border-color .12s;
+}
+.pe-ab-mini:disabled { opacity: 0.55; cursor: not-allowed; }
+.pe-ab-mini-ghost:hover:not(:disabled) {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.pe-ab-mini-danger {
+  color: color-mix(in oklab, var(--danger) 80%, var(--muted));
+}
+.pe-ab-mini-danger:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--danger) 9%, transparent);
+  color: var(--danger);
+  border-color: color-mix(in oklab, var(--danger) 22%, transparent);
+}
+.pe-ab-mini-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--border-2);
+  margin: 0 2px;
+}
+
+.pe-ab-spinner {
+  width: 14px; height: 14px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in oklab, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: pe-ab-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+.pe-ab-spinner.light { border-color: rgba(255,255,255,0.4); border-top-color: #fff; }
+@keyframes pe-ab-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 720px) {
+  .pe-ab-head { flex-wrap: wrap; }
+  .pe-ab-head-right { width: 100%; }
+  .pe-ab-primary { flex-direction: column; }
+  .pe-ab-btn-save, .pe-ab-btn-publish { flex: none; width: 100%; }
+}
+
+/* AI rewrite top banner */
+.pe-aib {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px 11px 14px;
+  min-width: 340px;
+  max-width: 560px;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px -10px rgba(15,23,42,0.35), 0 2px 6px rgba(15,23,42,0.08);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+  font-weight: 500;
+}
+.pe-aib.success {
+  background: color-mix(in oklab, #10b981 12%, #ffffffee);
+  border: 1px solid color-mix(in oklab, #10b981 38%, transparent);
+  color: #065f46;
+}
+.pe-aib.error {
+  background: color-mix(in oklab, #ef4444 12%, #ffffffee);
+  border: 1px solid color-mix(in oklab, #ef4444 38%, transparent);
+  color: #991b1b;
+}
+.pe-aib-icon {
+  width: 24px; height: 24px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background: currentColor;
+  color: #ffffff;
+}
+.pe-aib.success .pe-aib-icon { background: #10b981; }
+.pe-aib.error   .pe-aib-icon { background: #ef4444; }
+.pe-aib-text { flex: 1; line-height: 1.4; }
+.pe-aib-undo {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pe-aib-undo:hover { background: rgba(255,255,255,0.95); }
+.pe-aib-close {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.6;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.pe-aib-close:hover { opacity: 1; background: rgba(0,0,0,0.06); }
+.pe-aib-slide-enter-active, .pe-aib-slide-leave-active {
+  transition: transform .28s cubic-bezier(.22,.68,0,1.2), opacity .2s ease;
+}
+.pe-aib-slide-enter-from, .pe-aib-slide-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -20px);
 }
 
 /* AI rewrite modal — tavsiya etilgan promptdan foydalanish checkbox */

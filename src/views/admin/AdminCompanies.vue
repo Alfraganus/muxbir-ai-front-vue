@@ -71,9 +71,16 @@
             <td style="padding:10px 12px;vertical-align:middle;font-size:11.5px;color:var(--muted);" class="mono">
               {{ formatDate(c.created_at) }}
             </td>
-            <td style="padding:10px 12px;vertical-align:middle;text-align:right;">
+            <td style="padding:10px 12px;vertical-align:middle;text-align:right;white-space:nowrap;">
+              <AppButton variant="ghost" size="sm" @click="openEditModal(c)">
+                <template #icon><AppIcon name="Edit" :size="11"/></template>
+                Tahrirlash
+              </AppButton>
               <AppButton variant="secondary" size="sm" @click="openTariffModal(c)">
-                Tarifni o'zgartirish
+                Tarif
+              </AppButton>
+              <AppButton variant="ghost" size="sm" @click="onDelete(c)" title="Kompaniyani o'chirish">
+                <template #icon><AppIcon name="Trash" :size="11"/></template>
               </AppButton>
             </td>
           </tr>
@@ -125,6 +132,115 @@
         </AppButton>
       </template>
     </AppModal>
+
+    <!-- ─── Edit company + owner + reset password ─── -->
+    <AppModal
+      v-model="editOpen"
+      :title="`Kompaniyani tahrirlash`"
+      :subtitle="editSelected ? editSelected.name : ''"
+      width="560px"
+    >
+      <div v-if="editSelected" style="display:flex;flex-direction:column;gap:18px;">
+        <!-- Company section -->
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">
+            <AppIcon name="Settings" :size="12"/>
+            Kompaniya ma'lumotlari
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Nomi</label>
+              <input v-model="editForm.name" :style="inputStyle"/>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Slug</label>
+              <input v-model="editForm.slug" :style="inputStyle" class="mono"/>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Davlat</label>
+              <input v-model="editForm.country" :style="inputStyle" placeholder="UZ"/>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Manzil</label>
+              <input v-model="editForm.location" :style="inputStyle" placeholder="Toshkent"/>
+            </div>
+            <div style="grid-column:1/-1;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Status</label>
+              <select v-model="editForm.status" :style="selectStyle">
+                <option value="active">Faol (active)</option>
+                <option value="trial">Sinov (trial)</option>
+                <option value="suspended">To'xtatilgan (suspended)</option>
+                <option value="inactive">Nofaol (inactive)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Owner section -->
+        <div style="display:flex;flex-direction:column;gap:10px;
+                    padding-top:14px;border-top:1px dashed var(--border-2);">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">
+            <AppIcon name="Users" :size="12"/>
+            Kompaniya egasi
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Ism familiya</label>
+              <input v-model="editForm.owner_full_name" :style="inputStyle"/>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Email</label>
+              <input v-model="editForm.owner_email" :style="inputStyle" class="mono"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Password reset section -->
+        <div style="display:flex;flex-direction:column;gap:10px;
+                    padding:14px;border-radius:10px;
+                    background:color-mix(in oklab, var(--danger) 5%, transparent);
+                    border:1px dashed color-mix(in oklab, var(--danger) 30%, transparent);">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.05em;color:var(--danger);">
+            <AppIcon name="Bolt" :size="12"/>
+            Parolni qayta o'rnatish
+          </div>
+          <div style="font-size:11.5px;color:var(--text-2);line-height:1.5;">
+            Yangi parol — kamida 6 ta belgi. Saqlangach kompaniya egasi yangi parol bilan kiradi.
+          </div>
+          <div style="display:flex;gap:8px;align-items:stretch;">
+            <input v-model="editForm.new_password" type="text"
+                   placeholder="Yangi parol (bo'sh qoldirsangiz parol o'zgartirilmaydi)"
+                   :style="{ ...inputStyle, flex: 1 }"/>
+            <button type="button" @click="generatePassword"
+                    style="padding:0 12px;background:var(--panel-2);border:1px solid var(--border);
+                           border-radius:7px;cursor:pointer;font-size:11.5px;color:var(--text-2);
+                           white-space:nowrap;">
+              ✨ Tasodifiy
+            </button>
+          </div>
+          <div v-if="editForm.new_password" style="display:flex;align-items:center;gap:6px;
+                      font-size:11px;color:var(--text-2);">
+            <AppIcon name="Check" :size="10" :style="{color:'var(--success, #10b981)'}"/>
+            Saqlanganda parol <span class="mono" style="background:var(--panel-2);padding:1px 6px;border-radius:4px;">{{ editForm.new_password }}</span> ga o'zgaradi
+          </div>
+        </div>
+
+        <div v-if="editError" style="color:var(--danger);font-size:12px;">{{ editError }}</div>
+        <div v-if="editSuccess" style="color:var(--success, #10b981);font-size:12px;display:flex;align-items:center;gap:6px;">
+          <AppIcon name="Check" :size="11"/>
+          {{ editSuccess }}
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="ghost" size="md" @click="editOpen = false">Bekor qilish</AppButton>
+        <AppButton variant="primary" size="md" :disabled="editSubmitting" @click="submitEdit">
+          {{ editSubmitting ? 'Saqlanmoqda...' : "Saqlash" }}
+        </AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>
 
@@ -155,6 +271,29 @@ const selected = ref(null)
 const submitting = ref(false)
 const submitError = ref(null)
 const form = reactive({ tariff_id: '', billing_cycle: 'monthly', status: 'active' })
+
+// ── Edit modal state ──────────────────────────────────────
+const editOpen = ref(false)
+const editSelected = ref(null)
+const editSubmitting = ref(false)
+const editError = ref(null)
+const editSuccess = ref(null)
+const editForm = reactive({
+  name: '', slug: '', country: '', location: '', status: 'active',
+  owner_full_name: '', owner_email: '',
+  new_password: '',
+})
+
+const inputStyle = {
+  width: '100%',
+  padding: '8px 10px',
+  border: '1px solid var(--border)',
+  borderRadius: '7px',
+  background: 'var(--panel-2)',
+  color: 'var(--text)',
+  fontSize: '13px',
+  outline: 'none',
+}
 
 const selectStyle = {
   width: '100%',
@@ -280,6 +419,71 @@ async function submit() {
     submitError.value = e.response?.data?.message || 'Saqlashda xatolik'
   } finally {
     submitting.value = false
+  }
+}
+
+// ── Edit modal logic ──────────────────────────────────────
+function openEditModal(c) {
+  editSelected.value = c
+  editError.value = null
+  editSuccess.value = null
+  editForm.name = c.name || ''
+  editForm.slug = c.slug || ''
+  editForm.country = c.country || 'UZ'
+  editForm.location = c.location || ''
+  editForm.status = c.status || 'active'
+  editForm.owner_full_name = c.owner?.full_name || ''
+  editForm.owner_email = c.owner?.email || ''
+  editForm.new_password = ''
+  editOpen.value = true
+}
+
+function generatePassword() {
+  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
+  let pw = ''
+  for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)]
+  editForm.new_password = pw
+}
+
+async function submitEdit() {
+  if (!editSelected.value) return
+  editSubmitting.value = true
+  editError.value = null
+  editSuccess.value = null
+  try {
+    const updated = await adminApi.updateCompany(editSelected.value.id, {
+      name: editForm.name.trim(),
+      slug: editForm.slug.trim(),
+      country: editForm.country.trim() || 'UZ',
+      location: editForm.location.trim() || null,
+      status: editForm.status,
+      owner_full_name: editForm.owner_full_name.trim(),
+      owner_email: editForm.owner_email.trim(),
+    })
+    if (editForm.new_password) {
+      await adminApi.resetCompanyPassword(editSelected.value.id, editForm.new_password)
+    }
+    const idx = companies.value.findIndex(x => x.id === updated.id)
+    if (idx !== -1) companies.value.splice(idx, 1, updated)
+    editSuccess.value = editForm.new_password
+      ? "Saqlandi · yangi parol o'rnatildi"
+      : "Saqlandi"
+    setTimeout(() => { editOpen.value = false }, 800)
+  } catch (e) {
+    editError.value = e.response?.data?.message || 'Saqlashda xato'
+  } finally {
+    editSubmitting.value = false
+  }
+}
+
+async function onDelete(c) {
+  if (!c) return
+  if (!confirm(`"${c.name}" kompaniyasini butunlay o'chirishni xohlaysizmi?\n\nBu amalni qaytarib bo'lmaydi.`)) return
+  try {
+    await adminApi.deleteCompany(c.id)
+    companies.value = companies.value.filter(x => x.id !== c.id)
+  } catch (e) {
+    alert(e.response?.data?.message || "O'chirishda xato")
   }
 }
 

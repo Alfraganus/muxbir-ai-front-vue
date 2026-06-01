@@ -113,6 +113,25 @@
           </div>
         </AppPanel>
 
+        <!-- 6. Sort mode -->
+        <AppPanel title="5. Qanday postlarni chiqaramiz?"
+          subtitle="Saralash usulini tanlang">
+          <div class="ds-yn-grid">
+            <button class="ds-yn" :class="{ active: config.sortMode === 'best' }"
+              @click="config.sortMode = 'best'">
+              <AppIcon v-if="config.sortMode === 'best'" name="Check" :size="12"/>
+              <span class="ds-yn-lbl">⭐ Eng yaxshi postlar</span>
+              <span class="ds-yn-hint">AI eng ko'p share, reaktsiya va ko'rishlar olganlarini birinchi chiqaradi</span>
+            </button>
+            <button class="ds-yn" :class="{ active: config.sortMode === 'latest' }"
+              @click="config.sortMode = 'latest'">
+              <AppIcon v-if="config.sortMode === 'latest'" name="Check" :size="12"/>
+              <span class="ds-yn-lbl">🕒 Eng oxirgi postlar</span>
+              <span class="ds-yn-hint">Eng yangi chop etilgan postlar sana bo'yicha birinchi chiqadi</span>
+            </button>
+          </div>
+        </AppPanel>
+
       </div>
 
       <!-- RIGHT: sticky summary -->
@@ -134,13 +153,18 @@
             </SummaryRow>
             <SummaryRow label="Postlar"
               :value="`${config.perChannel} × ${config.sources.length} = ${totalPosts}`"
-              detail="Eng yuqori balli postlar ko'rsatiladi">
+              :detail="config.sortMode === 'latest' ? 'Eng oxirgi postlar sana bo\'yicha' : 'Eng yuqori balli postlar ko\'rsatiladi'">
               <template #icon><AppIcon name="Layers" :size="12"/></template>
             </SummaryRow>
             <SummaryRow label="Davr"
               :value="currentRange?.label"
               :detail="currentRange?.hint">
               <template #icon><AppIcon name="Calendar" :size="12"/></template>
+            </SummaryRow>
+            <SummaryRow label="Saralash"
+              :value="config.sortMode === 'latest' ? 'Eng oxirgi' : 'Eng yaxshi'"
+              :detail="config.sortMode === 'latest' ? 'Sana bo\'yicha (yangi → eski)' : 'AI bal bo\'yicha (yuqori → past)'">
+              <template #icon><AppIcon :name="config.sortMode === 'latest' ? 'Calendar' : 'Sparkle'" :size="12"/></template>
             </SummaryRow>
             <div style="height:1px;background:var(--border-2);margin:4px 0;"/>
 

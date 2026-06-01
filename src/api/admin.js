@@ -7,6 +7,12 @@ export const adminApi = {
     http.get(`/admin/companies/${id}`).then((r) => r.data),
   setCompanyTariff: (id, payload) =>
     http.patch(`/admin/companies/${id}/tariff`, payload).then((r) => r.data),
+  updateCompany: (id, payload) =>
+    http.patch(`/admin/companies/${id}`, payload).then((r) => r.data),
+  resetCompanyPassword: (id, new_password) =>
+    http.post(`/admin/companies/${id}/reset-password`, { new_password }).then((r) => r.data),
+  deleteCompany: (id) =>
+    http.delete(`/admin/companies/${id}`).then((r) => r.data),
 
   // AI BASE prompt (admin-only, platform-wide, priority N1)
   getAiBasePrompt: () =>
