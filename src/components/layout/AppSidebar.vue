@@ -102,6 +102,7 @@
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
+import { API_BASE } from '@/api/base.js'
 import BrandLogo from './BrandLogo.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppProgress from '@/components/ui/AppProgress.vue'
@@ -213,13 +214,13 @@ const channelsCount = ref(null)
 
 async function loadChannelsCount() {
   try {
-    const list = await axios.get('http://localhost:4001/companies/my', {
+    const list = await axios.get(`${API_BASE}/companies/my`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('access_token') || ''}` },
     }).then(r => r.data).catch(() => [])
     const arr = Array.isArray(list) ? list : [list].filter(Boolean)
     const companyId = arr[0]?.id
     if (!companyId) { channelsCount.value = 0; return }
-    const channels = await axios.get(`http://localhost:4001/companies/${companyId}/channels`, {
+    const channels = await axios.get(`${API_BASE}/companies/${companyId}/channels`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('access_token') || ''}` },
     }).then(r => r.data).catch(() => [])
     channelsCount.value = Array.isArray(channels) ? channels.length : 0

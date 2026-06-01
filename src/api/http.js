@@ -1,7 +1,8 @@
 import axios from 'axios'
+import { API_BASE } from './base.js'
 
 const http = axios.create({
-  baseURL: 'http://localhost:4001',
+  baseURL: API_BASE,
   timeout: 10000,
 })
 
@@ -23,7 +24,7 @@ http.interceptors.response.use(
       try {
         const rt = localStorage.getItem('refresh_token')
         if (rt) {
-          const { data } = await axios.post('http://localhost:4001/auth/refresh', { refresh_token: rt })
+          const { data } = await axios.post(`${API_BASE}/auth/refresh`, { refresh_token: rt })
           localStorage.setItem('access_token', data.access_token)
           err.config.headers.Authorization = `Bearer ${data.access_token}`
           return http(err.config)

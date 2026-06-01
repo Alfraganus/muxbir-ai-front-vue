@@ -25,6 +25,7 @@ import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
 import MagicAuth from '@/views/MagicAuth.vue'
 import axios from 'axios'
+import { API_BASE } from '@/api/base.js'
 import { isTokenValid, getUserRole, homePathForRole, isAdminRole, isCompanyRole } from '@/utils/authRole.js'
 
 const routes = [
@@ -71,7 +72,7 @@ async function tryRefresh() {
   const rt = localStorage.getItem('refresh_token')
   if (!rt) return false
   refreshInFlight = axios
-    .post('http://localhost:4001/auth/refresh', { refresh_token: rt })
+    .post(`${API_BASE}/auth/refresh`, { refresh_token: rt })
     .then(({ data }) => {
       if (data?.access_token) localStorage.setItem('access_token', data.access_token)
       if (data?.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)

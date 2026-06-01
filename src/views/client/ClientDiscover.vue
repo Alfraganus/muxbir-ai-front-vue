@@ -1,5 +1,13 @@
 <template>
   <div v-if="phase === 'setup'" class="cd-setup-wrap">
+    <DiscoverSetup
+      :config="config"
+      :sources="availableSources"
+      :categories="CATEGORIES"
+      :time-ranges="TIME_RANGES"
+      :loading="loadingSources"
+      @run="startScan"/>
+
     <!-- ─── Oxirgi qidiruvlar (tarix) ─── -->
     <div v-if="history.length" class="cd-history">
       <div class="cd-history-head">
@@ -49,14 +57,6 @@
         </button>
       </div>
     </div>
-
-    <DiscoverSetup
-      :config="config"
-      :sources="availableSources"
-      :categories="CATEGORIES"
-      :time-ranges="TIME_RANGES"
-      :loading="loadingSources"
-      @run="startScan"/>
   </div>
 
   <DiscoverScanning
