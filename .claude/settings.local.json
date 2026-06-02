@@ -88,7 +88,10 @@
       "Bash(curl -s \"http://localhost:5173/src/components/posts/ArticleFromUrlForm.vue\")",
       "Bash(grep -oE 'message\":\"[^\"]{0,250}')",
       "Bash(node -e ' *)",
-      "Bash(stat -c '%y %n' \"E:/work projects/personal projects/backend-ai-muxbir/src/modules/web-portal/admin/admin.module.ts\" \"E:/work projects/personal projects/backend-ai-muxbir/dist/modules/web-portal/admin/admin.module.js\" 2>/dev/null)"
+      "Bash(stat -c '%y %n' \"E:/work projects/personal projects/backend-ai-muxbir/src/modules/web-portal/admin/admin.module.ts\" \"E:/work projects/personal projects/backend-ai-muxbir/dist/modules/web-portal/admin/admin.module.js\" 2>/dev/null)",
+      "Bash(curl -s http://localhost:4001/api/docs-json -o \"E:/work projects/personal projects/backend-ai-muxbir/swagger.json\")",
+      "Bash(node swagger-to-postman.js)",
+      "Bash(npx --prefix \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\" tsc --noEmit -p \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\\\\tsconfig.json\")"
     ]
   }
 }
