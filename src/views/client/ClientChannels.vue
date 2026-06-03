@@ -930,21 +930,22 @@ const TIME_RANGE_OPTIONS = [
   { value: '30d', label: '30 kun' },
   { value: '90d', label: '90 kun' },
 ]
+// Til ro'yxati — ham manba filtri ("Til" chip-row), ham AI chiqish tili
+// ("Chiqish alifbosi") uchun bitta umumiy ro'yxat ishlatiladi.
 const LANG_OPTIONS = [
-  { value: 'uz', label: "O'zbekcha" },
-  { value: 'ru', label: 'Ruscha' },
-  { value: 'en', label: 'Inglizcha' },
+  { value: 'uz_lat', label: "O'zbek (lotin)" },
+  { value: 'uz_cyr', label: "O'zbek (kirill)" },
+  { value: 'ru', label: 'Rus tili' },
+  { value: 'en', label: 'Ingliz tili' },
 ]
 
 const categories = ref([])
 const autoInterval = ref(60)
 const autoCategoryIds = ref([])         // []
 const autoTestShowOriginal = ref(false) // test rejim toggle
-const autoOutputLanguage = ref('uz_lat') // AI chiqishi alifbosi: 'uz_lat' | 'uz_cyr'
-const OUTPUT_LANG_OPTIONS = [
-  { id: 'uz_lat', label: 'O\'zbek (lotin)', note: 'zamonaviy lotin yozuvi' },
-  { id: 'uz_cyr', label: 'O\'zbek (kirill)', note: 'кирилл алифбоси' },
-]
+// AI chiqish tili: uz_lat | uz_cyr | ru | en (LANG_OPTIONS bilan bir xil set)
+const autoOutputLanguage = ref('uz_lat')
+const OUTPUT_LANG_OPTIONS = LANG_OPTIONS.map((l) => ({ id: l.value, label: l.label }))
 const autoFilters = ref({
   time_range: '7d',
   per_channel: 3,
@@ -1302,7 +1303,9 @@ async function openAutoSettings(channel, opts = {}) {
   autoProvider.value = channel.auto_provider || 'openai'
   autoModel.value = channel.auto_model || (AI_MODELS_BY_PROVIDER[autoProvider.value]?.[0]?.id || 'gpt-4o-mini')
   autoUseRecommended.value = !!channel.auto_use_admin_recommended
-  autoOutputLanguage.value = channel.auto_output_language === 'uz_cyr' ? 'uz_cyr' : 'uz_lat'
+  autoOutputLanguage.value = ['uz_lat', 'uz_cyr', 'ru', 'en'].includes(channel.auto_output_language)
+    ? channel.auto_output_language
+    : 'uz_lat'
 
   loadCategories()
   autoModalOpen.value = true
