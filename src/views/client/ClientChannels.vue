@@ -351,21 +351,11 @@
                     <label class="cc-field-label">Til</label>
                     <div class="cc-chip-row">
                       <button v-for="l in LANG_OPTIONS" :key="l.value" type="button"
-                        class="cc-chip" :class="{ active: autoFilters.languages.includes(l.value) }"
-                        @click="toggleAutoLanguage(l.value)">{{ l.label }}</button>
-                    </div>
-                    <div class="cc-field-hint">Bo'sh — hamma tildagi postlar mos keladi</div>
-                  </div>
-
-                  <div class="cc-field">
-                    <label class="cc-field-label">Chiqish alifbosi</label>
-                    <div class="cc-chip-row">
-                      <button v-for="o in OUTPUT_LANG_OPTIONS" :key="o.id" type="button"
-                        class="cc-chip" :class="{ active: autoOutputLanguage === o.id }"
-                        @click="autoOutputLanguage = o.id">{{ o.label }}</button>
+                        class="cc-chip" :class="{ active: autoOutputLanguage === l.value }"
+                        @click="autoOutputLanguage = l.value">{{ l.label }}</button>
                     </div>
                     <div class="cc-field-hint">
-                      AI qayta yozilgan post matni qaysi alifboda chiqishi (Til filtridan farqli — bu AI chiqishi)
+                      AI postni shu tilda chiqaradi. Manba qaysi tilda bo'lishidan qat'i nazar — tanlangan tilga tarjima qilinadi.
                     </div>
                   </div>
 
@@ -580,21 +570,11 @@
                   <label class="cc-field-label">Til</label>
                   <div class="cc-chip-row">
                     <button v-for="l in LANG_OPTIONS" :key="l.value" type="button"
-                      class="cc-chip" :class="{ active: autoFilters.languages.includes(l.value) }"
-                      @click="toggleAutoLanguage(l.value)">{{ l.label }}</button>
-                  </div>
-                  <div class="cc-field-hint">Bo'sh — hamma tildagi postlar mos keladi</div>
-                </div>
-
-                <div class="cc-field">
-                  <label class="cc-field-label">Chiqish alifbosi</label>
-                  <div class="cc-chip-row">
-                    <button v-for="o in OUTPUT_LANG_OPTIONS" :key="o.id" type="button"
-                      class="cc-chip" :class="{ active: autoOutputLanguage === o.id }"
-                      @click="autoOutputLanguage = o.id">{{ o.label }}</button>
+                      class="cc-chip" :class="{ active: autoOutputLanguage === l.value }"
+                      @click="autoOutputLanguage = l.value">{{ l.label }}</button>
                   </div>
                   <div class="cc-field-hint">
-                    AI qayta yozilgan post matni qaysi alifboda chiqishi. Yuqoridagi "Til" — manba filtri, bu — AI chiqishi.
+                    AI postni shu tilda chiqaradi. Manba qaysi tilda bo'lishidan qat'i nazar — tanlangan tilga tarjima qilinadi.
                   </div>
                 </div>
 
