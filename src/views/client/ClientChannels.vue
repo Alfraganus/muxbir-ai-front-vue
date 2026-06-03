@@ -357,6 +357,18 @@
                     <div class="cc-field-hint">Bo'sh — hamma tildagi postlar mos keladi</div>
                   </div>
 
+                  <div class="cc-field">
+                    <label class="cc-field-label">Chiqish alifbosi</label>
+                    <div class="cc-chip-row">
+                      <button v-for="o in OUTPUT_LANG_OPTIONS" :key="o.id" type="button"
+                        class="cc-chip" :class="{ active: autoOutputLanguage === o.id }"
+                        @click="autoOutputLanguage = o.id">{{ o.label }}</button>
+                    </div>
+                    <div class="cc-field-hint">
+                      AI qayta yozilgan post matni qaysi alifboda chiqishi (Til filtridan farqli — bu AI chiqishi)
+                    </div>
+                  </div>
+
                   <div class="cc-auto-row">
                     <label class="cc-toggle-row">
                       <input type="checkbox" v-model="autoFilters.include_videos"/>
@@ -574,6 +586,18 @@
                   <div class="cc-field-hint">Bo'sh — hamma tildagi postlar mos keladi</div>
                 </div>
 
+                <div class="cc-field">
+                  <label class="cc-field-label">Chiqish alifbosi</label>
+                  <div class="cc-chip-row">
+                    <button v-for="o in OUTPUT_LANG_OPTIONS" :key="o.id" type="button"
+                      class="cc-chip" :class="{ active: autoOutputLanguage === o.id }"
+                      @click="autoOutputLanguage = o.id">{{ o.label }}</button>
+                  </div>
+                  <div class="cc-field-hint">
+                    AI qayta yozilgan post matni qaysi alifboda chiqishi. Yuqoridagi "Til" — manba filtri, bu — AI chiqishi.
+                  </div>
+                </div>
+
                 <div class="cc-auto-row">
                   <label class="cc-toggle-row">
                     <input type="checkbox" v-model="autoFilters.include_videos"/>
@@ -698,37 +722,6 @@
                   </div>
                 </div>
 
-
-                <!-- Chiqish alifbosi -->
-                <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
-                  <label class="cc-label"><b>Chiqish alifbosi</b></label>
-                  <div class="cc-field-hint" style="margin-bottom:8px;">
-                    AI tomonidan yozilgan post matni qaysi alifboda chiqarilishini tanlang.
-                    Manba kanal qaysi alifboda yozgani muhim emas — AI tanlangan alifboga o'tkazadi.
-                  </div>
-                  <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <label
-                      v-for="opt in OUTPUT_LANG_OPTIONS"
-                      :key="opt.id"
-                      :style="{
-                        display:'flex',alignItems:'center',gap:'8px',
-                        border:'1px solid ' + (autoOutputLanguage === opt.id ? 'var(--accent)' : 'var(--border-2)'),
-                        borderRadius:'10px',padding:'10px 14px',cursor:'pointer',
-                        background: autoOutputLanguage === opt.id ? 'rgba(99,102,241,.06)' : 'var(--bg)',
-                      }">
-                      <input
-                        type="radio"
-                        :value="opt.id"
-                        v-model="autoOutputLanguage"
-                        style="margin:0;"
-                      />
-                      <span>
-                        <b>{{ opt.label }}</b>
-                        <span style="color:var(--muted);margin-left:6px;font-size:12px;">{{ opt.note }}</span>
-                      </span>
-                    </label>
-                  </div>
-                </div>
 
                 <!-- Test rejim -->
                 <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
