@@ -699,6 +699,37 @@
                 </div>
 
 
+                <!-- Chiqish alifbosi -->
+                <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
+                  <label class="cc-label"><b>Chiqish alifbosi</b></label>
+                  <div class="cc-field-hint" style="margin-bottom:8px;">
+                    AI tomonidan yozilgan post matni qaysi alifboda chiqarilishini tanlang.
+                    Manba kanal qaysi alifboda yozgani muhim emas — AI tanlangan alifboga o'tkazadi.
+                  </div>
+                  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <label
+                      v-for="opt in OUTPUT_LANG_OPTIONS"
+                      :key="opt.id"
+                      :style="{
+                        display:'flex',alignItems:'center',gap:'8px',
+                        border:'1px solid ' + (autoOutputLanguage === opt.id ? 'var(--accent)' : 'var(--border-2)'),
+                        borderRadius:'10px',padding:'10px 14px',cursor:'pointer',
+                        background: autoOutputLanguage === opt.id ? 'rgba(99,102,241,.06)' : 'var(--bg)',
+                      }">
+                      <input
+                        type="radio"
+                        :value="opt.id"
+                        v-model="autoOutputLanguage"
+                        style="margin:0;"
+                      />
+                      <span>
+                        <b>{{ opt.label }}</b>
+                        <span style="color:var(--muted);margin-left:6px;font-size:12px;">{{ opt.note }}</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
                 <!-- Test rejim -->
                 <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
                   <label class="cc-toggle-row">
@@ -916,6 +947,11 @@ const categories = ref([])
 const autoInterval = ref(60)
 const autoCategoryIds = ref([])         // []
 const autoTestShowOriginal = ref(false) // test rejim toggle
+const autoOutputLanguage = ref('uz_lat') // AI chiqishi alifbosi: 'uz_lat' | 'uz_cyr'
+const OUTPUT_LANG_OPTIONS = [
+  { id: 'uz_lat', label: 'O\'zbek (lotin)', note: 'zamonaviy lotin yozuvi' },
+  { id: 'uz_cyr', label: 'O\'zbek (kirill)', note: 'кирилл алифбоси' },
+]
 const autoFilters = ref({
   time_range: '7d',
   per_channel: 3,
@@ -1001,6 +1037,7 @@ function resetAutoSettings() {
   autoProvider.value = 'openai'
   autoModel.value = 'gpt-4o-mini'
   autoUseRecommended.value = false
+  autoOutputLanguage.value = 'uz_lat'
 }
 
 function anyApplyBaseInGroup(g) {
@@ -1272,6 +1309,7 @@ async function openAutoSettings(channel, opts = {}) {
   autoProvider.value = channel.auto_provider || 'openai'
   autoModel.value = channel.auto_model || (AI_MODELS_BY_PROVIDER[autoProvider.value]?.[0]?.id || 'gpt-4o-mini')
   autoUseRecommended.value = !!channel.auto_use_admin_recommended
+  autoOutputLanguage.value = channel.auto_output_language === 'uz_cyr' ? 'uz_cyr' : 'uz_lat'
 
   loadCategories()
   autoModalOpen.value = true
@@ -1341,6 +1379,7 @@ async function saveAutoSettings() {
       auto_provider: autoProvider.value,
       auto_model: autoModel.value || null,
       auto_use_admin_recommended: autoUseRecommended.value,
+      auto_output_language: autoOutputLanguage.value,
     })
 
     const idx = channels.value.findIndex(x => x.id === updated.id)
