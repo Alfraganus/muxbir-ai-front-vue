@@ -91,7 +91,27 @@
       "Bash(stat -c '%y %n' \"E:/work projects/personal projects/backend-ai-muxbir/src/modules/web-portal/admin/admin.module.ts\" \"E:/work projects/personal projects/backend-ai-muxbir/dist/modules/web-portal/admin/admin.module.js\" 2>/dev/null)",
       "Bash(curl -s http://localhost:4001/api/docs-json -o \"E:/work projects/personal projects/backend-ai-muxbir/swagger.json\")",
       "Bash(node swagger-to-postman.js)",
-      "Bash(npx --prefix \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\" tsc --noEmit -p \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\\\\tsconfig.json\")"
+      "Bash(npx --prefix \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\" tsc --noEmit -p \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\\\\tsconfig.json\")",
+      "Bash(git -C \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\" status)",
+      "Bash(git -C \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\" add src/bot-worker/dispatcher/dispatcher.service.ts)",
+      "Bash(git -C 'E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir' commit -m ' *)",
+      "Bash(git -C \"E:\\\\work projects\\\\personal projects\\\\backend-ai-muxbir\" push origin master)",
+      "Bash(npx --prefix \"E:/work projects/personal projects/backend-ai-muxbir\" tsc --noEmit -p \"E:/work projects/personal projects/backend-ai-muxbir/tsconfig.json\")",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" add src/bot-worker/)",
+      "Bash(git -C 'E:/work projects/personal projects/backend-ai-muxbir' commit -m ' *)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" push origin master)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" add src/bot-worker/dispatcher/dispatcher.service.ts)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" pull --rebase origin master)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" stash)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" stash pop)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" add src)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" add src/bot-worker)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" status --short)",
+      "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" log --oneline origin/master..HEAD)",
+      "Bash(git commit *)"
     ]
   }
 }
