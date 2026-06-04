@@ -891,11 +891,6 @@ let addPollTimer = null
 
 // ── Avto-post sozlamalari (faqat auto rejimda) ─────────────────
 const INTERVAL_PRESETS = [
-  { value: 1,    label: '1 daq' },
-  { value: 5,    label: '5 daq' },
-  { value: 15,   label: '15 daq' },
-  { value: 30,   label: '30 daq' },
-  { value: 60,   label: '1 soat' },
   { value: 180,  label: '3 soat' },
   { value: 360,  label: '6 soat' },
   { value: 720,  label: '12 soat' },
@@ -904,11 +899,8 @@ const INTERVAL_PRESETS = [
 const TIME_RANGE_OPTIONS = [
   { value: '3h',  label: '3 soat' },
   { value: '6h',  label: '6 soat' },
+  { value: '12h', label: '12 soat' },
   { value: '24h', label: '24 soat' },
-  { value: '3d',  label: '3 kun' },
-  { value: '7d',  label: '7 kun' },
-  { value: '30d', label: '30 kun' },
-  { value: '90d', label: '90 kun' },
 ]
 // Til ro'yxati — ham manba filtri ("Til" chip-row), ham AI chiqish tili
 // ("Chiqish alifbosi") uchun bitta umumiy ro'yxat ishlatiladi.
@@ -927,7 +919,7 @@ const autoTestShowOriginal = ref(false) // test rejim toggle
 const autoOutputLanguage = ref('uz_lat')
 const OUTPUT_LANG_OPTIONS = LANG_OPTIONS.map((l) => ({ id: l.value, label: l.label }))
 const autoFilters = ref({
-  time_range: '7d',
+  time_range: '24h',
   per_channel: 3,
   similarity_threshold: 0.5,
   include_videos: true,
@@ -995,10 +987,10 @@ function toggleAutoLanguage(code) {
   else autoFilters.value.languages.splice(i, 1)
 }
 function resetAutoSettings() {
-  autoInterval.value = 60
+  autoInterval.value = 180
   autoCategoryIds.value = []
   autoFilters.value = {
-    time_range: '7d',
+    time_range: '24h',
     per_channel: 3,
     similarity_threshold: 0.5,
     include_videos: true,
@@ -1263,12 +1255,12 @@ async function openAutoSettings(channel, opts = {}) {
   autoSaveError.value = ''
 
   // Kanal sozlamalari bilan oldindan to'ldiramiz
-  autoInterval.value = channel.auto_interval_minutes || 60
+  autoInterval.value = channel.auto_interval_minutes || 180
   autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
   autoTestShowOriginal.value = !!channel.test_show_original
   const f = channel.auto_filters || {}
   autoFilters.value = {
-    time_range: f.time_range || '7d',
+    time_range: f.time_range || '24h',
     per_channel: f.per_channel ?? 3,
     similarity_threshold: f.similarity_threshold ?? 0.5,
     include_videos: f.include_videos !== false,
