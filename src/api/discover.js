@@ -4,13 +4,13 @@ export const discoverApi = {
   /** Barcha mavjud source kanallarni qaytaradi */
   listSources: () => http.get('/sources').then(r => r.data),
 
-  /** AI bilan postlarni izlash — fallback skanerlash og'irroq, timeout uzaytirilgan */
+  /** AI bilan postlarni izlash — manba ko'p bo'lsa skan og'irroq, timeout 3 daqiqa */
   run: (companyId, payload) =>
-    http.post(`/companies/${companyId}/discover`, payload, { timeout: 60000 }).then(r => r.data),
+    http.post(`/companies/${companyId}/discover`, payload, { timeout: 180000 }).then(r => r.data),
 
   /** Skanerlash animatsiyasi uchun kanallar kesimida candidate post sonlari */
   counts: (companyId, payload) =>
-    http.post(`/companies/${companyId}/discover/counts`, payload, { timeout: 60000 }).then(r => r.data),
+    http.post(`/companies/${companyId}/discover/counts`, payload, { timeout: 180000 }).then(r => r.data),
 
   /** Oxirgi N ta discover sessiyasi (default: 5) */
   history: (companyId, limit = 5) =>
