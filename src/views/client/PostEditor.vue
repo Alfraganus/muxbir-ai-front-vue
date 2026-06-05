@@ -59,6 +59,68 @@
       <div class="pe-body">
         <!-- ╔══════ LEFT (writer) ══════╗ -->
         <main class="pe-writer">
+          <!-- ─── Yagona amallar paneli (kutubxona tepasida): chapda AI + qoralama, o'ngda saqlash/e'lon ─── -->
+          <div class="pe-toolbar">
+            <!-- LEFT: AI amallar + qoralama -->
+            <div class="pe-toolbar-left">
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite" title="AI bilan qayta yozish — prompt va model tanlash">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon name="Sparkle" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiShortening ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
+              </button>
+              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
+              </button>
+              <!-- Joriy til avtomatik holati — faqat o'qish uchun (qo'lda toggle yo'q) -->
+              <span class="pe-chip pe-chip-auto" :class="{ 'pe-chip-on': isActiveComplete }"
+                    :title="isActiveComplete ? `Bu til to'liq to'ldirilgan — avtomatik tayyor` : `Sarlavha va matn to'ldirilsa, til avtomatik tayyor bo'ladi`">
+                <AppIcon :name="isActiveComplete ? 'Check' : 'Edit'" :size="11"/>
+                <span class="pe-chip-text">{{ isActiveComplete ? 'Tayyor' : 'Qoralama' }}</span>
+              </span>
+              <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
+                <AppIcon name="Trash" :size="11"/>
+              </button>
+            </div>
+
+            <div class="pe-toolbar-spacer"/>
+
+            <!-- RIGHT: saqlash / tahrirlash / e'lon qilish -->
+            <div class="pe-toolbar-right">
+              <span v-if="savedLabel" class="pe-ab-saved-pill pe-tb-saved">
+                <AppIcon name="Check" :size="10"/>
+                {{ savedLabel }}
+              </span>
+              <button v-if="isEdit" class="pe-tb-btn pe-tb-btn-del" :disabled="deleting" @click="onDelete" type="button" :title="tt('pe.delete')">
+                <span v-if="deleting" class="pe-ab-spinner"/>
+                <AppIcon v-else name="Trash" :size="14"/>
+                <span>{{ tt('pe.delete') }}</span>
+              </button>
+              <button v-if="isEdit && form.platform === 'telegram'"
+                      class="pe-tb-btn pe-tb-btn-publish"
+                      :disabled="publishing || activating"
+                      @click="onPublishClick" type="button">
+                <span v-if="publishing || activating" class="pe-ab-spinner light"/>
+                <AppIcon v-else name="Send" :size="15"/>
+                <span>{{ tt('pe.publish') }}</span>
+              </button>
+              <button class="pe-tb-btn pe-tb-btn-save" :disabled="saving" @click="saveAll" type="button">
+                <span v-if="saving" class="pe-ab-spinner"/>
+                <AppIcon v-else name="Check" :size="15"/>
+                <span>{{ isEdit ? tt('pe.savePostEdit') : tt('pe.savePost') }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- AI hint / error -->
+          <div v-if="aiError" class="pe-ribbon-hint pe-ribbon-hint-err">
+            <AppIcon name="Close" :size="11"/>
+            {{ aiError }}
+          </div>
+
           <!-- Magazine-style cover hero with language switcher overlay -->
           <div class="pe-hero-cover" :class="{ filled: !!form.cover_image_url, empty: !form.cover_image_url }">
             <input ref="coverFileInput" type="file" accept="image/*" @change="onCoverFile" hidden/>
@@ -122,42 +184,6 @@
             </div>
           </div>
 
-          <!-- Action ribbon: AI chips + platform + complete -->
-          <div class="pe-ribbon">
-            <div class="pe-ribbon-group">
-              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite" title="AI bilan qayta yozish — prompt va model tanlash">
-                <span class="pe-chip-ic pe-chip-ic-ai">
-                  <AppIcon name="Sparkle" :size="11"/>
-                </span>
-                <span class="pe-chip-text">{{ aiShortening ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
-              </button>
-              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
-                <span class="pe-chip-ic pe-chip-ic-ai">
-                  <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
-                </span>
-                <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
-              </button>
-            </div>
-
-            <div class="pe-ribbon-spacer"/>
-
-            <div class="pe-ribbon-group">
-              <button class="pe-chip pe-chip-complete" :class="{ 'pe-chip-on': activeTr.is_complete }" @click="toggleComplete">
-                <AppIcon :name="activeTr.is_complete ? 'Check' : 'Edit'" :size="11"/>
-                <span class="pe-chip-text">{{ activeTr.is_complete ? 'Tayyor' : 'Qoralama' }}</span>
-              </button>
-              <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
-                <AppIcon name="Trash" :size="11"/>
-              </button>
-            </div>
-          </div>
-
-          <!-- AI hint / error -->
-          <div v-if="aiError" class="pe-ribbon-hint pe-ribbon-hint-err">
-            <AppIcon name="Close" :size="11"/>
-            {{ aiError }}
-          </div>
-
           <!-- Composition "paper" — title + short desc + editor as one unified surface -->
           <div class="pe-paper">
             <input v-model="activeTr.title"
@@ -183,65 +209,6 @@
             </div>
           </div>
 
-          <!-- ─────────── Action bar (editor pastida) ─────────── -->
-          <div class="pe-actionbar">
-            <!-- Header: status + label -->
-            <div class="pe-ab-head">
-              <div class="pe-ab-head-left">
-                <span class="pe-ab-head-icon"><AppIcon name="Send" :size="13"/></span>
-                <div>
-                  <div class="pe-ab-head-title">Yakuniy amallar</div>
-                  <div class="pe-ab-head-sub">
-                    {{ isEdit && form.platform === 'telegram'
-                       ? "Postni saqlang yoki to'g'ridan-to'g'ri Telegramga e'lon qiling"
-                       : "Postingizni saqlang" }}
-                  </div>
-                </div>
-              </div>
-              <div v-if="post" class="pe-ab-head-right">
-                <span class="cp-card-status" :class="post.status">
-                  <span class="cp-card-status-dot"/>
-                  {{ tt('posts.status.' + post.status) }}
-                </span>
-                <span v-if="savedLabel" class="pe-ab-saved-pill">
-                  <AppIcon name="Check" :size="10"/>
-                  {{ savedLabel }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Primary action row -->
-            <div class="pe-ab-primary">
-              <button class="pe-ab-btn pe-ab-btn-save" :disabled="saving" @click="saveAll" type="button">
-                <span v-if="saving" class="pe-ab-spinner"/>
-                <AppIcon v-else name="Check" :size="15"/>
-                <span>{{ isEdit ? tt('pe.savePostEdit') : tt('pe.savePost') }}</span>
-              </button>
-              <button v-if="isEdit && form.platform === 'telegram'"
-                      class="pe-ab-btn pe-ab-btn-publish"
-                      :disabled="publishing || activating"
-                      @click="onPublishClick" type="button">
-                <span v-if="publishing || activating" class="pe-ab-spinner light"/>
-                <AppIcon v-else name="Send" :size="15"/>
-                <span>{{ tt('pe.publish') }}</span>
-                <span class="pe-ab-btn-arrow"><AppIcon name="Arrow" :size="13"/></span>
-              </button>
-            </div>
-
-            <!-- Secondary row: back + delete -->
-            <div class="pe-ab-secondary">
-              <button class="pe-ab-mini pe-ab-mini-ghost" @click="$router.push('/client/posts')" type="button">
-                <AppIcon name="ChevronL" :size="11"/>
-                <span>{{ tt('pe.back') }}</span>
-              </button>
-              <span v-if="isEdit" class="pe-ab-mini-sep"/>
-              <button v-if="isEdit" class="pe-ab-mini pe-ab-mini-danger" :disabled="deleting" @click="onDelete" type="button">
-                <span v-if="deleting" class="pe-ab-spinner"/>
-                <AppIcon v-else name="Trash" :size="11"/>
-                <span>{{ tt('pe.delete') }}</span>
-              </button>
-            </div>
-          </div>
         </main>
 
         <!-- ╔══════ RIGHT (sticky sidebar) ══════╗ -->
@@ -1069,10 +1036,18 @@ function iconStyle(p) {
   return { width:'24px', height:'24px', borderRadius:'7px', background: bg, color: fg, display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink: 0 }
 }
 
+/**
+ * Til "to'liq tayyor" (is_complete) ekanini AVTOMATIK aniqlaydi:
+ * sarlavha va asosiy matn bo'lsa — tayyor. Qo'lda toggle qilish shart emas.
+ */
+function trComplete(tr) {
+  return !!(tr && tr.title && tr.title.trim()) && hasContent(tr?.content_json)
+}
+
 function langState(l) {
   const tr = translations[l]
   if (!tr) return 'empty'
-  if (tr.is_complete && (tr.title || hasContent(tr.content_json))) return 'complete'
+  if (trComplete(tr)) return 'complete'
   if (tr.title || tr.short_description || hasContent(tr.content_json)) return 'draft'
   return 'empty'
 }
@@ -1090,7 +1065,8 @@ function firstNonEmptyTitle() {
   return ''
 }
 
-function toggleComplete() { activeTr.value.is_complete = !activeTr.value.is_complete }
+// Joriy til avtomatik "tayyor"mi — faqat o'qish uchun indikator (qo'lda toggle yo'q)
+const isActiveComplete = computed(() => trComplete(activeTr.value))
 
 function removeLang() {
   if (!confirm(tt('pe.lang.removeTranslation') + '?')) return
@@ -1263,7 +1239,7 @@ async function saveAll() {
           title: translations[l].title || null,
           short_description: translations[l].short_description || null,
           content_json: translations[l].content_json || null,
-          is_complete: translations[l].is_complete || false,
+          is_complete: trComplete(translations[l]),
         }))
       saved = await postsApi.create(company.value.id, { ...payload, translations: trArr })
     }
@@ -1279,7 +1255,7 @@ async function saveAll() {
             title: tr.title || null,
             short_description: tr.short_description || null,
             content_json: tr.content_json || null,
-            is_complete: tr.is_complete,
+            is_complete: trComplete(tr),
           })
         }
       }
@@ -2414,6 +2390,24 @@ async function aiGenerateTags() {
   border-color: color-mix(in oklab, var(--danger) 35%, var(--border-2));
   background: var(--danger-bg);
 }
+
+/* Avtomatik tayyorlik indikatori — faqat o'qish uchun, bosib bo'lmaydi */
+.pe-chip-auto {
+  cursor: default;
+  padding-left: 10px;
+}
+.pe-chip-auto:hover:not(:disabled) {
+  transform: none;
+  background: var(--panel-2);
+  border-color: var(--border-2);
+}
+.pe-chip-auto.pe-chip-on,
+.pe-chip-auto.pe-chip-on:hover:not(:disabled) {
+  background: color-mix(in oklab, #22C55E 12%, var(--panel-2));
+  border-color: color-mix(in oklab, #22C55E 35%, var(--border-2));
+  color: #16A34A;
+  transform: none;
+}
 .pe-ribbon-hint {
   display: inline-flex;
   align-items: center;
@@ -2430,6 +2424,94 @@ async function aiGenerateTags() {
   background: var(--danger-bg);
   border-color: color-mix(in oklab, var(--danger) 28%, transparent);
   color: var(--danger);
+}
+
+/* ────────── Unified action toolbar (bitta row) ────────── */
+.pe-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04), 0 12px 32px -22px rgba(15, 23, 42, 0.18);
+  flex-wrap: wrap;
+}
+.pe-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pe-toolbar-spacer { flex: 1; min-width: 12px; }
+.pe-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pe-tb-saved { margin-right: 2px; }
+.pe-tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .15s ease, background .12s, border-color .12s, color .12s, filter .12s;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  letter-spacing: -0.005em;
+}
+.pe-tb-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.pe-tb-btn:not(:disabled):active { transform: translateY(1px); }
+
+.pe-tb-btn-save {
+  background: var(--panel);
+  border-color: color-mix(in oklab, #10b981 45%, var(--border));
+  color: #047857;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, #10b981 12%, transparent);
+}
+.pe-tb-btn-save:hover:not(:disabled) {
+  background: color-mix(in oklab, #10b981 8%, var(--panel));
+  border-color: #10b981;
+  box-shadow: 0 6px 16px -6px rgba(16, 185, 129, 0.4);
+}
+
+.pe-tb-btn-publish {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 60%, #4338ca 100%);
+  border-color: #4338ca;
+  color: #fff;
+  box-shadow: 0 8px 22px -10px rgba(79, 70, 229, 0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.pe-tb-btn-publish:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px -10px rgba(79, 70, 229, 0.7), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.pe-tb-btn-del {
+  color: color-mix(in oklab, var(--danger) 80%, var(--muted));
+  border-color: var(--border-2);
+}
+.pe-tb-btn-del:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--danger) 9%, transparent);
+  color: var(--danger);
+  border-color: color-mix(in oklab, var(--danger) 30%, transparent);
+}
+
+@media (max-width: 720px) {
+  .pe-toolbar-left, .pe-toolbar-right { width: 100%; }
+  .pe-toolbar-spacer { display: none; }
+  .pe-tb-btn-save, .pe-tb-btn-publish { flex: 1; }
 }
 
 /* ────────── Composition paper ────────── */
