@@ -287,6 +287,31 @@
                     </div>
                   </div>
 
+                  <!-- Faol vaqt oynasi -->
+                  <div class="cc-field">
+                    <label class="cc-field-label">
+                      <AppIcon name="Calendar" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                      Faol vaqt oynasi
+                    </label>
+                    <label class="cc-window-toggle">
+                      <input type="checkbox" v-model="autoWindowEnabled"/>
+                      <span>Faqat belgilangan soatlar oralig'ida yuborilsin</span>
+                    </label>
+                    <div v-if="autoWindowEnabled" class="cc-window-row">
+                      <select v-model.number="autoActiveFromHour" class="cc-window-select">
+                        <option v-for="h in HOUR_OPTIONS" :key="'f'+h.value" :value="h.value">{{ h.label }}</option>
+                      </select>
+                      <span class="cc-window-sep">dan</span>
+                      <select v-model.number="autoActiveToHour" class="cc-window-select">
+                        <option v-for="h in HOUR_OPTIONS" :key="'t'+h.value" :value="h.value">{{ h.label }}</option>
+                      </select>
+                      <span class="cc-window-sep">gacha</span>
+                    </div>
+                    <div class="cc-field-hint">
+                      Autopost faqat shu soatlar oralig'ida ishlaydi (Toshkent vaqti). Masalan 08:00 dan 22:00 gacha.
+                    </div>
+                  </div>
+
                   <!-- Kategoriyalar -->
                   <div class="cc-field">
                     <label class="cc-field-label">
@@ -504,6 +529,31 @@
                     Boshqa qiymat:
                     <input type="number" min="1" max="10080" v-model.number="autoInterval" class="cc-inline-num"/>
                     daqiqa
+                  </div>
+                </div>
+
+                <!-- Faol vaqt oynasi -->
+                <div class="cc-field">
+                  <label class="cc-field-label">
+                    <AppIcon name="Calendar" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                    Faol vaqt oynasi
+                  </label>
+                  <label class="cc-window-toggle">
+                    <input type="checkbox" v-model="autoWindowEnabled"/>
+                    <span>Faqat belgilangan soatlar oralig'ida yuborilsin</span>
+                  </label>
+                  <div v-if="autoWindowEnabled" class="cc-window-row">
+                    <select v-model.number="autoActiveFromHour" class="cc-window-select">
+                      <option v-for="h in HOUR_OPTIONS" :key="'f'+h.value" :value="h.value">{{ h.label }}</option>
+                    </select>
+                    <span class="cc-window-sep">dan</span>
+                    <select v-model.number="autoActiveToHour" class="cc-window-select">
+                      <option v-for="h in HOUR_OPTIONS" :key="'t'+h.value" :value="h.value">{{ h.label }}</option>
+                    </select>
+                    <span class="cc-window-sep">gacha</span>
+                  </div>
+                  <div class="cc-field-hint">
+                    Autopost faqat shu soatlar oralig'ida ishlaydi (Toshkent vaqti). Masalan 08:00 dan 22:00 gacha.
                   </div>
                 </div>
 
@@ -891,11 +941,17 @@ let addPollTimer = null
 
 // ── Avto-post sozlamalari (faqat auto rejimda) ─────────────────
 const INTERVAL_PRESETS = [
+  { value: 60,   label: '1 soat' },
   { value: 180,  label: '3 soat' },
   { value: 360,  label: '6 soat' },
   { value: 720,  label: '12 soat' },
   { value: 1440, label: '24 soat' },
 ]
+// Faol vaqt oynasi uchun soatlar (0..23) — "08:00" ko'rinishida
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
+  value: h,
+  label: String(h).padStart(2, '0') + ':00',
+}))
 const TIME_RANGE_OPTIONS = [
   { value: '3h',  label: '3 soat' },
   { value: '6h',  label: '6 soat' },
@@ -913,6 +969,10 @@ const LANG_OPTIONS = [
 
 const categories = ref([])
 const autoInterval = ref(60)
+// Faol vaqt oynasi — yoqilsa autopost faqat shu soatlar oralig'ida ishlaydi (Toshkent vaqti)
+const autoWindowEnabled = ref(false)
+const autoActiveFromHour = ref(8)
+const autoActiveToHour = ref(22)
 const autoCategoryIds = ref([])         // []
 const autoTestShowOriginal = ref(false) // test rejim toggle
 // AI chiqish tili: uz_lat | uz_cyr | ru | en (LANG_OPTIONS bilan bir xil set)
@@ -988,6 +1048,9 @@ function toggleAutoLanguage(code) {
 }
 function resetAutoSettings() {
   autoInterval.value = 180
+  autoWindowEnabled.value = false
+  autoActiveFromHour.value = 8
+  autoActiveToHour.value = 22
   autoCategoryIds.value = []
   autoFilters.value = {
     time_range: '24h',
@@ -1256,6 +1319,11 @@ async function openAutoSettings(channel, opts = {}) {
 
   // Kanal sozlamalari bilan oldindan to'ldiramiz
   autoInterval.value = channel.auto_interval_minutes || 180
+  // Faol vaqt oynasi — ikkala soat ham mavjud bo'lsa yoqilgan hisoblanadi
+  const hasWindow = channel.auto_active_from_hour != null && channel.auto_active_to_hour != null
+  autoWindowEnabled.value = hasWindow
+  autoActiveFromHour.value = hasWindow ? channel.auto_active_from_hour : 8
+  autoActiveToHour.value = hasWindow ? channel.auto_active_to_hour : 22
   autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
   autoTestShowOriginal.value = !!channel.test_show_original
   const f = channel.auto_filters || {}
@@ -1348,6 +1416,8 @@ async function saveAutoSettings() {
       auto_model: autoModel.value || null,
       auto_use_admin_recommended: autoUseRecommended.value,
       auto_output_language: autoOutputLanguage.value,
+      auto_active_from_hour: autoWindowEnabled.value ? autoActiveFromHour.value : null,
+      auto_active_to_hour: autoWindowEnabled.value ? autoActiveToHour.value : null,
     })
 
     const idx = channels.value.findIndex(x => x.id === updated.id)
@@ -1555,6 +1625,8 @@ async function submitAdd() {
             keywords: (autoFilters.value.keywords || '')
               .split(',').map(s => s.trim()).filter(Boolean),
           },
+          auto_active_from_hour: autoWindowEnabled.value ? autoActiveFromHour.value : null,
+          auto_active_to_hour: autoWindowEnabled.value ? autoActiveToHour.value : null,
         })
         addedChannel.value = { ...res.channel, ...updated }
       } catch { /* sozlamalar muvaffaqiyatsiz bo'lsa ham kanal yaratildi */ }
@@ -1997,6 +2069,39 @@ onBeforeUnmount(() => {
   outline: none;
 }
 .cc-inline-num:focus { border-color: var(--accent); }
+
+/* Faol vaqt oynasi */
+.cc-window-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.cc-window-toggle input { cursor: pointer; }
+.cc-window-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.cc-window-select {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+}
+.cc-window-select:focus { border-color: var(--accent); }
+.cc-window-sep { font-size: 12.5px; color: var(--muted); }
 
 .cc-num-input {
   display: inline-flex; align-items: center;
