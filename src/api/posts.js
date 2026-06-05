@@ -1,8 +1,22 @@
 import http from './http.js'
 
 export const postsApi = {
-  list: (companyId, status) =>
-    http.get(`/companies/${companyId}/posts`, { params: status ? { status } : {} }).then(r => r.data),
+  /**
+   * Postlar ro'yxati — paginatsiya bilan.
+   * opts: { status, q, limit, offset }
+   * Javob: { items, total, counts }
+   */
+  list: (companyId, opts = {}) => {
+    const { status, q, limit, offset } = opts
+    return http.get(`/companies/${companyId}/posts`, {
+      params: {
+        status: status || undefined,
+        q: q || undefined,
+        limit: limit != null ? limit : undefined,
+        offset: offset != null ? offset : undefined,
+      },
+    }).then(r => r.data)
+  },
 
   /** Tag autocomplete: prefiks bo'yicha unikal teglar (eng ko'p ishlatilgani oldinda) */
   listTags: (companyId, q, limit = 20) =>
@@ -56,7 +70,8 @@ export const postsApi = {
     http.post(`/companies/${companyId}/posts/${postId}/ai/tags`, { lang, apply },
               { timeout: 60000 }).then(r => r.data),
 
-  publish: (companyId, postId) =>
-    http.post(`/companies/${companyId}/posts/${postId}/publish`, null,
+  publish: (companyId, postId, lang) =>
+    http.post(`/companies/${companyId}/posts/${postId}/publish`,
+              lang ? { lang } : null,
               { timeout: 60000 }).then(r => r.data),
 }

@@ -177,7 +177,7 @@
                   :class="[{ active: activeLang === l }, langState(l)]"
                   @click="activeLang = l"
                   :title="tt('pe.lang.' + l)">
-                  <span class="pe-hcl-code">{{ l.toUpperCase() }}</span>
+                  <span class="pe-hcl-code">{{ langCode(l) }}</span>
                   <span class="pe-hcl-dot"/>
                 </button>
               </div>
@@ -552,6 +552,28 @@
           </select>
         </label>
 
+        <!-- Chiqish tili -->
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text);">4. Chiqish tili</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <label v-for="l in AI_OUTPUT_LANGS" :key="l.id"
+                   :style="{
+                     display: 'flex', alignItems: 'center', gap: '8px',
+                     padding: '9px 12px', cursor: aiShortening ? 'not-allowed' : 'pointer',
+                     border: '1px solid ' + (aiRewriteForm.outputLanguage === l.id ? 'var(--accent)' : 'var(--border-2)'),
+                     borderRadius: '7px',
+                     background: aiRewriteForm.outputLanguage === l.id ? 'rgba(99,102,241,.06)' : 'var(--bg)',
+                   }">
+              <input v-model="aiRewriteForm.outputLanguage" type="radio" :value="l.id" :disabled="aiShortening"
+                     style="margin:0;cursor:pointer;"/>
+              <span style="font-size:12.5px;font-weight:600;color:var(--text);">{{ l.label }}</span>
+            </label>
+          </div>
+          <span style="font-size:11px;color:var(--muted);">
+            AI matnni shu tilda va yozuvda qaytaradi — manba qaysi tilda bo'lishidan qat'i nazar.
+          </span>
+        </div>
+
         <div v-if="aiError" style="padding:10px 12px;border-radius:7px;background:rgba(239,68,68,.08);
                      border:1px solid rgba(239,68,68,.25);color:#ef4444;font-size:12.5px;">
           {{ aiError }}
@@ -574,6 +596,57 @@
                   fontSize: '12.5px', fontWeight: 600,
                 }">
           {{ aiShortening ? 'Yozilmoqda…' : '✨ Qayta yozish' }}
+        </button>
+      </template>
+    </AppModal>
+
+    <!-- ─── Telegram publish — til tanlash ─── -->
+    <AppModal v-model="showPublishLang"
+              title="Qaysi tilda e'lon qilinsin?"
+              subtitle="Tanlangan til keyingi postlar uchun ham default bo'ladi"
+              width="460px">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div v-if="!publishableLangs.length"
+             style="padding:12px;border-radius:8px;background:rgba(245,158,11,.08);
+                    border:1px solid rgba(245,158,11,.25);color:#92400e;font-size:12.5px;">
+          ⚠️ Hali birorta til to'ldirilmagan. Avval postni biror tilda yozing.
+        </div>
+        <label v-for="l in publishableLangs" :key="l"
+               :style="{
+                 display: 'flex', alignItems: 'center', gap: '10px',
+                 padding: '11px 13px', cursor: 'pointer',
+                 border: '1px solid ' + (publishLang === l ? 'var(--accent)' : 'var(--border-2)'),
+                 borderRadius: '8px',
+                 background: publishLang === l ? 'rgba(99,102,241,.06)' : 'var(--bg)',
+               }">
+          <input type="radio" v-model="publishLang" :value="l" style="margin:0;cursor:pointer;"/>
+          <span class="pe-hcl-code" style="font-size:11px;font-weight:700;color:var(--muted);
+                       padding:2px 7px;border:1px solid var(--border-2);border-radius:5px;">
+            {{ langCode(l) }}
+          </span>
+          <span style="font-size:13px;font-weight:600;color:var(--text);">{{ tt('pe.lang.' + l) }}</span>
+          <span v-if="company?.default_publish_lang === l"
+                style="margin-left:auto;font-size:10.5px;color:var(--accent);font-weight:600;">
+            default
+          </span>
+        </label>
+      </div>
+      <template #footer>
+        <button type="button" @click="showPublishLang = false"
+                style="padding:8px 14px;border-radius:6px;background:transparent;color:var(--muted);
+                       border:1px solid var(--border-2);cursor:pointer;font-size:12.5px;">
+          Bekor qilish
+        </button>
+        <button type="button" @click="confirmPublishLang"
+                :disabled="!publishableLangs.length"
+                :style="{
+                  padding: '8px 16px', borderRadius: '6px',
+                  background: publishableLangs.length ? 'var(--accent)' : 'var(--bg-2,rgba(0,0,0,.05))',
+                  color: publishableLangs.length ? '#fff' : 'var(--muted)',
+                  border: 'none', cursor: publishableLangs.length ? 'pointer' : 'default',
+                  fontSize: '12.5px', fontWeight: 600,
+                }">
+          ➤ E'lon qilish
         </button>
       </template>
     </AppModal>
@@ -647,8 +720,11 @@ const postsUsageStore = usePostsUsageStore()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
 
-const LANGS = ['uz', 'ru', 'en']
+const LANGS = ['uz', 'uz_cyr', 'ru', 'en']
 const platforms = ['telegram', 'website', 'instagram']
+// Til switcher chipida ko'rsatiladigan qisqa kod (uz_cyr juda uzun)
+const LANG_CODE = { uz: 'UZ', uz_cyr: 'ЎЗ', ru: 'RU', en: 'EN' }
+function langCode(l) { return LANG_CODE[l] || (l || '').toUpperCase() }
 
 const isEdit = computed(() => !!route.params.id)
 const postId = computed(() => route.params.id)
@@ -679,10 +755,20 @@ const aiRewriteForm = reactive({
   groupId:  aiSavedPrefs.groupId  || '',
   provider: aiSavedPrefs.provider || 'openai',
   model:    aiSavedPrefs.model    || 'gpt-4o-mini',
+  // Chiqish tili — AI matnni shu tilda qaytaradi VA shu til tabiga joylaydi (uz | uz_cyr | ru | en)
+  outputLanguage: aiSavedPrefs.outputLanguage || 'uz',
   // Default: yoqilgan — lekin admin tavsiya etgan prompt mavjud bo'lmasa
   // openAiRewrite ichida false ga tushiriladi.
   useRecommended: aiSavedPrefs.useRecommended === undefined ? true : !!aiSavedPrefs.useRecommended,
 })
+
+// AI rewrite chiqish tili variantlari
+const AI_OUTPUT_LANGS = [
+  { id: 'uz',     label: "O'zbek (lotin)" },
+  { id: 'uz_cyr', label: "O'zbek (kirill)" },
+  { id: 'ru',     label: 'Rus tili' },
+  { id: 'en',     label: 'Ingliz tili' },
+]
 
 // Admin tavsiya etgan prompt mavjudligi — modal har ochilganda yangilanadi.
 const aiRecommended = ref({ exists: false, name: null, loaded: false })
@@ -998,9 +1084,10 @@ async function removeGallery(i) {
 const editorReloadKey = ref(0)
 
 const translations = reactive({
-  uz: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
-  ru: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
-  en: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
+  uz:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
+  uz_cyr: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
+  ru:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
+  en:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
 })
 const activeLang = ref(
   (typeof route.query.lang === 'string' && route.query.lang in translations)
@@ -1059,7 +1146,7 @@ function hasContent(json) {
 }
 function hasAnyContent(l) { return langState(l) !== 'empty' }
 function firstNonEmptyTitle() {
-  for (const l of [store.lang, 'uz', 'ru', 'en']) {
+  for (const l of [store.lang, 'uz', 'uz_cyr', 'ru', 'en']) {
     if (translations[l]?.title) return translations[l].title
   }
   return ''
@@ -1304,23 +1391,39 @@ async function onDelete() {
  *   Telegramga yuboraylikmi?
  * - Aks holda darhol publish qilamiz.
  */
-async function onPublishClick() {
+// ── Telegram publish — til tanlash dialogi ──────────────────────
+const showPublishLang = ref(false)
+const publishLang = ref('uz')
+// Faqat to'ldirilgan tillar e'long taklif qilinadi
+const publishableLangs = computed(() => LANGS.filter(l => hasAnyContent(l)))
+
+function onPublishClick() {
   if (!isEdit.value || !post.value) return
   if (!form.telegram_channel_id) {
     formError.value = 'Telegram kanal tanlanmagan — o\'ng tomondagi panel orqali kanalni tanlang'
     alert('⚠ Telegram kanal tanlanmagan!\n\nO\'ng tomondagi panel orqali kanalni tanlang va qaytadan urinib ko\'ring.')
     return
   }
-  if (post.value.status === 'draft') {
+  // Default til: kompaniya sozlamasi → joriy tab → birinchi to'ldirilgan til
+  const avail = publishableLangs.value
+  const def = company.value?.default_publish_lang
+  publishLang.value =
+    (def && avail.includes(def)) ? def
+    : (avail.includes(activeLang.value) ? activeLang.value : (avail[0] || 'uz'))
+  showPublishLang.value = true
+}
+
+async function confirmPublishLang() {
+  showPublishLang.value = false
+  if (post.value?.status === 'draft') {
     if (!confirm(tt('pe.confirmActivatePublish'))) return
-    // Avval draft → scheduled
     await activatePost()
     if (formError.value) return
   }
-  await publishNow()
+  await publishNow(publishLang.value)
 }
 
-async function publishNow() {
+async function publishNow(lang) {
   if (!isEdit.value || !post.value) return
   if (!form.telegram_channel_id) {
     formError.value = tt('pe.tg.noConnected')
@@ -1333,11 +1436,14 @@ async function publishNow() {
 
   publishing.value = true
   try {
-    const res = await postsApi.publish(company.value.id, postId.value)
+    const res = await postsApi.publish(company.value.id, postId.value, lang)
     post.value = res
     if (res?.status) form.status = res.status
+    // Kompaniya default tilini lokal obyektda ham yangilab qo'yamiz
+    if (lang && company.value) company.value.default_publish_lang = lang
     lastSavedAt.value = Date.now()
-    showAiBanner('success', "Post Telegram'ga e'lon qilindi")
+    const lbl = (AI_OUTPUT_LANGS.find(l => l.id === lang) || {}).label || lang
+    showAiBanner('success', `Post Telegram'ga e'lon qilindi (${lbl})`)
   } catch (e) {
     const msg = e?.response?.data?.message
     formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
@@ -1431,6 +1537,13 @@ async function openAiRewrite() {
     if (saved.useRecommended !== undefined) {
       aiRewriteForm.useRecommended = !!saved.useRecommended
     }
+    // Default — joriy til tabi (saqlangan tanlovdan ko'ra dolzarbroq).
+    // Foydalanuvchi modaldan boshqa tilni tanlasa, natija o'sha til tabiga tushadi.
+    aiRewriteForm.outputLanguage = AI_OUTPUT_LANGS.some(l => l.id === activeLang.value)
+      ? activeLang.value
+      : (saved.outputLanguage && AI_OUTPUT_LANGS.some(l => l.id === saved.outputLanguage)
+          ? saved.outputLanguage
+          : 'uz')
   } catch { /* ignore */ }
 
   // Promptlarni yuklab olamiz (har gal modal ochilganda — eng yangi)
@@ -1484,6 +1597,7 @@ async function openAiRewrite() {
 watch(
   () => ({
     groupId: aiRewriteForm.groupId, provider: aiRewriteForm.provider, model: aiRewriteForm.model,
+    outputLanguage: aiRewriteForm.outputLanguage,
     useRecommended: aiRewriteForm.useRecommended,
   }),
   (v) => {
@@ -1499,26 +1613,41 @@ async function runAiRewrite() {
   }
   aiError.value = ''
   aiShortening.value = true
-  // Joriy editor content'ini saqlab qo'yamiz — "Qaytarish" tugmasi uchun
-  const prevContentJson = JSON.parse(JSON.stringify(activeTr.value.content_json || { html: '' }))
+  // Tanlangan chiqish tili — natija SHU til tabiga tushadi.
+  const target = aiRewriteForm.outputLanguage // uz | uz_cyr | ru | en
+  // Manba — hozir editorda ko'rinayotgan (joriy tab) matn.
+  const sourceJson = activeTr.value.content_json && typeof activeTr.value.content_json === 'object'
+    ? activeTr.value.content_json
+    : { html: '' }
+  // "Qaytarish" uchun TARGET tabning hozirgi holatini saqlab qo'yamiz.
+  const prevTargetJson = JSON.parse(JSON.stringify(translations[target]?.content_json || { html: '' }))
   try {
-    // DB'dagi emas, hozir editor'da ko'rinayotgan content'ni yuboramiz
-    const sourceJson = activeTr.value.content_json && typeof activeTr.value.content_json === 'object'
-      ? activeTr.value.content_json
-      : { html: '' }
     const res = await postsApi.aiRewrite(company.value.id, postId.value, {
-      lang: activeLang.value,
+      lang: target,                       // backend natijani shu til tarjimasiga yozadi
       prompt_group_id: aiRewriteForm.useRecommended ? undefined : aiRewriteForm.groupId,
       provider: aiRewriteForm.provider,
       model: aiRewriteForm.model,
       use_admin_recommended: aiRewriteForm.useRecommended,
       source_content_json: sourceJson,
+      output_language: target,
     })
+    // Oxirgi tanlovni eslab qolamiz
+    try {
+      localStorage.setItem(AI_REWRITE_LS_KEY, JSON.stringify({
+        groupId: aiRewriteForm.groupId,
+        provider: aiRewriteForm.provider,
+        model: aiRewriteForm.model,
+        outputLanguage: target,
+        useRecommended: aiRewriteForm.useRecommended,
+      }))
+    } catch { /* localStorage to'la bo'lsa — e'tiborsiz */ }
     if (res?.content_json) {
-      activeTr.value.content_json = res.content_json
+      if (translations[target]) translations[target].content_json = res.content_json
+      // Natija qaysi tilda bo'lsa — o'sha til tabiga o'tamiz.
+      activeLang.value = target
       editorReloadKey.value++ // editor'ni majburiy re-mount qilamiz
-      // Yuqorida banner ko'rsatamiz — "Qaytarish" imkoniyati bilan
-      showAiBanner('success', 'Matn AI yordamida qayta yozildi', prevContentJson)
+      const lbl = (AI_OUTPUT_LANGS.find(l => l.id === target) || {}).label || target
+      showAiBanner('success', `Matn "${lbl}" tabiga qayta yozildi`, prevTargetJson)
     }
     aiUsageStore.refresh()
     showAiRewrite.value = false

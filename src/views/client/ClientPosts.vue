@@ -30,8 +30,8 @@
       {{ tt('cc.loading') }}
     </div>
 
-    <!-- Empty -->
-    <AppPanel v-else-if="!posts.length" :padding="44">
+    <!-- Empty (umuman post yo'q) -->
+    <AppPanel v-else-if="!counts.all" :padding="44">
       <div style="display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;">
         <span style="width:56px;height:56px;border-radius:14px;background:var(--accent-bg);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;">
           <AppIcon name="Send" :size="26"/>
@@ -117,12 +117,12 @@
 
             <td style="padding:10px 14px;vertical-align:middle;">
               <div style="display:flex;gap:4px;">
-                <span v-for="l in ['uz','ru','en']" :key="l"
+                <span v-for="l in ['uz','uz_cyr','ru','en']" :key="l"
                   class="cp-lang-chip cp-lang-chip-btn"
                   :class="langChipState(p, l)"
                   :title="langChipTitle(p, l)"
                   @click.stop="goEdit(p, l)">
-                  {{ l.toUpperCase() }}
+                  {{ langChipCode(l) }}
                 </span>
               </div>
             </td>
@@ -150,6 +150,22 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Paginatsiya -->
+      <div v-if="total > 0" class="cp-pagination">
+        <span class="cp-pag-info">{{ rangeStart }}–{{ rangeEnd }} / {{ total }}</span>
+        <div class="cp-pag-btns">
+          <button class="cp-pag-btn" :disabled="page === 0 || loading" @click="goToPage(page - 1)">
+            <AppIcon name="ChevronL" :size="12"/>
+            <span>Oldingi</span>
+          </button>
+          <span class="cp-pag-page">{{ page + 1 }} / {{ totalPages }}</span>
+          <button class="cp-pag-btn" :disabled="page >= totalPages - 1 || loading" @click="goToPage(page + 1)">
+            <span>Keyingi</span>
+            <AppIcon name="ChevronL" :size="12" :style="{ transform: 'rotate(180deg)' }"/>
+          </button>
+        </div>
+      </div>
     </AppPanel>
     <!-- Havoladan maqola modal -->
     <AppModal v-model="showFromUrl"
@@ -165,7 +181,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -197,39 +213,81 @@ const posts = ref([])
 const filter = ref('published')
 const query = ref('')
 
+// ── Paginatsiya (server-side, offset orqali) ──────────────────
+const PAGE_SIZE = 20
+const page = ref(0)        // 0-based
+const total = ref(0)       // joriy filtr/qidiruvga mos jami post soni
+const counts = ref({ all: 0, published: 0, scheduled: 0, draft: 0, failed: 0 })
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
+const rangeStart = computed(() => (total.value === 0 ? 0 : page.value * PAGE_SIZE + 1))
+const rangeEnd = computed(() => Math.min((page.value + 1) * PAGE_SIZE, total.value))
+
+async function loadPosts() {
+  if (!company.value) { posts.value = []; total.value = 0; return }
+  loading.value = true
+  try {
+    const res = await postsApi.list(company.value.id, {
+      status: filter.value === 'all' ? undefined : filter.value,
+      q: query.value.trim() || undefined,
+      limit: PAGE_SIZE,
+      offset: page.value * PAGE_SIZE,
+    })
+    posts.value = res?.items || []
+    total.value = res?.total || 0
+    counts.value = res?.counts || { all: 0, published: 0, scheduled: 0, draft: 0, failed: 0 }
+  } catch {
+    posts.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
 async function loadAll() {
   loading.value = true
   try {
     const cs = await companiesApi.getMy().catch(() => [])
     const list = Array.isArray(cs) ? cs : [cs].filter(Boolean)
     company.value = list[0] || null
-    if (!company.value) { posts.value = []; return }
-    const data = await postsApi.list(company.value.id)
-    posts.value = data || []
   } catch {
-    posts.value = []
-  } finally {
-    loading.value = false
+    company.value = null
   }
+  if (!company.value) {
+    posts.value = []
+    total.value = 0
+    loading.value = false
+    return
+  }
+  await loadPosts() // loading'ni o'zi false qiladi
 }
 
 onMounted(loadAll)
 
+// Filtr yoki qidiruv o'zgarsa — birinchi sahifaga qaytib qayta yuklaymiz.
+// Qidiruvni biroz kechiktiramiz (debounce) — har bosishda so'rov ketmasin.
+let searchTimer = null
+watch(filter, () => { page.value = 0; loadPosts() })
+watch(query, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { page.value = 0; loadPosts() }, 350)
+})
+
+function goToPage(n) {
+  const target = Math.min(Math.max(0, n), totalPages.value - 1)
+  if (target === page.value) return
+  page.value = target
+  loadPosts()
+}
+
 const filterTabs = computed(() => [
-  { value: 'published', label: tt('posts.filter.published'), count: posts.value.filter(p => p.status === 'published').length },
-  { value: 'scheduled', label: tt('posts.filter.scheduled'), count: posts.value.filter(p => p.status === 'scheduled').length },
-  { value: 'draft',     label: tt('posts.filter.draft'),     count: posts.value.filter(p => p.status === 'draft').length },
-  { value: 'all',       label: tt('posts.filter.all'),       count: posts.value.length },
+  { value: 'published', label: tt('posts.filter.published'), count: counts.value.published || 0 },
+  { value: 'scheduled', label: tt('posts.filter.scheduled'), count: counts.value.scheduled || 0 },
+  { value: 'draft',     label: tt('posts.filter.draft'),     count: counts.value.draft || 0 },
+  { value: 'all',       label: tt('posts.filter.all'),       count: counts.value.all || 0 },
 ])
 
-const filtered = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  return posts.value.filter(p => {
-    if (filter.value !== 'all' && p.status !== filter.value) return false
-    if (q && !titleOf(p).toLowerCase().includes(q)) return false
-    return true
-  })
-})
+// Server allaqachon filtr/qidiruvni qo'llaydi — shu sahifa postlarini ko'rsatamiz
+const filtered = computed(() => posts.value)
 
 const headers = computed(() => [
   { key: 'title',    label: tt('posts.col.title') },
@@ -282,6 +340,9 @@ function langChipTitle(p, l) {
   if (!tr) return tt('pe.lang.notFilled')
   return tr.is_complete ? tt('pe.lang.complete') : tt('pe.lang.draft')
 }
+// Til chipi qisqa kodi (uz_cyr juda uzun)
+const LANG_CHIP_CODE = { uz: 'UZ', uz_cyr: 'ЎЗ', ru: 'RU', en: 'EN' }
+function langChipCode(l) { return LANG_CHIP_CODE[l] || (l || '').toUpperCase() }
 
 function platformColor(slug) {
   if (slug === 'instagram') return '#E1306C'
@@ -317,6 +378,7 @@ async function onStatusChange(p, newStatus) {
   p.status = newStatus // optimistic
   try {
     await postsApi.update(company.value.id, p.id, { status: newStatus })
+    await loadPosts() // counts va filtr (post boshqa statusga o'tdi) yangilansin
   } catch (e) {
     p.status = prev
     const msg = e?.response?.data?.message
@@ -328,7 +390,9 @@ async function removePost(p) {
   if (!confirm(tt('posts.confirmDelete', { name: titleOf(p) }))) return
   try {
     await postsApi.remove(company.value.id, p.id)
-    posts.value = posts.value.filter(x => x.id !== p.id)
+    // Sahifadagi oxirgi post o'chsa va bu birinchi sahifa bo'lmasa — oldingisiga qaytamiz
+    if (posts.value.length === 1 && page.value > 0) page.value -= 1
+    await loadPosts()
   } catch {}
 }
 </script>
@@ -343,6 +407,57 @@ async function removePost(p) {
   animation: cp-spin 0.8s linear infinite;
 }
 @keyframes cp-spin { to { transform: rotate(360deg); } }
+
+/* Paginatsiya */
+.cp-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.cp-pag-info {
+  font-size: 12px;
+  color: var(--muted);
+}
+.cp-pag-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cp-pag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.cp-pag-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--panel-2);
+}
+.cp-pag-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.cp-pag-page {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 56px;
+  text-align: center;
+}
 
 .cp-post-cover {
   width: 38px; height: 38px;
