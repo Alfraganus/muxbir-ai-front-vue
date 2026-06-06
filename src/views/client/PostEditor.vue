@@ -59,68 +59,6 @@
       <div class="pe-body">
         <!-- ╔══════ LEFT (writer) ══════╗ -->
         <main class="pe-writer">
-          <!-- ─── Yagona amallar paneli (kutubxona tepasida): chapda AI + qoralama, o'ngda saqlash/e'lon ─── -->
-          <div class="pe-toolbar">
-            <!-- LEFT: AI amallar + qoralama -->
-            <div class="pe-toolbar-left">
-              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite" title="AI bilan qayta yozish — prompt va model tanlash">
-                <span class="pe-chip-ic pe-chip-ic-ai">
-                  <AppIcon name="Sparkle" :size="11"/>
-                </span>
-                <span class="pe-chip-text">{{ aiShortening ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
-              </button>
-              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
-                <span class="pe-chip-ic pe-chip-ic-ai">
-                  <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
-                </span>
-                <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
-              </button>
-              <!-- Joriy til avtomatik holati — faqat o'qish uchun (qo'lda toggle yo'q) -->
-              <span class="pe-chip pe-chip-auto" :class="{ 'pe-chip-on': isActiveComplete }"
-                    :title="isActiveComplete ? `Bu til to'liq to'ldirilgan — avtomatik tayyor` : `Sarlavha va matn to'ldirilsa, til avtomatik tayyor bo'ladi`">
-                <AppIcon :name="isActiveComplete ? 'Check' : 'Edit'" :size="11"/>
-                <span class="pe-chip-text">{{ isActiveComplete ? 'Tayyor' : 'Qoralama' }}</span>
-              </span>
-              <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
-                <AppIcon name="Trash" :size="11"/>
-              </button>
-            </div>
-
-            <div class="pe-toolbar-spacer"/>
-
-            <!-- RIGHT: saqlash / tahrirlash / e'lon qilish -->
-            <div class="pe-toolbar-right">
-              <span v-if="savedLabel" class="pe-ab-saved-pill pe-tb-saved">
-                <AppIcon name="Check" :size="10"/>
-                {{ savedLabel }}
-              </span>
-              <button v-if="isEdit" class="pe-tb-btn pe-tb-btn-del" :disabled="deleting" @click="onDelete" type="button" :title="tt('pe.delete')">
-                <span v-if="deleting" class="pe-ab-spinner"/>
-                <AppIcon v-else name="Trash" :size="14"/>
-                <span>{{ tt('pe.delete') }}</span>
-              </button>
-              <button v-if="isEdit && form.platform === 'telegram'"
-                      class="pe-tb-btn pe-tb-btn-publish"
-                      :disabled="publishing || activating"
-                      @click="onPublishClick" type="button">
-                <span v-if="publishing || activating" class="pe-ab-spinner light"/>
-                <AppIcon v-else name="Send" :size="15"/>
-                <span>{{ tt('pe.publish') }}</span>
-              </button>
-              <button class="pe-tb-btn pe-tb-btn-save" :disabled="saving" @click="saveAll" type="button">
-                <span v-if="saving" class="pe-ab-spinner"/>
-                <AppIcon v-else name="Check" :size="15"/>
-                <span>{{ isEdit ? tt('pe.savePostEdit') : tt('pe.savePost') }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- AI hint / error -->
-          <div v-if="aiError" class="pe-ribbon-hint pe-ribbon-hint-err">
-            <AppIcon name="Close" :size="11"/>
-            {{ aiError }}
-          </div>
-
           <!-- Magazine-style cover hero with language switcher overlay -->
           <div class="pe-hero-cover" :class="{ filled: !!form.cover_image_url, empty: !form.cover_image_url }">
             <input ref="coverFileInput" type="file" accept="image/*" @change="onCoverFile" hidden/>
@@ -206,6 +144,68 @@
 
             <div class="pe-paper-editor">
               <RichEditor :key="`${activeLang}-${editorReloadKey}`" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
+            </div>
+          </div>
+
+          <!-- AI hint / error -->
+          <div v-if="aiError" class="pe-ribbon-hint pe-ribbon-hint-err">
+            <AppIcon name="Close" :size="11"/>
+            {{ aiError }}
+          </div>
+
+          <!-- ─── Amallar paneli (kontent ostida): chapda AI + qoralama, o'ngda o'chirish/saqlash/e'lon ─── -->
+          <div class="pe-toolbar pe-toolbar-bottom">
+            <!-- LEFT: AI amallar + qoralama -->
+            <div class="pe-toolbar-left">
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite" title="AI bilan qayta yozish — prompt va model tanlash">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon name="Sparkle" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiShortening ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
+              </button>
+              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
+              </button>
+              <!-- Joriy til avtomatik holati — faqat o'qish uchun (qo'lda toggle yo'q) -->
+              <span class="pe-chip pe-chip-auto" :class="{ 'pe-chip-on': isActiveComplete }"
+                    :title="isActiveComplete ? `Bu til to'liq to'ldirilgan — avtomatik tayyor` : `Sarlavha va matn to'ldirilsa, til avtomatik tayyor bo'ladi`">
+                <AppIcon :name="isActiveComplete ? 'Check' : 'Edit'" :size="11"/>
+                <span class="pe-chip-text">{{ isActiveComplete ? 'Tayyor' : 'Qoralama' }}</span>
+              </span>
+              <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
+                <AppIcon name="Trash" :size="11"/>
+              </button>
+            </div>
+
+            <div class="pe-toolbar-spacer"/>
+
+            <!-- RIGHT: o'chirish / saqlash / e'lon qilish (e'lon eng o'ngda) -->
+            <div class="pe-toolbar-right">
+              <span v-if="savedLabel" class="pe-ab-saved-pill pe-tb-saved">
+                <AppIcon name="Check" :size="10"/>
+                {{ savedLabel }}
+              </span>
+              <button v-if="isEdit" class="pe-tb-btn pe-tb-btn-del" :disabled="deleting" @click="onDelete" type="button" :title="tt('pe.delete')">
+                <span v-if="deleting" class="pe-ab-spinner"/>
+                <AppIcon v-else name="Trash" :size="14"/>
+                <span>{{ tt('pe.delete') }}</span>
+              </button>
+              <button class="pe-tb-btn pe-tb-btn-save" :disabled="saving" @click="saveAll" type="button">
+                <span v-if="saving" class="pe-ab-spinner"/>
+                <AppIcon v-else name="Check" :size="15"/>
+                <span>{{ isEdit ? tt('pe.savePostEdit') : tt('pe.savePost') }}</span>
+              </button>
+              <button v-if="isEdit && form.platform === 'telegram'"
+                      class="pe-tb-btn pe-tb-btn-publish"
+                      :disabled="publishing || activating"
+                      @click="onPublishClick" type="button">
+                <span v-if="publishing || activating" class="pe-ab-spinner light"/>
+                <AppIcon v-else name="Send" :size="15"/>
+                <span>{{ tt('pe.publish') }}</span>
+              </button>
             </div>
           </div>
 
