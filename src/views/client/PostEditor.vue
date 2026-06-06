@@ -122,6 +122,33 @@
             </div>
           </div>
 
+          <!-- ─── AI amallar + til holati (sarlavha tepasida) ─── -->
+          <div class="pe-toolbar pe-toolbar-ai">
+            <div class="pe-toolbar-left">
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite" title="AI bilan qayta yozish — prompt va model tanlash">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon name="Sparkle" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiShortening ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
+              </button>
+              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
+              </button>
+              <!-- Joriy til avtomatik holati — faqat o'qish uchun (qo'lda toggle yo'q) -->
+              <span class="pe-chip pe-chip-auto" :class="{ 'pe-chip-on': isActiveComplete }"
+                    :title="isActiveComplete ? `Bu til to'liq to'ldirilgan — avtomatik tayyor` : `Sarlavha va matn to'ldirilsa, til avtomatik tayyor bo'ladi`">
+                <AppIcon :name="isActiveComplete ? 'Check' : 'Edit'" :size="11"/>
+                <span class="pe-chip-text">{{ isActiveComplete ? 'Tayyor' : 'Qoralama' }}</span>
+              </span>
+              <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
+                <AppIcon name="Trash" :size="11"/>
+              </button>
+            </div>
+          </div>
+
           <!-- Composition "paper" — title + short desc + editor as one unified surface -->
           <div class="pe-paper">
             <input v-model="activeTr.title"
@@ -153,33 +180,8 @@
             {{ aiError }}
           </div>
 
-          <!-- ─── Amallar paneli (kontent ostida): chapda AI + qoralama, o'ngda o'chirish/saqlash/e'lon ─── -->
+          <!-- ─── Amallar paneli (kontent ostida): o'chirish / saqlash / e'lon ─── -->
           <div class="pe-toolbar pe-toolbar-bottom">
-            <!-- LEFT: AI amallar + qoralama -->
-            <div class="pe-toolbar-left">
-              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite" title="AI bilan qayta yozish — prompt va model tanlash">
-                <span class="pe-chip-ic pe-chip-ic-ai">
-                  <AppIcon name="Sparkle" :size="11"/>
-                </span>
-                <span class="pe-chip-text">{{ aiShortening ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
-              </button>
-              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
-                <span class="pe-chip-ic pe-chip-ic-ai">
-                  <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
-                </span>
-                <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
-              </button>
-              <!-- Joriy til avtomatik holati — faqat o'qish uchun (qo'lda toggle yo'q) -->
-              <span class="pe-chip pe-chip-auto" :class="{ 'pe-chip-on': isActiveComplete }"
-                    :title="isActiveComplete ? `Bu til to'liq to'ldirilgan — avtomatik tayyor` : `Sarlavha va matn to'ldirilsa, til avtomatik tayyor bo'ladi`">
-                <AppIcon :name="isActiveComplete ? 'Check' : 'Edit'" :size="11"/>
-                <span class="pe-chip-text">{{ isActiveComplete ? 'Tayyor' : 'Qoralama' }}</span>
-              </span>
-              <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
-                <AppIcon name="Trash" :size="11"/>
-              </button>
-            </div>
-
             <div class="pe-toolbar-spacer"/>
 
             <!-- RIGHT: o'chirish / saqlash / e'lon qilish (e'lon eng o'ngda) -->
