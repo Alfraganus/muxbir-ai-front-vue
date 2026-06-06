@@ -53,6 +53,16 @@
           title="2. Qaysi manbalardan qidirilsin?"
           :subtitle="`${config.sources.length} ta manba tanlandi · manbalarni Kanallar > Manbalar orqali boshqaring`">
 
+          <!-- Manba turi filtri -->
+          <div class="ds-typebar">
+            <button v-for="opt in TYPE_OPTS" :key="opt.id"
+              class="ds-typebtn" :class="{ active: config.sourceType === opt.id }"
+              @click="config.sourceType = opt.id">
+              <AppIcon v-if="opt.icon" :name="opt.icon" :size="12"/>
+              {{ opt.label }}
+            </button>
+          </div>
+
           <div v-if="loading" style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;">
             Manbalar yuklanmoqda...
           </div>
@@ -76,11 +86,14 @@
               <span class="ds-src-avatar" :style="{ background: s.color }">{{ s.name.charAt(0) }}</span>
               <div style="display:flex;flex-direction:column;flex:1;min-width:0;text-align:left;">
                 <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="ds-srctype" :class="s.type === 'website' ? 'web' : 'tg'">
+                    <AppIcon :name="s.type === 'website' ? 'Globe' : 'Telegram'" :size="10"/>
+                  </span>
                   <span style="font-size:13px;font-weight:600;">{{ s.name }}</span>
                   <span class="mono" style="font-size:11px;color:var(--muted);">{{ s.handle }}</span>
                 </div>
                 <span style="font-size:11px;color:var(--muted);">
-                  {{ fmtCompact(s.subs) }} obunachi · {{ s.category }}
+                  {{ s.type === 'website' ? 'Veb-sayt manba' : (fmtCompact(s.subs) + ' obunachi') }}
                 </span>
               </div>
               <AppBadge :tone="config.sources.includes(s.id) ? 'accent' : 'muted'" dot>Faol</AppBadge>
@@ -257,6 +270,12 @@ function channelLabel(c) {
   return c.display_name || (c.username ? '@' + String(c.username).replace(/^@/, '') : 'Kanal')
 }
 
+const TYPE_OPTS = [
+  { id: 'all', label: 'Hammasi', icon: null },
+  { id: 'telegram', label: 'Telegram', icon: 'Telegram' },
+  { id: 'website', label: 'Website', icon: 'Globe' },
+]
+
 const totalPosts = computed(() => props.config.sources.length * props.config.perChannel)
 const currentRange = computed(() => props.timeRanges.find(t => t.id === props.config.timeRange))
 const selectedSourceNames = computed(() =>
@@ -310,6 +329,21 @@ function scoreColor(v) {
   transition: all .12s; font-family: inherit;
 }
 .ds-chan.active { background: var(--accent-bg); border-color: var(--accent); }
+
+.ds-typebar { display: flex; gap: 6px; margin-bottom: 12px; }
+.ds-typebtn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 28px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--panel-2); color: var(--text-2);
+  font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit;
+}
+.ds-typebtn.active { background: var(--accent-bg); border-color: color-mix(in oklab, var(--accent) 30%, transparent); color: var(--accent); }
+.ds-srctype {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+}
+.ds-srctype.tg { color: #2AABEE; background: rgba(42,171,238,.12); }
+.ds-srctype.web { color: #16a34a; background: rgba(34,197,94,.12); }
 
 .ds-src {
   display: flex; align-items: center; gap: 12px;

@@ -323,6 +323,7 @@ const config = reactive({
   customSource: '',
   includeVideos: false,
   sortMode: 'best', // 'best' — eng yaxshi postlar; 'latest' — eng yangi postlar
+  sourceType: 'all', // 'all' | 'telegram' | 'website'
 })
 
 // ── Channels + sources from backend ──────────────────────
@@ -439,9 +440,10 @@ async function loadChannelSources(channelId) {
       .map((s, i) => ({
         id: s.source_channel_id,
         ownedId: s.id,
+        type: s.source_type || 'telegram',
         name: s.title || s.username_normalized,
         username: s.username_normalized,
-        handle: '@' + s.username_normalized,
+        handle: (s.source_type === 'website' ? '' : '@') + s.username_normalized,
         color: colorFor(i),
         category: '',
         subs: s.subscriber_count || 0,
@@ -508,6 +510,7 @@ async function startScan() {
   const payload = {
     channel_id: selectedChannelId.value,
     source_ids: config.sources,
+    source_types: config.sourceType === 'all' ? undefined : [config.sourceType],
     time_range: config.timeRange,
     per_channel: config.perChannel,
     similarity_threshold: 0.5,

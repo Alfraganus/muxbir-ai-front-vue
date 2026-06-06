@@ -14,29 +14,55 @@
       </div>
 
       <div class="csm-body">
-        <!-- TG API holati -->
-        <div v-if="tgApi.loaded && !tgApi.is_saved" class="csm-warn">
+        <!-- Manba turi -->
+        <div class="csm-types">
+          <button type="button" class="csm-type" :class="{ active: newType === 'telegram' }" @click="newType = 'telegram'">
+            <AppIcon name="Telegram" :size="15"/>
+            <span>Telegram kanal</span>
+          </button>
+          <button type="button" class="csm-type" :class="{ active: newType === 'website' }" @click="newType = 'website'">
+            <AppIcon name="Globe" :size="15"/>
+            <span>Website</span>
+          </button>
+          <button type="button" class="csm-type csm-type-soon" disabled title="Tez orada">
+            <AppIcon name="Facebook" :size="15"/>
+            <span>Facebook</span>
+            <span class="csm-soon">tez orada</span>
+          </button>
+          <button type="button" class="csm-type csm-type-soon" disabled title="Tez orada">
+            <AppIcon name="Instagram" :size="15"/>
+            <span>Instagram</span>
+            <span class="csm-soon">tez orada</span>
+          </button>
+        </div>
+
+        <!-- TG API holati (faqat telegram tur uchun) -->
+        <div v-if="newType === 'telegram' && tgApi.loaded && !tgApi.is_saved" class="csm-warn">
           <span style="font-size:16px;">⚠️</span>
           <span style="flex:1;">
-            Avval <strong>Telegram API</strong> credentials'ingizni kiriting — aks holda
-            manbalarni scan qila olmaymiz.
+            Telegram manba uchun avval <strong>Telegram API</strong> credentials'ingizni kiriting.
           </span>
           <button class="csm-btn-accent" @click="goToTgApi">Telegram API →</button>
         </div>
 
         <!-- Yangi manba qo'shish -->
-        <form v-if="!tgApi.loaded || tgApi.is_saved" class="csm-add" @submit.prevent="addOne">
+        <form class="csm-add" @submit.prevent="addOne">
           <input
-            v-model="newUsername"
+            v-model="newValue"
             type="text"
-            placeholder="@kunuz yoki t.me/kunuz"
+            :placeholder="newType === 'website' ? 'https://kun.uz (news portal manzili)' : '@kunuz yoki t.me/kunuz'"
             :disabled="adding"
             class="csm-input"
           />
-          <button type="submit" :disabled="adding || !newUsername.trim()" class="csm-btn-accent">
+          <button type="submit" :disabled="adding || !newValue.trim() || telegramLocked" class="csm-btn-accent">
             {{ adding ? 'Qo\'shilmoqda…' : '+ Qo\'shish' }}
           </button>
         </form>
+        <div class="csm-hint">
+          {{ newType === 'website'
+            ? 'Sayt URL’ini kiriting — RSS feed avtomatik topiladi, bo‘lmasa sahifadan o‘qiladi.'
+            : 'Public Telegram kanal @username yoki t.me linki.' }}
+        </div>
         <div v-if="addError" class="csm-err">{{ addError }}</div>
 
         <!-- Ro'yxat -->
@@ -55,10 +81,17 @@
 
             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <a :href="`https://t.me/${s.username_normalized}`" target="_blank" class="csm-handle">
+                <span class="csm-type-badge" :class="s.source_type === 'website' ? 'web' : 'tg'">
+                  <AppIcon :name="s.source_type === 'website' ? 'Globe' : 'Telegram'" :size="10"/>
+                  {{ s.source_type === 'website' ? 'Website' : 'Telegram' }}
+                </span>
+                <a v-if="s.source_type === 'website'" :href="s.username_raw || ('https://' + s.username_normalized)" target="_blank" class="csm-handle">
+                  {{ s.username_normalized }}
+                </a>
+                <a v-else :href="`https://t.me/${s.username_normalized}`" target="_blank" class="csm-handle">
                   @{{ s.username_normalized }}
                 </a>
-                <span v-if="s.title" style="font-size:12px;color:var(--text);">— {{ s.title }}</span>
+                <span v-if="s.title && s.title !== s.username_normalized" style="font-size:12px;color:var(--text);">— {{ s.title }}</span>
                 <span v-if="s.subscriber_count > 0" class="csm-badge">
                   {{ formatNumber(s.subscriber_count) }} obunachi
                 </span>
@@ -82,8 +115,9 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import { channelsApi } from '@/api/channels.js'
 import { companiesApi } from '@/api/companies.js'
 
@@ -97,10 +131,14 @@ const router = useRouter()
 const loading = ref(true)
 const adding = ref(false)
 const addError = ref(null)
-const newUsername = ref('')
+const newType = ref('telegram')   // 'telegram' | 'website'
+const newValue = ref('')
 const sources = ref([])
 const scanningId = ref(null)
 const tgApi = reactive({ loaded: false, is_saved: false })
+
+// Telegram manba uchun TG API saqlanmagan bo'lsa — qo'shishni bloklash
+const telegramLocked = computed(() => newType.value === 'telegram' && tgApi.loaded && !tgApi.is_saved)
 
 function formatDate(d) {
   if (!d) return ''
@@ -132,12 +170,16 @@ onMounted(async () => {
 })
 
 async function addOne() {
-  if (!newUsername.value.trim()) return
+  const val = newValue.value.trim()
+  if (!val || telegramLocked.value) return
   adding.value = true
   addError.value = null
   try {
-    await channelsApi.addSource(props.companyId, props.channel.id, newUsername.value.trim())
-    newUsername.value = ''
+    const payload = newType.value === 'website'
+      ? { source_type: 'website', url: val }
+      : { source_type: 'telegram', username: val }
+    await channelsApi.addSource(props.companyId, props.channel.id, payload)
+    newValue.value = ''
     await reload()
   } catch (e) {
     addError.value = e?.response?.data?.message ?? e.message
@@ -225,6 +267,27 @@ async function remove(s) {
   padding: 8px 12px; border-radius: 6px; font-size: 12.5px; color: #ef4444;
   background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25);
 }
+.csm-types { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.csm-type {
+  display: flex; align-items: center; gap: 7px; position: relative;
+  padding: 9px 11px; border: 1.5px solid var(--border-2); border-radius: 8px;
+  background: var(--bg); color: var(--text); cursor: pointer;
+  font-size: 12.5px; font-weight: 500; font-family: inherit;
+}
+.csm-type.active { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 8%, var(--bg)); color: var(--accent); }
+.csm-type-soon { opacity: .55; cursor: not-allowed; }
+.csm-soon {
+  margin-left: auto; font-size: 9px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--muted); background: var(--bg-2, rgba(0,0,0,.05)); padding: 1px 5px; border-radius: 999px;
+}
+.csm-hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.csm-type-badge {
+  display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
+  font-size: 9.5px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 4px;
+}
+.csm-type-badge.tg { color: #2AABEE; background: rgba(42,171,238,.12); }
+.csm-type-badge.web { color: #16a34a; background: rgba(34,197,94,.12); }
 .csm-muted { color: var(--muted); font-size: 13px; }
 .csm-empty {
   padding: 26px; text-align: center; color: var(--muted); font-size: 13px;

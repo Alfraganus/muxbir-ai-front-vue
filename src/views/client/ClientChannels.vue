@@ -368,6 +368,18 @@
                     </div>
                   </div>
 
+                  <!-- Manba turi -->
+                  <div class="cc-field">
+                    <label class="cc-field-label">Manba turi</label>
+                    <div class="cc-chip-row">
+                      <button v-for="o in SOURCE_TYPE_OPTIONS" :key="o.value" type="button"
+                        class="cc-chip"
+                        :class="{ active: autoFilters.source_type === o.value }"
+                        @click="autoFilters.source_type = o.value">{{ o.label }}</button>
+                    </div>
+                    <div class="cc-field-hint">Autopost qaysi turdagi manbalardan post tanlasin</div>
+                  </div>
+
                   <!-- Filtrlar -->
                   <div class="cc-auto-row">
                     <div class="cc-field" style="flex:1;min-width:160px;">
@@ -997,6 +1009,11 @@ const TIME_RANGE_OPTIONS = [
   { value: '12h', label: '12 soat' },
   { value: '24h', label: '24 soat' },
 ]
+const SOURCE_TYPE_OPTIONS = [
+  { value: 'all',      label: 'Hammasi' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'website',  label: 'Website' },
+]
 // Til ro'yxati — ham manba filtri ("Til" chip-row), ham AI chiqish tili
 // ("Chiqish alifbosi") uchun bitta umumiy ro'yxat ishlatiladi.
 const LANG_OPTIONS = [
@@ -1019,6 +1036,7 @@ const autoOutputLanguage = ref('uz_lat')
 const OUTPUT_LANG_OPTIONS = LANG_OPTIONS.map((l) => ({ id: l.value, label: l.label }))
 const autoFilters = ref({
   time_range: '24h',
+  source_type: 'all',
   per_channel: 3,
   similarity_threshold: 0.5,
   include_videos: true,
@@ -1093,6 +1111,7 @@ function resetAutoSettings() {
   autoCategoryIds.value = []
   autoFilters.value = {
     time_range: '24h',
+    source_type: 'all',
     per_channel: 3,
     similarity_threshold: 0.5,
     include_videos: true,
@@ -1420,8 +1439,10 @@ async function openAutoSettings(channel, opts = {}) {
   autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
   autoTestShowOriginal.value = !!channel.test_show_original
   const f = channel.auto_filters || {}
+  const fTypes = Array.isArray(f.source_types) ? f.source_types : []
   autoFilters.value = {
     time_range: f.time_range || '24h',
+    source_type: fTypes.length === 1 ? fTypes[0] : 'all',
     per_channel: f.per_channel ?? 3,
     similarity_threshold: f.similarity_threshold ?? 0.5,
     include_videos: f.include_videos !== false,
@@ -1493,6 +1514,7 @@ async function saveAutoSettings() {
       auto_category_ids: [...autoCategoryIds.value],
       auto_filters: {
         time_range: autoFilters.value.time_range,
+        source_types: autoFilters.value.source_type === 'all' ? [] : [autoFilters.value.source_type],
         per_channel: autoFilters.value.per_channel,
         similarity_threshold: autoFilters.value.similarity_threshold,
         include_videos: autoFilters.value.include_videos,
@@ -1709,6 +1731,7 @@ async function submitAdd() {
           auto_category_ids: [...autoCategoryIds.value],
           auto_filters: {
             time_range: autoFilters.value.time_range,
+            source_types: autoFilters.value.source_type === 'all' ? [] : [autoFilters.value.source_type],
             per_channel: autoFilters.value.per_channel,
             similarity_threshold: autoFilters.value.similarity_threshold,
             include_videos: autoFilters.value.include_videos,

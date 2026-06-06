@@ -33,9 +33,9 @@ export const channelsApi = {
   listSources: (companyId, channelId) =>
     http.get(`/companies/${companyId}/channels/${channelId}/sources`).then(r => r.data),
 
-  /** Kanalga yangi manba qo'shish (@username yoki t.me linki) */
-  addSource: (companyId, channelId, username) =>
-    http.post(`/companies/${companyId}/channels/${channelId}/sources`, { username }).then(r => r.data),
+  /** Kanalga yangi manba qo'shish. payload: { source_type: 'telegram'|'website', username?, url? } */
+  addSource: (companyId, channelId, payload) =>
+    http.post(`/companies/${companyId}/channels/${channelId}/sources`, payload).then(r => r.data),
 
   /** Manbani yoqish/o'chirish (is_active toggle) */
   updateSource: (companyId, channelId, sourceId, patch) =>
