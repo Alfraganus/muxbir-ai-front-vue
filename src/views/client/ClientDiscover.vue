@@ -3,9 +3,13 @@
     <DiscoverSetup
       :config="config"
       :sources="availableSources"
+      :channels="channels"
+      :selected-channel-id="selectedChannelId"
       :categories="CATEGORIES"
       :time-ranges="TIME_RANGES"
       :loading="loadingSources"
+      :loading-channels="loadingChannels"
+      @select-channel="onSelectChannel"
       @run="startScan"/>
 
     <!-- ─── Oxirgi qidiruvlar (tarix) ─── -->
@@ -282,6 +286,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { channelsApi } from '@/api/channels.js'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
@@ -320,10 +325,15 @@ const config = reactive({
   sortMode: 'best', // 'best' — eng yaxshi postlar; 'latest' — eng yangi postlar
 })
 
-// ── Sources from backend ─────────────────────────────────
+// ── Channels + sources from backend ──────────────────────
+// Discover endi KANAL-scoped: avval kanal tanlanadi, keyin faqat shu kanalga
+// biriktirilgan manbalar ko'rinadi va qidiriladi.
 const availableSources = ref([]) // [{ id, name, username, handle, color, category, subs }]
-const loadingSources = ref(true)
+const loadingSources = ref(false)
 const company = ref(null)
+const channels = ref([])
+const loadingChannels = ref(true)
+const selectedChannelId = ref(null)
 
 const PALETTE = [
   'oklch(0.65 0.18 28)',
@@ -390,18 +400,40 @@ async function openHistoryItem(h) {
   }
 }
 
-async function loadSources() {
-  loadingSources.value = true
+async function loadInitial() {
+  loadingChannels.value = true
   try {
     const comps = await companiesApi.getMy().catch(() => [])
     const list = Array.isArray(comps) ? comps : [comps].filter(Boolean)
     company.value = list[0] || null
     if (!company.value) {
-      availableSources.value = []
+      channels.value = []
       return
     }
-    // Faqat kompaniyaning O'Z qo'shgan manbalari (admin defaults aralashmaydi).
-    const owned = await companiesApi.listOwnedSources(company.value.id).catch(() => [])
+    const chans = await channelsApi.list(company.value.id).catch(() => [])
+    channels.value = Array.isArray(chans) ? chans : []
+    // Bitta kanal bo'lsa — avtomatik tanlaymiz (qo'shimcha qadam shart emas)
+    if (channels.value.length === 1) {
+      await onSelectChannel(channels.value[0].id)
+    }
+    // Tarix kompaniya darajasida — kanaldan qat'iy nazar yuklaymiz
+    loadHistory()
+  } finally {
+    loadingChannels.value = false
+  }
+}
+
+async function onSelectChannel(channelId) {
+  selectedChannelId.value = channelId
+  await loadChannelSources(channelId)
+}
+
+async function loadChannelSources(channelId) {
+  if (!company.value || !channelId) { availableSources.value = []; return }
+  loadingSources.value = true
+  try {
+    // Faqat SHU kanalga biriktirilgan manbalar.
+    const owned = await channelsApi.listSources(company.value.id, channelId).catch(() => [])
     availableSources.value = (owned || [])
       .filter(s => s.source_channel_id)
       .map((s, i) => ({
@@ -416,15 +448,13 @@ async function loadSources() {
         lastError: s.last_error || null,
         lastScannedAt: s.last_scanned_at || null,
       }))
-    // Default selection: barcha owned sources
+    // Default selection: shu kanalning barcha manbalari
     config.sources = availableSources.value.map(s => s.id)
-    // Sources tayyor — tarixni ham yuklab qo'yamiz (companyId kerak)
-    loadHistory()
   } finally {
     loadingSources.value = false
   }
 }
-onMounted(loadSources)
+onMounted(loadInitial)
 
 // ── Discovery ────────────────────────────────────────────
 const discovered = ref({ channels: [], total: 0 })
@@ -453,13 +483,13 @@ function formatRelative(iso) {
 }
 
 async function scanFromEmpty(s) {
-  if (!company.value || !s?.ownedId) return
+  if (!company.value || !selectedChannelId.value || !s?.ownedId) return
   scanningOwnedId.value = s.ownedId
   try {
-    await companiesApi.scanOwnedSource(company.value.id, s.ownedId)
-    // Bir necha soniya kutib, sources'ni qayta yuklaymiz (last_scanned_at yangilanadi)
+    await channelsApi.scanSource(company.value.id, selectedChannelId.value, s.ownedId)
+    // Bir necha soniya kutib, manbalarni qayta yuklaymiz (last_scanned_at yangilanadi)
     await new Promise(r => setTimeout(r, 3000))
-    await loadSources()
+    await loadChannelSources(selectedChannelId.value)
   } catch (e) {
     alert(e?.response?.data?.message ?? e.message)
   } finally {
@@ -468,7 +498,7 @@ async function scanFromEmpty(s) {
 }
 
 async function startScan() {
-  if (!company.value || config.sources.length === 0) return
+  if (!company.value || !selectedChannelId.value || config.sources.length === 0) return
   phase.value = 'scanning'
   scanAnimationDone = false
   scanRequestDone = false
@@ -476,6 +506,7 @@ async function startScan() {
   selected.value = {}
 
   const payload = {
+    channel_id: selectedChannelId.value,
     source_ids: config.sources,
     time_range: config.timeRange,
     per_channel: config.perChannel,

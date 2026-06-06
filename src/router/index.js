@@ -19,7 +19,6 @@ import ClientCategories from '@/views/client/ClientCategories.vue'
 import ClientDiscover from '@/views/client/ClientDiscover.vue'
 import ClientAiPrompt from '@/views/client/ClientAiPrompt.vue'
 import ClientTelegramApi from '@/views/client/ClientTelegramApi.vue'
-import ClientOwnedSources from '@/views/client/ClientOwnedSources.vue'
 import ClientSettings from '@/views/client/ClientSettings.vue'
 import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
@@ -53,7 +52,6 @@ const routes = [
   { path: '/client/categories', component: ClientCategories },
   { path: '/client/ai-prompt',  component: ClientAiPrompt },
   { path: '/client/telegram-api', component: ClientTelegramApi },
-  { path: '/client/owned-sources', component: ClientOwnedSources },
   { path: '/client/settings', component: ClientSettings },
   { path: '/signup',           component: Onboarding },
 ]

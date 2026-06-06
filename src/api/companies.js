@@ -46,17 +46,7 @@ export const companiesApi = {
   revokeTelegramSession: (id) =>
     http.delete(`/companies/${id}/telegram-session`).then(r => r.data),
 
-  // Kompaniya o'z manbalari (Telegram kanal username'lari)
-  listOwnedSources: (id) =>
-    http.get(`/companies/${id}/owned-sources`).then(r => r.data),
-  addOwnedSource: (id, username) =>
-    http.post(`/companies/${id}/owned-sources`, { username }).then(r => r.data),
-  updateOwnedSource: (id, sourceId, patch) =>
-    http.patch(`/companies/${id}/owned-sources/${sourceId}`, patch).then(r => r.data),
-  removeOwnedSource: (id, sourceId) =>
-    http.delete(`/companies/${id}/owned-sources/${sourceId}`).then(r => r.data),
-  scanOwnedSource: (id, sourceId) =>
-    http.post(`/companies/${id}/owned-sources/${sourceId}/scan`).then(r => r.data),
+  // Eslatma: manbalar endi har kanalda alohida boshqariladi — channelsApi.listSources / addSource / ...
 
   // Havoladan AI maqola yaratish — URL fetch + AI complete uzoq vaqt olishi mumkin
   createPostFromUrl: (id, payload) =>

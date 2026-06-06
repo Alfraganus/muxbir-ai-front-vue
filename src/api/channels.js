@@ -27,4 +27,25 @@ export const channelsApi = {
   // fallback — agar webhook ishlamasa qo'lda tasdiqlash
   verify: (companyId, channelId) =>
     http.post(`/companies/${companyId}/channels/${channelId}/verify`).then(r => r.data),
+
+  // ── Kanalga biriktirilgan manbalar (har kanal o'z manbalarini boshqaradi) ──
+  /** Kanal manbalari ro'yxati */
+  listSources: (companyId, channelId) =>
+    http.get(`/companies/${companyId}/channels/${channelId}/sources`).then(r => r.data),
+
+  /** Kanalga yangi manba qo'shish (@username yoki t.me linki) */
+  addSource: (companyId, channelId, username) =>
+    http.post(`/companies/${companyId}/channels/${channelId}/sources`, { username }).then(r => r.data),
+
+  /** Manbani yoqish/o'chirish (is_active toggle) */
+  updateSource: (companyId, channelId, sourceId, patch) =>
+    http.patch(`/companies/${companyId}/channels/${channelId}/sources/${sourceId}`, patch).then(r => r.data),
+
+  /** Manbani o'chirish */
+  removeSource: (companyId, channelId, sourceId) =>
+    http.delete(`/companies/${companyId}/channels/${channelId}/sources/${sourceId}`).then(r => r.data),
+
+  /** Manba uchun darhol scan ishga tushirish */
+  scanSource: (companyId, channelId, sourceId) =>
+    http.post(`/companies/${companyId}/channels/${channelId}/sources/${sourceId}/scan`).then(r => r.data),
 }

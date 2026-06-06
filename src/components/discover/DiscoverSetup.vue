@@ -2,22 +2,56 @@
   <div class="ds-root">
     <PageHeader
       title="Postlarni topish"
-      subtitle="AI Telegram manbalaringizdan eng yaxshi postlarni topib beradi. Avval qidiruv parametrlarini sozlang."
+      subtitle="AI tanlangan kanal manbalaridan eng yaxshi postlarni topib beradi. Avval qaysi kanal uchun qidirayotganingizni tanlang."
     />
 
     <div class="ds-grid">
       <!-- LEFT: form -->
       <div class="ds-col">
-        <!-- 1. Kanallar -->
+        <!-- 0. Kanal tanlash -->
         <AppPanel
-          title="1. Qaysi kanallardan qidirilsin?"
-          :subtitle="`${config.sources.length} ta kanal tanlandi · siz manbalarni ko'paytirishingiz mumkin`">
-          <template #action>
-            <AppButton variant="secondary" size="sm">
-              <template #icon><AppIcon name="Plus" :size="12"/></template>
-              Yangi manba qo'shish
-            </AppButton>
-          </template>
+          title="1. Qaysi kanal uchun qidiramiz?"
+          subtitle="Har kanalning o'z manbalari bor — post o'sha kanalga moslab izlanadi">
+          <div v-if="loadingChannels" style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px;">
+            Kanallar yuklanmoqda...
+          </div>
+          <div v-else-if="!channels.length"
+               style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;
+                      display:flex;flex-direction:column;gap:10px;align-items:center;">
+            <span>Hali ulangan kanal yo'q. Avval Kanallar sahifasida kanal qo'shing.</span>
+            <a href="#/client/channels"
+               style="padding:7px 14px;border-radius:6px;background:var(--accent);color:#fff;
+                      text-decoration:none;font-size:12.5px;font-weight:500;">
+              Kanallar sahifasi →
+            </a>
+          </div>
+          <div v-else class="ds-chan-grid">
+            <button v-for="c in channels" :key="c.id"
+              class="ds-chan" :class="{ active: selectedChannelId === c.id }"
+              @click="$emit('select-channel', c.id)">
+              <span class="ds-cb" :class="{ active: selectedChannelId === c.id }">
+                <AppIcon v-if="selectedChannelId === c.id" name="Check" :size="11"/>
+              </span>
+              <AppIcon name="Telegram" :size="15" :style="{ color: '#229ED9', flexShrink: 0 }"/>
+              <span style="font-size:13px;font-weight:600;flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                {{ channelLabel(c) }}
+              </span>
+            </button>
+          </div>
+        </AppPanel>
+
+        <!-- Kanal tanlanmaguncha qolgan sozlamalar yashirin -->
+        <AppPanel v-if="!selectedChannelId && channels.length && !loadingChannels" :padding="24">
+          <div style="text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6;">
+            👆 Yuqorida kanal tanlang — keyin o'sha kanalning manbalari va qidiruv sozlamalari ko'rinadi.
+          </div>
+        </AppPanel>
+
+        <template v-if="selectedChannelId">
+        <!-- 1. Kanallar (manbalar) -->
+        <AppPanel
+          title="2. Qaysi manbalardan qidirilsin?"
+          :subtitle="`${config.sources.length} ta manba tanlandi · manbalarni Kanallar > Manbalar orqali boshqaring`">
 
           <div v-if="loading" style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;">
             Manbalar yuklanmoqda...
@@ -25,11 +59,11 @@
           <div v-else-if="!sources.length"
                style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;
                       display:flex;flex-direction:column;gap:10px;align-items:center;">
-            <span>Hech qanday manba yo'q. Avval "Mening manbalarim" sahifasida kanal qo'shing.</span>
-            <a href="#/client/owned-sources"
+            <span>Bu kanal uchun hali manba yo'q. Kanallar sahifasida kanalning "Manbalar" tugmasidan qo'shing.</span>
+            <a href="#/client/channels"
                style="padding:7px 14px;border-radius:6px;background:var(--accent);color:#fff;
                       text-decoration:none;font-size:12.5px;font-weight:500;">
-              Manba qo'shish →
+              Kanallar sahifasi →
             </a>
           </div>
           <div v-else style="display:flex;flex-direction:column;gap:6px;">
@@ -63,8 +97,8 @@
         </AppPanel>
 
         <!-- 3. Per channel -->
-        <AppPanel title="2. Har kanaldan nechta post taklif qilinsin?"
-          subtitle="AI har bir kanaldan eng yuqori balli postlarni tanlaydi">
+        <AppPanel title="3. Har manbadan nechta post taklif qilinsin?"
+          subtitle="AI har bir manbadan eng yuqori balli postlarni tanlaydi">
           <div class="ds-n-grid">
             <button v-for="n in [3,5,10,15,20]" :key="n"
               class="ds-n-btn" :class="{ active: config.perChannel === n }"
@@ -82,7 +116,7 @@
         </AppPanel>
 
         <!-- 4. Time range -->
-        <AppPanel title="3. Qaysi davrdagi postlar?" subtitle="Kanalda chop etilgan vaqt bo'yicha">
+        <AppPanel title="4. Qaysi davrdagi postlar?" subtitle="Kanalda chop etilgan vaqt bo'yicha">
           <div class="ds-time-grid">
             <button v-for="t in timeRanges" :key="t.id"
               class="ds-time" :class="{ active: config.timeRange === t.id }"
@@ -95,7 +129,7 @@
         </AppPanel>
 
         <!-- 5. Video filter -->
-        <AppPanel title="4. Video bilan postlar"
+        <AppPanel title="5. Video bilan postlar"
           subtitle="Telegram'da video yoki katta fayl bo'lgan postlarni qo'shamizmi?">
           <div class="ds-yn-grid">
             <button class="ds-yn" :class="{ active: config.includeVideos }"
@@ -114,7 +148,7 @@
         </AppPanel>
 
         <!-- 6. Sort mode -->
-        <AppPanel title="5. Qanday postlarni chiqaramiz?"
+        <AppPanel title="6. Qanday postlarni chiqaramiz?"
           subtitle="Saralash usulini tanlang">
           <div class="ds-yn-grid">
             <button class="ds-yn" :class="{ active: config.sortMode === 'best' }"
@@ -131,6 +165,7 @@
             </button>
           </div>
         </AppPanel>
+        </template>
 
       </div>
 
@@ -169,7 +204,7 @@
             <div style="height:1px;background:var(--border-2);margin:4px 0;"/>
 
             <AppButton variant="primary" size="lg"
-              :disabled="config.sources.length === 0"
+              :disabled="!selectedChannelId || config.sources.length === 0"
               @click="$emit('run')"
               :style="{ width: '100%', justifyContent: 'center', height: '40px' }">
               <template #icon><AppIcon name="Sparkle" :size="14"/></template>
@@ -209,11 +244,18 @@ import SummaryRow from '@/components/discover/SummaryRow.vue'
 const props = defineProps({
   config: { type: Object, required: true },
   sources: { type: Array, required: true },
+  channels: { type: Array, default: () => [] },
+  selectedChannelId: { type: [String, Number], default: null },
   categories: { type: Array, required: true },
   timeRanges: { type: Array, required: true },
   loading: { type: Boolean, default: false },
+  loadingChannels: { type: Boolean, default: false },
 })
-defineEmits(['run'])
+defineEmits(['run', 'select-channel'])
+
+function channelLabel(c) {
+  return c.display_name || (c.username ? '@' + String(c.username).replace(/^@/, '') : 'Kanal')
+}
 
 const totalPosts = computed(() => props.config.sources.length * props.config.perChannel)
 const currentRange = computed(() => props.timeRanges.find(t => t.id === props.config.timeRange))
@@ -257,6 +299,17 @@ function scoreColor(v) {
 @media (max-width: 1100px) { .ds-grid { grid-template-columns: 1fr; } }
 .ds-col { display: flex; flex-direction: column; gap: 14px; }
 .ds-side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.ds-chan-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (max-width: 700px) { .ds-chan-grid { grid-template-columns: 1fr; } }
+.ds-chan {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  background: var(--panel); border: 1.5px solid var(--border);
+  border-radius: 10px; cursor: pointer; text-align: left;
+  transition: all .12s; font-family: inherit;
+}
+.ds-chan.active { background: var(--accent-bg); border-color: var(--accent); }
 
 .ds-src {
   display: flex; align-items: center; gap: 12px;

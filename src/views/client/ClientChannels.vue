@@ -54,72 +54,109 @@
     </AppPanel>
 
     <!-- Cards view -->
-    <div v-else-if="view === 'cards'" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;">
+    <div v-else-if="view === 'cards'" class="ccx-grid" :class="gridClass">
       <AppPanel v-for="c in filteredList" :key="c.id" :padding="0">
-        <!-- Yuqori chiziq — platforma rangi -->
-        <div class="cc-card-accent" :style="{ background: platformColor(c) }"/>
-
-        <div style="padding:14px 16px;display:flex;align-items:flex-start;gap:10px;">
-          <span class="cc-platform-icon" :style="platformIconStyle(platformSlug(c))">
-            <AppIcon :name="platformIconName(platformSlug(c))" :size="18"/>
-          </span>
-          <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
-            <div style="display:flex;gap:6px;align-items:center;">
-              <span style="font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ displayName(c) }}</span>
-              <AppBadge :tone="isActive(c) ? 'success' : 'muted'" dot>{{ statusLabel(c) }}</AppBadge>
+        <div class="ccx-card" :class="{ 'ccx-card-wide': filteredList.length === 1 }">
+          <!-- Header -->
+          <div class="ccx-head">
+            <span class="ccx-avatar" :style="{ background: avatarBg(c) }">
+              <AppIcon :name="platformIconName(platformSlug(c))" :size="20"/>
+              <span v-if="isActive(c)" class="ccx-live"/>
+            </span>
+            <div class="ccx-head-main">
+              <div class="ccx-head-row">
+                <span class="ccx-name">{{ displayName(c) }}</span>
+                <AppBadge :tone="isActive(c) ? 'success' : 'muted'" dot>{{ statusLabel(c) }}</AppBadge>
+              </div>
+              <div class="ccx-head-sub">
+                <span class="mono ccx-handle">{{ identifier(c) }}</span>
+                <span class="ccx-dot"/>
+                <span class="ccx-mode" :class="modeOf(c)">
+                  <AppIcon :name="modeOf(c) === 'auto' ? 'Bolt' : 'Edit'" :size="9"/>
+                  {{ modeOf(c) === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }}
+                </span>
+              </div>
             </div>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
-              <span class="mono" style="font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ identifier(c) }}</span>
-              <span class="cc-platform-pill" :style="{ color: platformColor(c), background: platformColor(c) + '14' }">
-                {{ platformName(c.platform) }}
+            <ChannelActionsMenu
+              :channel="c" :active="isActive(c)"
+              @posts="gotoPosts(c)" @signature="openSignature(c)" @sources="openSources(c)"
+              @settings="openAutoSettings(c)" @toggle-mode="togglePostingMode(c)" @remove="removeChannel(c)"/>
+          </div>
+
+          <!-- Meta strip -->
+          <div class="ccx-meta">
+            <div class="ccx-meta-item">
+              <AppIcon name="Shield" :size="11"/>
+              <span class="ccx-meta-lbl">{{ tt('cc.col.botStatus') }}</span>
+              <span class="ccx-meta-val" :style="{ color: isActive(c) ? 'var(--success)' : 'var(--warn)' }">{{ botStatusLabel(c.bot_status) }}</span>
+            </div>
+            <div class="ccx-meta-item">
+              <AppIcon name="Layers" :size="11"/>
+              <span class="ccx-meta-lbl">{{ tt('cc.col.type') }}</span>
+              <span class="ccx-meta-val">{{ chatTypeLabel(c.chat_type) }}</span>
+            </div>
+            <div class="ccx-meta-item">
+              <AppIcon name="Calendar" :size="11"/>
+              <span class="ccx-meta-lbl">{{ tt('cc.col.connectedAt') }}</span>
+              <span class="ccx-meta-val" :title="connectedDateFull(c)">{{ connectedDate(c) }}</span>
+            </div>
+            <div class="ccx-meta-item">
+              <AppIcon name="Database" :size="11"/>
+              <span class="ccx-meta-lbl">ID</span>
+              <span class="ccx-meta-val mono">{{ c.telegram_chat_id || '—' }}</span>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="ccx-stats">
+            <div class="ccx-stat">
+              <span class="ccx-stat-lbl">Obunachilar</span>
+              <span class="ccx-stat-val tabular">{{ fmtCompact(c.subscriber_count || 0) }}</span>
+            </div>
+            <div class="ccx-stat">
+              <span class="ccx-stat-lbl">Post (7 kun)</span>
+              <span class="ccx-stat-val tabular">{{ c.posts_7d ?? 0 }}</span>
+            </div>
+            <div class="ccx-stat">
+              <span class="ccx-stat-lbl">Manba</span>
+              <span class="ccx-stat-val tabular">{{ c.sources_count ?? 0 }}</span>
+            </div>
+          </div>
+
+          <!-- Sparkline -->
+          <div class="ccx-spark">
+            <div class="ccx-spark-head">
+              <span class="ccx-spark-lbl">Post faolligi · 8 hafta</span>
+              <span v-if="hasActivity(c)" class="ccx-trend" :style="{ color: trendDelta(c) >= 0 ? 'var(--success)' : 'var(--danger)' }">
+                <AppIcon :name="trendDelta(c) >= 0 ? 'ArrowUp' : 'ArrowDown'" :size="10"/>
+                {{ Math.abs(trendDelta(c)).toFixed(0) }}%
               </span>
             </div>
+            <Sparkline :data="activitySeries(c)" :width="300" :height="filteredList.length === 1 ? 60 : 36"/>
           </div>
-          <span class="cc-mode-pill" :class="c.posting_mode || 'auto'">
-            {{ (c.posting_mode || 'auto') === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }}
-          </span>
-        </div>
 
-        <div style="padding:0 16px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-          <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-            <span class="cc-stat-label">{{ tt('cc.col.botStatus') }}</span>
-            <span class="cc-stat-value">{{ botStatusLabel(c.bot_status) }}</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-            <span class="cc-stat-label">{{ tt('cc.col.type') }}</span>
-            <span class="cc-stat-value">{{ chatTypeLabel(c.chat_type) }}</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-            <span class="cc-stat-label">{{ tt('cc.col.connectedAt') }}</span>
-            <span class="cc-stat-value" :title="connectedDateFull(c)">{{ connectedDate(c) }}</span>
-          </div>
-        </div>
-
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel-2);border-top:1px solid var(--border-2);border-radius:0 0 var(--r-lg) var(--r-lg);">
-          <span style="font-size:11px;color:var(--muted);">
-            ID: <span class="mono" style="color:var(--text-2);">{{ c.telegram_chat_id || '—' }}</span>
-          </span>
-          <div style="display:flex;gap:6px;">
-            <AppButton v-if="!isActive(c)" variant="primary" size="sm" @click="openReactivateModal(c)" title="Botni kanalga qayta admin qilish">
-              <template #icon><AppIcon name="Sparkle" :size="12"/></template>
-              Qayta faollashtirish
-            </AppButton>
-            <AppButton variant="ghost" size="sm" @click="openSignature(c)" title="Kanal imzosi (post oxiriga qo'shiladi)">
-              <template #icon><AppIcon name="Edit" :size="12"/></template>
-              Imzo
-            </AppButton>
-            <AppButton v-if="(c.posting_mode||'auto')==='auto'" variant="ghost" size="sm" @click="openAutoSettings(c)" title="Avto-post sozlamalari">
-              <template #icon><AppIcon name="Sparkle" :size="12"/></template>
-              Sozlash
-            </AppButton>
-            <AppButton variant="ghost" size="sm" @click="togglePostingMode(c)">
-              <template #icon><AppIcon :name="(c.posting_mode||'auto')==='auto' ? 'Edit' : 'Sparkle'" :size="12"/></template>
-              {{ (c.posting_mode||'auto') === 'auto' ? tt('cc.action.setManual') : tt('cc.action.setAuto') }}
-            </AppButton>
-            <AppButton variant="ghost" size="sm" @click="removeChannel(c)">
-              <template #icon><AppIcon name="Trash" :size="12"/></template>
-              {{ tt('cc.action.remove') }}
-            </AppButton>
+          <!-- Footer -->
+          <div class="ccx-foot">
+            <span class="ccx-foot-last">
+              <AppIcon name="Send" :size="11" style="flex-shrink:0;"/>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">So'nggi: {{ lastPostRelative(c) }}</span>
+            </span>
+            <template v-if="!isActive(c)">
+              <AppButton variant="primary" size="sm" @click="openReactivateModal(c)" title="Botni kanalga qayta admin qilish">
+                <template #icon><AppIcon name="Sparkle" :size="12"/></template>
+                Faollashtirish
+              </AppButton>
+            </template>
+            <template v-else>
+              <AppButton variant="secondary" size="sm" @click="openSources(c)">
+                <template #icon><AppIcon name="Layers" :size="12"/></template>
+                Manbalar
+              </AppButton>
+              <AppButton variant="primary" size="sm" @click="openAutoSettings(c)">
+                <template #icon><AppIcon name="Settings" :size="12"/></template>
+                Sozlash
+              </AppButton>
+            </template>
           </div>
         </div>
       </AppPanel>
@@ -130,53 +167,44 @@
       <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
         <thead>
           <tr style="border-bottom:1px solid var(--border);">
-            <th style="text-align:left;padding:8px 14px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cc.col.channel') }}</th>
-            <th v-for="h in tableHeaders" :key="h"
-              style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ h }}</th>
+            <th class="ccx-th" style="padding-left:14px;">{{ tt('cc.col.channel') }}</th>
+            <th class="ccx-th">Manba</th>
+            <th class="ccx-th" style="text-align:right;">Obunachi</th>
+            <th class="ccx-th" style="text-align:right;">Post (7k)</th>
+            <th class="ccx-th">So'nggi post</th>
+            <th class="ccx-th">{{ tt('cc.col.mode') }}</th>
+            <th class="ccx-th">{{ tt('cc.col.status') }}</th>
+            <th class="ccx-th" style="width:44px;"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(c, i) in filteredList" :key="c.id" :style="{ borderTop: i===0?'none':'1px solid var(--border-2)' }">
             <td style="padding:10px 14px;vertical-align:middle;">
               <div style="display:flex;align-items:center;gap:10px;">
-                <span class="cc-platform-icon" :style="platformIconStyle(platformSlug(c), 'sm')">
+                <span class="ccx-avatar ccx-avatar-sm" :style="{ background: avatarBg(c) }">
                   <AppIcon :name="platformIconName(platformSlug(c))" :size="13"/>
                 </span>
-                <div style="display:flex;flex-direction:column;">
+                <div style="display:flex;flex-direction:column;min-width:0;">
                   <span style="font-weight:500;">{{ displayName(c) }}</span>
                   <span class="mono" style="font-size:11px;color:var(--muted);">{{ identifier(c) }}</span>
                 </div>
               </div>
             </td>
+            <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ c.sources_count ?? 0 }} manba</td>
+            <td style="padding:10px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtCompact(c.subscriber_count || 0) }}</td>
+            <td style="padding:10px;vertical-align:middle;text-align:right;" class="tabular">{{ c.posts_7d ?? 0 }}</td>
+            <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ lastPostRelative(c) }}</td>
             <td style="padding:10px;vertical-align:middle;">
-              <span class="cc-platform-pill" :style="{ color: platformColor(c), background: platformColor(c) + '14' }">
-                {{ platformName(c.platform) }}
+              <span class="cc-mode-pill" :class="modeOf(c)">
+                {{ modeOf(c) === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }}
               </span>
             </td>
-            <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ chatTypeLabel(c.chat_type) }}</td>
-            <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ botStatusLabel(c.bot_status) }}</td>
-            <td style="padding:10px;vertical-align:middle;">
-              <span class="cc-mode-pill" :class="c.posting_mode || 'auto'">
-                {{ (c.posting_mode || 'auto') === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }}
-              </span>
-            </td>
-            <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ connectedDate(c) }}</td>
             <td style="padding:10px;vertical-align:middle;"><AppBadge :tone="isActive(c) ? 'success' : 'muted'" dot>{{ statusLabel(c) }}</AppBadge></td>
-            <td style="padding:10px;vertical-align:middle;text-align:right;white-space:nowrap;">
-              <AppButton v-if="!isActive(c)" variant="primary" size="sm" @click="openReactivateModal(c)">
-                <template #icon><AppIcon name="Sparkle" :size="12"/></template>
-                Qayta faollashtirish
-              </AppButton>
-              <AppButton v-if="(c.posting_mode||'auto')==='auto'" variant="ghost" size="sm" @click="openAutoSettings(c)">
-                <template #icon><AppIcon name="Sparkle" :size="12"/></template>
-                Sozlash
-              </AppButton>
-              <AppButton variant="ghost" size="sm" @click="togglePostingMode(c)">
-                {{ (c.posting_mode||'auto') === 'auto' ? tt('cc.action.setManual') : tt('cc.action.setAuto') }}
-              </AppButton>
-              <AppButton variant="ghost" size="sm" @click="removeChannel(c)">
-                <template #icon><AppIcon name="Trash" :size="12"/></template>
-              </AppButton>
+            <td style="padding:10px;vertical-align:middle;text-align:right;">
+              <ChannelActionsMenu
+                :channel="c" :active="isActive(c)"
+                @posts="gotoPosts(c)" @signature="openSignature(c)" @sources="openSources(c)"
+                @settings="openAutoSettings(c)" @toggle-mode="togglePostingMode(c)" @remove="removeChannel(c)"/>
             </td>
           </tr>
         </tbody>
@@ -894,6 +922,14 @@
       :initial-signature="sigInitial"
       @save="saveSignature"
     />
+
+    <!-- ─── Kanal manbalari modal ─── -->
+    <ChannelSourcesModal
+      v-if="sourcesModalChannel && company"
+      :company-id="company.id"
+      :channel="sourcesModalChannel"
+      @close="sourcesModalChannel = null"
+    />
   </div>
 </template>
 
@@ -907,6 +943,9 @@ import AppTabs from '@/components/ui/AppTabs.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import SignatureModal from '@/components/channels/SignatureModal.vue'
+import ChannelSourcesModal from '@/components/channels/ChannelSourcesModal.vue'
+import ChannelActionsMenu from '@/components/channels/ChannelActionsMenu.vue'
+import Sparkline from '@/components/ui/Sparkline.vue'
 import { companiesApi } from '@/api/companies.js'
 import { channelsApi } from '@/api/channels.js'
 import { referencesApi } from '@/api/references.js'
@@ -1182,6 +1221,46 @@ function platformIconStyle(slug, size = 'md') {
   }
 }
 
+// ── Kartali dizayn helperlari (zip prototipiga mos) ───────────────
+function fmtCompact(n) {
+  const x = Number(n) || 0
+  if (x >= 1_000_000) return (x / 1_000_000).toFixed(x >= 10_000_000 ? 0 : 1).replace(/\.0$/, '') + 'M'
+  if (x >= 1_000) return (x / 1_000).toFixed(x >= 10_000 ? 0 : 1).replace(/\.0$/, '') + 'K'
+  return String(x)
+}
+function modeOf(c) { return c.posting_mode || 'auto' }
+function avatarBg(c) {
+  const name = displayName(c)
+  const hue = [...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 360
+  return `linear-gradient(135deg, oklch(0.68 0.15 ${hue}), oklch(0.55 0.16 ${(hue + 40) % 360}))`
+}
+function activitySeries(c) {
+  const s = Array.isArray(c.activity_series) ? c.activity_series : []
+  return s.length ? s : [0, 0, 0, 0, 0, 0, 0, 0]
+}
+function hasActivity(c) {
+  return activitySeries(c).some(v => v > 0)
+}
+function trendDelta(c) {
+  const s = activitySeries(c)
+  const a = s[0], b = s[s.length - 1]
+  if (!a) return b > 0 ? 100 : 0
+  return ((b - a) / a) * 100
+}
+function lastPostRelative(c) {
+  const dt = parseDate(c.last_post_at)
+  if (!dt) return '—'
+  const diff = (Date.now() - dt.getTime()) / 1000
+  if (diff < 60) return 'hozirgina'
+  if (diff < 3600) return `${Math.floor(diff / 60)} daq. oldin`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} soat oldin`
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} kun oldin`
+  return connectedDate({ connected_at: c.last_post_at })
+}
+function gotoPosts(c) {
+  router.push({ path: '/client/posts', query: { channel: c.id } })
+}
+
 // ── Tab'lar ───────────────────────────────────────────────────────
 const headerSubtitle = computed(() => {
   if (loading.value) return ''
@@ -1233,6 +1312,14 @@ const filteredList = computed(() => {
   })
 })
 
+// Kanal soniga qarab grid: 1 → butun ekran, 2 → 50%, 3+ → 3 ustun
+const gridClass = computed(() => {
+  const n = filteredList.value.length
+  if (n <= 1) return 'ccx-grid-1'
+  if (n === 2) return 'ccx-grid-2'
+  return 'ccx-grid-3'
+})
+
 // ── Data loading ──────────────────────────────────────────────────
 async function loadAll() {
   loading.value = true
@@ -1274,6 +1361,12 @@ async function togglePostingMode(c) {
     const idx = channels.value.findIndex(x => x.id === c.id)
     if (idx >= 0) channels.value.splice(idx, 1, updated)
   } catch {}
+}
+
+// ── Kanal manbalari (sources) modal ───────────────────────
+const sourcesModalChannel = ref(null)
+function openSources(channel) {
+  sourcesModalChannel.value = channel
 }
 
 // ── Imzo (signature) modal ─────────────────────────────────
@@ -1693,6 +1786,83 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* ─── Kanal kartalari gridi (kanal soniga moslashadi) ─── */
+.ccx-grid { display: grid; gap: 14px; align-items: stretch; }
+.ccx-grid-1 { grid-template-columns: 1fr; }
+.ccx-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.ccx-grid-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1100px) { .ccx-grid-3 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px) {
+  .ccx-grid-2, .ccx-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ─── Kartali dizayn (zip prototipi) ─── */
+.ccx-card { display: flex; flex-direction: column; height: 100%; }
+
+/* Bitta kanal — butun ekran. Meta strip kengroq, sparkline balandroq */
+.ccx-card-wide .ccx-meta { grid-template-columns: repeat(4, 1fr); }
+.ccx-card-wide .ccx-stats { grid-template-columns: repeat(3, minmax(0, 220px)); }
+.ccx-card-wide .ccx-head,
+.ccx-card-wide .ccx-spark,
+.ccx-card-wide .ccx-stats { padding-left: 20px; padding-right: 20px; }
+.ccx-card-wide .ccx-meta { margin-left: 20px; margin-right: 20px; }
+@media (max-width: 720px) {
+  .ccx-card-wide .ccx-meta { grid-template-columns: 1fr 1fr; }
+  .ccx-card-wide .ccx-stats { grid-template-columns: 1fr 1fr 1fr; }
+}
+.ccx-head { padding: 14px 16px 12px; display: flex; align-items: center; gap: 11px; }
+.ccx-avatar {
+  width: 42px; height: 42px; border-radius: 11px; color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0; position: relative;
+  box-shadow: 0 2px 6px -1px rgba(15,23,42,0.18);
+}
+.ccx-avatar-sm { width: 26px; height: 26px; border-radius: 7px; box-shadow: none; }
+.ccx-live {
+  position: absolute; right: -2px; bottom: -2px;
+  width: 12px; height: 12px; border-radius: 999px;
+  background: var(--success); border: 2px solid var(--panel);
+}
+.ccx-head-main { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
+.ccx-head-row { display: flex; gap: 7px; align-items: center; }
+.ccx-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ccx-head-sub { display: flex; align-items: center; gap: 6px; }
+.ccx-handle { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ccx-dot { width: 3px; height: 3px; border-radius: 999px; background: var(--border); flex-shrink: 0; }
+.ccx-mode {
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--muted);
+}
+.ccx-mode.auto { color: var(--accent); }
+.ccx-meta {
+  margin: 0 16px; padding: 9px 12px;
+  background: var(--panel-2); border: 1px solid var(--border-2); border-radius: 8px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 7px 10px;
+}
+.ccx-meta-item { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--muted); }
+.ccx-meta-lbl { font-size: 10.5px; color: var(--muted); flex-shrink: 0; }
+.ccx-meta-val { font-size: 11.5px; font-weight: 500; color: var(--text); margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ccx-stats { padding: 12px 16px 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.ccx-stat { display: flex; flex-direction: column; gap: 2px; }
+.ccx-stat-lbl { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.ccx-stat-val { font-size: 15px; font-weight: 600; color: var(--text); }
+.ccx-spark { padding: 0 16px 12px; }
+.ccx-spark-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.ccx-spark-lbl { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.ccx-trend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; }
+.ccx-foot {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; margin-top: auto;
+  background: var(--panel-2); border-top: 1px solid var(--border-2);
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+.ccx-foot-last { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; }
+.ccx-th {
+  text-align: left; padding: 8px 10px; font-weight: 500; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+}
+
 .cc-card-accent {
   height: 3px;
   border-radius: var(--r-lg) var(--r-lg) 0 0;

@@ -44,6 +44,7 @@
     <template v-else-if="name === 'Database'"><ellipse cx="12" cy="5" rx="8" ry="2.6"/><path d="M4 5v6c0 1.4 3.6 2.6 8 2.6s8-1.2 8-2.6V5M4 11v6c0 1.4 3.6 2.6 8 2.6s8-1.2 8-2.6v-6"/></template>
     <template v-else-if="name === 'List'"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></template>
     <template v-else-if="name === 'Dot'"><circle cx="12" cy="12" r="4" fill="currentColor"/></template>
+    <template v-else-if="name === 'More'"><circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/></template>
   </svg>
 </template>
 

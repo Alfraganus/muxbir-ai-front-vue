@@ -252,7 +252,7 @@ function isActive(path) {
   if (!path) return false
   if (path === '/client/settings') {
     return currentPath.value === '/client/settings'
-      || ['/client/telegram-api', '/client/ai-prompt', '/client/owned-sources'].includes(currentPath.value)
+      || ['/client/telegram-api', '/client/ai-prompt'].includes(currentPath.value)
   }
   return currentPath.value === path
 }
