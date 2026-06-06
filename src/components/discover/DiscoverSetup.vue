@@ -76,8 +76,12 @@
               Kanallar sahifasi →
             </a>
           </div>
+          <div v-else-if="!visibleSources.length"
+               style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px;">
+            Bu turdagi manba yo'q. Boshqa turni tanlang yoki Kanallar &gt; Manbalar orqali qo'shing.
+          </div>
           <div v-else style="display:flex;flex-direction:column;gap:6px;">
-            <button v-for="s in sources" :key="s.id"
+            <button v-for="s in visibleSources" :key="s.id"
               class="ds-src" :class="{ active: config.sources.includes(s.id) }"
               @click="toggleSrc(s.id)">
               <span class="ds-cb" :class="{ active: config.sources.includes(s.id) }">
@@ -246,7 +250,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
@@ -275,6 +279,19 @@ const TYPE_OPTS = [
   { id: 'telegram', label: 'Telegram', icon: 'Telegram' },
   { id: 'website', label: 'Website', icon: 'Globe' },
 ]
+
+// Tanlangan turga mos manbalar (ro'yxat darhol filtrlanadi)
+const visibleSources = computed(() => {
+  const t = props.config.sourceType || 'all'
+  if (t === 'all') return props.sources
+  return props.sources.filter((s) => (s.type || 'telegram') === t)
+})
+
+// Tur o'zgarsa — tanlovni o'sha turdagi manbalarga moslaymiz (summary to'g'ri bo'lsin)
+watch(
+  () => props.config.sourceType,
+  () => { props.config.sources = visibleSources.value.map((s) => s.id) },
+)
 
 const totalPosts = computed(() => props.config.sources.length * props.config.perChannel)
 const currentRange = computed(() => props.timeRanges.find(t => t.id === props.config.timeRange))
