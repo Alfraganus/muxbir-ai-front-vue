@@ -111,7 +111,11 @@
       "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" add src/bot-worker)",
       "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" status --short)",
       "Bash(git -C \"E:/work projects/personal projects/backend-ai-muxbir\" log --oneline origin/master..HEAD)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(ls -la .env*)",
+      "Bash(grep -hiE \"API|BASE|URL\" .env .env.local .env.development .env.production .env.development.local)",
+      "Bash(echo \"BUILD_EXIT=$?\")"
     ]
   }
 }

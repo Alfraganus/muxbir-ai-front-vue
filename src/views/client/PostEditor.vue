@@ -144,18 +144,23 @@
                 <span class="pe-chip-text">{{ isActiveComplete ? 'Tayyor' : 'Qoralama' }}</span>
               </span>
               <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
-                <AppIcon name="Trash" :size="11"/>
+                <span class="pe-chip-ic pe-chip-ic-danger">
+                  <AppIcon name="Trash" :size="11"/>
+                </span>
+                <span class="pe-chip-text">Ushbu postni {{ tt('pe.lang.' + activeLang) }} qismini o'chirish</span>
               </button>
             </div>
           </div>
 
           <!-- Composition "paper" — title + short desc + editor as one unified surface -->
           <div class="pe-paper">
+            <label class="pe-label pe-paper-label">Sarlavha</label>
             <input v-model="activeTr.title"
               :placeholder="tt('pe.field.langTitlePh')"
               class="pe-paper-title"/>
 
-            <div class="pe-paper-short-wrap">
+            <!-- Qisqa tavsif — hozircha yashirilgan -->
+            <div v-if="false" class="pe-paper-short-wrap">
               <textarea v-model="activeTr.short_description"
                 :placeholder="tt('pe.field.langShortDescPh')"
                 rows="2" maxlength="500"
@@ -163,11 +168,7 @@
               <span class="pe-paper-short-counter">{{ (activeTr.short_description || '').length }}/500</span>
             </div>
 
-            <div class="pe-paper-divider">
-              <span/>
-              <em>Asosiy matn</em>
-              <span/>
-            </div>
+            <label class="pe-label pe-paper-label pe-paper-label-content">Asosiy matn</label>
 
             <div class="pe-paper-editor">
               <RichEditor :key="`${activeLang}-${editorReloadKey}`" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
@@ -1632,6 +1633,9 @@ async function runAiRewrite() {
       use_admin_recommended: aiRewriteForm.useRecommended,
       source_content_json: sourceJson,
       output_language: target,
+      // Sarlavha va teglar ham birga tarjima qilinishi uchun manbani yuboramiz
+      source_title: activeTr.value.title || '',
+      source_tags: Array.isArray(tagsArr.value) ? [...tagsArr.value] : [],
     })
     // Oxirgi tanlovni eslab qolamiz
     try {
@@ -1644,12 +1648,18 @@ async function runAiRewrite() {
       }))
     } catch { /* localStorage to'la bo'lsa — e'tiborsiz */ }
     if (res?.content_json) {
-      if (translations[target]) translations[target].content_json = res.content_json
+      if (translations[target]) {
+        translations[target].content_json = res.content_json
+        // Sarlavha ham tarjima qilingan bo'lsa — target tab sarlavhasini yangilaymiz
+        if (res.title) translations[target].title = res.title
+      }
+      // Teglar post darajasida (umumiy) — tarjima qilingani bilan almashtiramiz
+      if (Array.isArray(res.tags)) tagsArr.value = res.tags
       // Natija qaysi tilda bo'lsa — o'sha til tabiga o'tamiz.
       activeLang.value = target
       editorReloadKey.value++ // editor'ni majburiy re-mount qilamiz
       const lbl = (AI_OUTPUT_LANGS.find(l => l.id === target) || {}).label || target
-      showAiBanner('success', `Matn "${lbl}" tabiga qayta yozildi`, prevTargetJson)
+      showAiBanner('success', `Sarlavha, matn va teglar "${lbl}" tiliga qayta yozildi`, prevTargetJson)
     }
     aiUsageStore.refresh()
     showAiRewrite.value = false
@@ -2511,15 +2521,19 @@ async function aiGenerateTags() {
   color: #16A34A;
 }
 .pe-chip-danger {
-  padding: 0;
-  width: 30px;
-  justify-content: center;
-  color: var(--muted);
+  color: var(--danger);
+  border-color: color-mix(in oklab, var(--danger) 28%, var(--border-2));
+  background: color-mix(in oklab, var(--danger) 5%, var(--panel));
 }
 .pe-chip-danger:hover:not(:disabled) {
   color: var(--danger);
-  border-color: color-mix(in oklab, var(--danger) 35%, var(--border-2));
+  border-color: color-mix(in oklab, var(--danger) 45%, var(--border-2));
   background: var(--danger-bg);
+}
+.pe-chip-ic-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 2px 6px -2px color-mix(in oklab, #ef4444 60%, transparent);
 }
 
 /* Avtomatik tayyorlik indikatori — faqat o'qish uchun, bosib bo'lmaydi */
@@ -2569,6 +2583,22 @@ async function aiGenerateTags() {
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04), 0 12px 32px -22px rgba(15, 23, 42, 0.18);
   flex-wrap: wrap;
 }
+/* AI amallar paneli (sarlavha tepasida) — ajralib turishi uchun accent border + nozik fon */
+.pe-toolbar-ai {
+  justify-content: flex-end;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.07), rgba(99, 102, 241, 0.02));
+  box-shadow:
+    0 1px 2px rgba(99, 102, 241, 0.06),
+    0 10px 26px -18px rgba(99, 102, 241, 0.5);
+}
+.pe-toolbar-ai .pe-toolbar-left { justify-content: flex-end; }
+/* pe-paper ichidagi form label'lar (Sarlavha / Asosiy matn) */
+.pe-paper-label {
+  display: block;
+  margin-bottom: 6px;
+}
+.pe-paper-label-content { margin-top: 18px; }
 .pe-toolbar-left {
   display: flex;
   align-items: center;
