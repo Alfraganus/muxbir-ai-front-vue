@@ -81,13 +81,17 @@
         </div>
         <div v-if="addError" class="csm-err">{{ addError }}</div>
 
-        <!-- Ro'yxat -->
+        <!-- Ro'yxat (tanlangan tur bo'yicha filtrlangan) -->
         <div v-if="loading" class="csm-muted">Yuklanmoqda…</div>
         <div v-else-if="!sources.length" class="csm-empty">
-          Bu kanal uchun hali manba yo'q. Yuqorida birinchi Telegram kanalini qo'shing.
+          Bu kanal uchun hali manba yo'q. Yuqorida birinchi manbani qo'shing.
+        </div>
+        <div v-else-if="!filteredSources.length" class="csm-empty">
+          {{ newType === 'website' ? 'Website manba yo\'q.' : 'Telegram manba yo\'q.' }}
+          Yuqoridagi maydondan qo'shing yoki boshqa turni tanlang.
         </div>
         <div v-else class="csm-list">
-          <div v-for="s in sources" :key="s.id" class="csm-row">
+          <div v-for="s in filteredSources" :key="s.id" class="csm-row">
             <label class="csm-toggle">
               <input type="checkbox" :checked="s.is_active" @change="toggleActive(s)" />
               <span :style="{ color: s.is_active ? '#16a34a' : 'var(--muted)' }">
@@ -161,6 +165,11 @@ const tgApi = reactive({ loaded: false, is_saved: false })
 
 // Telegram manba uchun TG API saqlanmagan bo'lsa — qo'shishni bloklash
 const telegramLocked = computed(() => newType.value === 'telegram' && tgApi.loaded && !tgApi.is_saved)
+
+// Ro'yxat tanlangan tur bo'yicha filtrlanadi (source_type yo'q bo'lsa — telegram).
+const filteredSources = computed(() =>
+  sources.value.filter((s) => (s.source_type || 'telegram') === newType.value)
+)
 
 function formatDate(d) {
   if (!d) return ''
