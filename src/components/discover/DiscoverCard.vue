@@ -46,9 +46,10 @@
         <template v-if="!isWeb">
           <AppIcon name="Eye" :size="10"/>
           <span class="tabular">{{ fmtCompact(post.views) }}</span>
-          <span>·</span>
+          <span v-if="post.dateLabel">·</span>
         </template>
-        <span>{{ post.time }}</span>
+        <!-- Haqiqiy e'lon sanasi-vaqti; aniqlanmagan bo'lsa umuman ko'rsatilmaydi -->
+        <span v-if="post.dateLabel" class="tabular">{{ post.dateLabel }}</span>
         <span v-if="!isWeb && post.trend === 'up'" class="dc-trend">
           <AppIcon name="ArrowUp" :size="9"/> Trending
         </span>

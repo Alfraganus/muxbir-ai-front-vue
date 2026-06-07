@@ -561,11 +561,16 @@ function mapBackendPost(p) {
   const firstNewline = text.indexOf('\n')
   const title = firstNewline > 0 ? text.slice(0, firstNewline).slice(0, 180) : text.slice(0, 140)
   const snippet = firstNewline > 0 ? text.slice(firstNewline + 1, firstNewline + 220).trim() : ''
-  const ageH = (Date.now() - new Date(p.posted_at).getTime()) / 3_600_000
-  const time = ageH < 1
-    ? `${Math.max(1, Math.round(ageH * 60))} daq`
+  // Sana-vaqt: avval haqiqiy qiymat tekshiriladi. Aniqlanmagan/yaroqsiz bo'lsa —
+  // umuman yozilmaydi (dateLabel = null).
+  const postedMs = p.posted_at ? new Date(p.posted_at).getTime() : NaN
+  const hasDate = !isNaN(postedMs)
+  const ageH = hasDate ? (Date.now() - postedMs) / 3_600_000 : null
+  const time = !hasDate ? null
+    : ageH < 1 ? `${Math.max(1, Math.round(ageH * 60))} daq`
     : ageH < 24 ? `${Math.round(ageH)} soat`
     : `${Math.round(ageH / 24)} kun`
+  const dateLabel = hasDate ? fmtPostedAt(postedMs) : null
   // Website maqolasi telegram emas — embed/score/metrikalar yo'q, rasm image_url'dan.
   const isWebsite = p.source_type === 'website' || p.media_type === 'webpage'
   const cleanUsername = (p.source_username || '').replace(/^@+/, '')
@@ -595,8 +600,24 @@ function mapBackendPost(p) {
     isWebsite,
     imageUrl: p.image_url || null,
     articleUrl: isWebsite ? (p.media_url || null) : null,
+    dateLabel,
     _raw: p,
   }
+}
+
+// posted_at (ms) → "07.06.2026 11:29" (mahalliy vaqt). Bugun bo'lsa "Bugun 11:29".
+function fmtPostedAt(ms) {
+  const d = new Date(ms)
+  if (isNaN(d.getTime())) return null
+  const pad = (n) => String(n).padStart(2, '0')
+  const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  const now = new Date()
+  const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+  const y = new Date(now); y.setDate(now.getDate() - 1)
+  const isYtd = d.getFullYear() === y.getFullYear() && d.getMonth() === y.getMonth() && d.getDate() === y.getDate()
+  if (sameDay) return `Bugun ${hm}`
+  if (isYtd) return `Kecha ${hm}`
+  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${hm}`
 }
 
 const mappedPosts = computed(() => {

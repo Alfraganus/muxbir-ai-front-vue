@@ -5,7 +5,7 @@
         <span class="dp-src-avatar" :style="{ background: source.color }">{{ source.name.charAt(0) }}</span>
         <div style="display:flex;flex-direction:column;">
           <span style="font-size:13px;font-weight:600;">{{ source.name }}</span>
-          <span class="mono" style="font-size:11px;color:var(--muted);">{{ source.handle }} · {{ post.time }}</span>
+          <span class="mono" style="font-size:11px;color:var(--muted);">{{ source.handle }}<template v-if="post.dateLabel || post.time"> · {{ post.dateLabel || post.time }}</template></span>
         </div>
         <div style="flex:1"/>
         <span class="dp-pill">AI: {{ post.ai.total }}/100</span>
