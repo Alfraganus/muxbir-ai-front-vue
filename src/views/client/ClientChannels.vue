@@ -71,10 +71,13 @@
               <div class="ccx-head-sub">
                 <span class="mono ccx-handle">{{ identifier(c) }}</span>
                 <span class="ccx-dot"/>
-                <span class="ccx-mode" :class="modeOf(c)">
+                <button type="button" class="ccx-mode ccx-mode-btn" :class="modeOf(c)"
+                  @click.stop="togglePostingMode(c)"
+                  :title="modeOf(c) === 'auto' ? 'Manual rejimga oʻtkazish uchun bosing' : 'Avto rejimga oʻtkazish uchun bosing'">
                   <AppIcon :name="modeOf(c) === 'auto' ? 'Bolt' : 'Edit'" :size="9"/>
                   {{ modeOf(c) === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }}
-                </span>
+                  <AppIcon name="ArrowDown" :size="8" style="opacity:.6;"/>
+                </button>
               </div>
             </div>
             <ChannelActionsMenu
@@ -148,6 +151,11 @@
               </AppButton>
             </template>
             <template v-else>
+              <AppButton variant="ghost" size="sm" @click="togglePostingMode(c)"
+                :title="modeOf(c) === 'auto' ? 'Qoʻl rejimiga oʻtkazish' : 'Avto rejimga oʻtkazish'">
+                <template #icon><AppIcon :name="modeOf(c) === 'auto' ? 'Edit' : 'Bolt'" :size="12"/></template>
+                {{ modeOf(c) === 'auto' ? 'Manualga' : 'Avtoga' }}
+              </AppButton>
               <AppButton variant="secondary" size="sm" @click="openSources(c)">
                 <template #icon><AppIcon name="Layers" :size="12"/></template>
                 Manbalar
@@ -195,9 +203,11 @@
             <td style="padding:10px;vertical-align:middle;text-align:right;" class="tabular">{{ c.posts_7d ?? 0 }}</td>
             <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ lastPostRelative(c) }}</td>
             <td style="padding:10px;vertical-align:middle;">
-              <span class="cc-mode-pill" :class="modeOf(c)">
-                {{ modeOf(c) === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }}
-              </span>
+              <button type="button" class="cc-mode-pill cc-mode-pill-btn" :class="modeOf(c)"
+                @click.stop="togglePostingMode(c)"
+                :title="modeOf(c) === 'auto' ? 'Manual rejimga oʻtkazish uchun bosing' : 'Avto rejimga oʻtkazish uchun bosing'">
+                {{ modeOf(c) === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }} ⇅
+              </button>
             </td>
             <td style="padding:10px;vertical-align:middle;"><AppBadge :tone="isActive(c) ? 'success' : 'muted'" dot>{{ statusLabel(c) }}</AppBadge></td>
             <td style="padding:10px;vertical-align:middle;text-align:right;">
@@ -410,6 +420,19 @@
                         @click="autoFilters.similarity_threshold = th.v">{{ th.l }}</button>
                     </div>
                     <div class="cc-field-hint">Yangi post o'zimizning eski post bilan o'xshashlik darajasi</div>
+                  </div>
+
+                  <div class="cc-field">
+                    <label class="cc-field-label">Saralash usuli</label>
+                    <div class="cc-chip-row">
+                      <button v-for="o in SORT_MODE_OPTIONS" :key="o.value" type="button"
+                        class="cc-chip" :class="{ active: autoFilters.sort_mode === o.value }"
+                        @click="autoFilters.sort_mode = o.value">{{ o.label }}</button>
+                    </div>
+                    <div class="cc-field-hint">
+                      "Eng oxirgi" — eng yangi maqolalar (sana bo'yicha) birinchi post qilinadi.
+                      "Yuqori ballli" — ko'rish/ulashish/reaksiyaga ko'ra eng yaxshi postlar.
+                    </div>
                   </div>
 
                   <div class="cc-field">
@@ -654,6 +677,19 @@
                       @click="autoFilters.similarity_threshold = th.v">{{ th.l }}</button>
                   </div>
                   <div class="cc-field-hint">Yangi post o'zimizning eski post bilan o'xshashlik darajasi</div>
+                </div>
+
+                <div class="cc-field">
+                  <label class="cc-field-label">Saralash usuli</label>
+                  <div class="cc-chip-row">
+                    <button v-for="o in SORT_MODE_OPTIONS" :key="o.value" type="button"
+                      class="cc-chip" :class="{ active: autoFilters.sort_mode === o.value }"
+                      @click="autoFilters.sort_mode = o.value">{{ o.label }}</button>
+                  </div>
+                  <div class="cc-field-hint">
+                    "Eng oxirgi" — eng yangi maqolalar (sana bo'yicha) birinchi post qilinadi.
+                    "Yuqori ballli" — ko'rish/ulashish/reaksiyaga ko'ra eng yaxshi postlar.
+                  </div>
                 </div>
 
                 <div class="cc-field">
@@ -1039,12 +1075,19 @@ const autoFilters = ref({
   source_type: 'all',
   per_channel: 3,
   similarity_threshold: 0.5,
+  sort_mode: 'best', // 'best' — yuqori ballli postlar; 'latest' — eng oxirgi maqolalar (posted_at)
   include_videos: true,
   require_media: false,
   min_length: 50,
   languages: [],
   keywords: '',
 })
+
+// Auto-post qaysi postlarni tanlasin: eng oxirgi (sana) yoki eng yuqori ballli
+const SORT_MODE_OPTIONS = [
+  { value: 'latest', label: '🕒 Eng oxirgi maqolalar' },
+  { value: 'best', label: '⭐ Yuqori ballli postlar' },
+]
 
 // ── AI sozlamalari (prompt + provider + model + recommended) ──
 const AI_PROVIDERS = [
@@ -1114,6 +1157,7 @@ function resetAutoSettings() {
     source_type: 'all',
     per_channel: 3,
     similarity_threshold: 0.5,
+    sort_mode: 'best',
     include_videos: true,
     require_media: false,
     min_length: 50,
@@ -1445,6 +1489,7 @@ async function openAutoSettings(channel, opts = {}) {
     source_type: fTypes.length === 1 ? fTypes[0] : 'all',
     per_channel: f.per_channel ?? 3,
     similarity_threshold: f.similarity_threshold ?? 0.5,
+    sort_mode: f.sort_mode === 'latest' ? 'latest' : 'best',
     include_videos: f.include_videos !== false,
     require_media: !!f.require_media,
     min_length: f.min_length ?? 50,
@@ -1517,6 +1562,7 @@ async function saveAutoSettings() {
         source_types: autoFilters.value.source_type === 'all' ? [] : [autoFilters.value.source_type],
         per_channel: autoFilters.value.per_channel,
         similarity_threshold: autoFilters.value.similarity_threshold,
+        sort_mode: autoFilters.value.sort_mode,
         include_videos: autoFilters.value.include_videos,
         require_media: autoFilters.value.require_media,
         min_length: autoFilters.value.min_length,
@@ -1734,6 +1780,7 @@ async function submitAdd() {
             source_types: autoFilters.value.source_type === 'all' ? [] : [autoFilters.value.source_type],
             per_channel: autoFilters.value.per_channel,
             similarity_threshold: autoFilters.value.similarity_threshold,
+            sort_mode: autoFilters.value.sort_mode,
             include_videos: autoFilters.value.include_videos,
             require_media: autoFilters.value.require_media,
             min_length: autoFilters.value.min_length,
@@ -1858,6 +1905,12 @@ onBeforeUnmount(() => {
   color: var(--muted);
 }
 .ccx-mode.auto { color: var(--accent); }
+.ccx-mode-btn {
+  border: 1px solid var(--border-2); background: var(--panel-2);
+  padding: 2px 7px; border-radius: 999px; cursor: pointer; font-family: inherit;
+  transition: background .12s, border-color .12s;
+}
+.ccx-mode-btn:hover { background: var(--panel); border-color: color-mix(in oklab, var(--accent) 35%, var(--border-2)); }
 .ccx-meta {
   margin: 0 16px; padding: 9px 12px;
   background: var(--panel-2); border: 1px solid var(--border-2); border-radius: 8px;
@@ -1940,6 +1993,11 @@ onBeforeUnmount(() => {
   background: color-mix(in oklab, var(--muted) 16%, transparent);
   color: var(--text-2);
 }
+.cc-mode-pill-btn {
+  border: none; cursor: pointer; font-family: inherit; gap: 3px;
+  transition: filter .12s;
+}
+.cc-mode-pill-btn:hover { filter: brightness(1.08); text-decoration: underline; }
 .cc-spinner {
   width: 18px;
   height: 18px;

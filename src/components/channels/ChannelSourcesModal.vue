@@ -58,9 +58,25 @@
             {{ adding ? 'Qo\'shilmoqda…' : '+ Qo\'shish' }}
           </button>
         </form>
+
+        <!-- Website uchun qo'shimcha sozlamalar (ixtiyoriy) -->
+        <div v-if="newType === 'website'" class="csm-adv">
+          <input
+            v-model="newFeedUrl"
+            type="text"
+            placeholder="RSS feed URL (ixtiyoriy) — masalan https://feeds.bbci.co.uk/news/rss.xml"
+            :disabled="adding"
+            class="csm-input"
+          />
+          <label class="csm-check">
+            <input type="checkbox" v-model="newAllowUndated" :disabled="adding" />
+            <span>Sanasiz postlarga ham ruxsat (o‘quv/resurs saytlari uchun)</span>
+          </label>
+        </div>
+
         <div class="csm-hint">
           {{ newType === 'website'
-            ? 'Sayt URL’ini kiriting — RSS feed avtomatik topiladi, bo‘lmasa sahifadan o‘qiladi.'
+            ? 'Sayt URL’ini kiriting — RSS feed avtomatik topiladi, bo‘lmasa sahifadan o‘qiladi. Topilmasa, RSS feed URL’ini qo‘lda kiriting.'
             : 'Public Telegram kanal @username yoki t.me linki.' }}
         </div>
         <div v-if="addError" class="csm-err">{{ addError }}</div>
@@ -101,6 +117,10 @@
                 <span v-else>Hali scan qilinmagan</span>
                 <span v-if="s.last_error" style="color:#ef4444;margin-left:6px;">· ⚠ {{ s.last_error }}</span>
               </div>
+              <label v-if="s.source_type === 'website'" class="csm-check csm-check-sm">
+                <input type="checkbox" :checked="s.allow_undated" @change="toggleUndated(s)" />
+                <span>Sanasiz postlarga ruxsat</span>
+              </label>
             </div>
 
             <button @click="scanOne(s)" :disabled="scanningId === s.id" class="csm-btn-ghost" title="Hozir scan qil">
@@ -133,6 +153,8 @@ const adding = ref(false)
 const addError = ref(null)
 const newType = ref('telegram')   // 'telegram' | 'website'
 const newValue = ref('')
+const newFeedUrl = ref('')        // website: ixtiyoriy RSS feed URL
+const newAllowUndated = ref(false) // website: sanasiz postlarga ruxsat
 const sources = ref([])
 const scanningId = ref(null)
 const tgApi = reactive({ loaded: false, is_saved: false })
@@ -176,10 +198,17 @@ async function addOne() {
   addError.value = null
   try {
     const payload = newType.value === 'website'
-      ? { source_type: 'website', url: val }
+      ? {
+          source_type: 'website',
+          url: val,
+          feed_url: newFeedUrl.value.trim() || undefined,
+          allow_undated: newAllowUndated.value,
+        }
       : { source_type: 'telegram', username: val }
     await channelsApi.addSource(props.companyId, props.channel.id, payload)
     newValue.value = ''
+    newFeedUrl.value = ''
+    newAllowUndated.value = false
     await reload()
   } catch (e) {
     addError.value = e?.response?.data?.message ?? e.message
@@ -191,6 +220,15 @@ async function addOne() {
 async function toggleActive(s) {
   try {
     await channelsApi.updateSource(props.companyId, props.channel.id, s.id, { is_active: !s.is_active })
+    await reload()
+  } catch (e) {
+    alert(e?.response?.data?.message ?? e.message)
+  }
+}
+
+async function toggleUndated(s) {
+  try {
+    await channelsApi.updateSource(props.companyId, props.channel.id, s.id, { allow_undated: !s.allow_undated })
     await reload()
   } catch (e) {
     alert(e?.response?.data?.message ?? e.message)
@@ -281,6 +319,13 @@ async function remove(s) {
   color: var(--muted); background: var(--bg-2, rgba(0,0,0,.05)); padding: 1px 5px; border-radius: 999px;
 }
 .csm-hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.csm-adv { display: flex; flex-direction: column; gap: 8px; margin-top: -4px; }
+.csm-check {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  user-select: none; font-size: 12px; color: var(--text);
+}
+.csm-check input { cursor: pointer; }
+.csm-check-sm { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .csm-type-badge {
   display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
   font-size: 9.5px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
