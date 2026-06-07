@@ -1,8 +1,8 @@
 <template>
   <div class="dc" :class="{ selected }">
     <!-- Media area -->
-    <div class="dc-media" :class="{ 'dc-media-embed': !!post.embedUrl }"
-      :style="post.embedUrl ? {} : { background: `linear-gradient(135deg, ${source.color}, color-mix(in oklab, ${source.color} 60%, black))` }">
+    <div class="dc-media" :class="{ 'dc-media-embed': !!post.embedUrl, 'dc-media-img': hasImg }"
+      :style="post.embedUrl || hasImg ? {} : { background: `linear-gradient(135deg, ${source.color}, color-mix(in oklab, ${source.color} 60%, black))` }">
       <iframe v-if="post.embedUrl"
         :src="post.embedUrl"
         class="dc-embed"
@@ -10,6 +10,12 @@
         scrolling="no"
         frameborder="0"
         referrerpolicy="no-referrer"/>
+      <img v-else-if="hasImg"
+        :src="post.imageUrl"
+        class="dc-img"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        @error="imgFailed = true"/>
       <template v-else>
         <div aria-hidden class="dc-stripes"/>
         <div aria-hidden class="dc-shade"/>
@@ -22,8 +28,8 @@
 
       <span class="dc-rank mono">#{{ rank }} top</span>
 
-      <!-- Score badge (0-100) -->
-      <div class="dc-score-wrap" :title="`Engagement ball ${post.ai.total}/100 (xom: ${fmtScore(post.rawScore)})`">
+      <!-- Score badge (0-100) — faqat telegram postlarida -->
+      <div v-if="!isWeb" class="dc-score-wrap" :title="`Engagement ball ${post.ai.total}/100 (xom: ${fmtScore(post.rawScore)})`">
         <svg :width="42" :height="42" viewBox="0 0 42 42" style="position:absolute;inset:0;transform:rotate(-90deg);">
           <circle cx="21" cy="21" r="18" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="3"/>
           <circle cx="21" cy="21" r="18" fill="none" :stroke="toneColor" stroke-width="3"
@@ -37,11 +43,13 @@
       </div>
 
       <div class="dc-meta">
-        <AppIcon name="Eye" :size="10"/>
-        <span class="tabular">{{ fmtCompact(post.views) }}</span>
-        <span>·</span>
+        <template v-if="!isWeb">
+          <AppIcon name="Eye" :size="10"/>
+          <span class="tabular">{{ fmtCompact(post.views) }}</span>
+          <span>·</span>
+        </template>
         <span>{{ post.time }}</span>
-        <span v-if="post.trend === 'up'" class="dc-trend">
+        <span v-if="!isWeb && post.trend === 'up'" class="dc-trend">
           <AppIcon name="ArrowUp" :size="9"/> Trending
         </span>
       </div>
@@ -53,8 +61,8 @@
       <h3 class="dc-title">{{ post.title }}</h3>
       <p class="dc-snippet">{{ post.snippet }}</p>
 
-      <!-- Engagement stats -->
-      <div class="dc-stats" :title="`Score formulasi: forward × 5 + reaction × 1 + view × 0.01 = ${fmtScore(post.rawScore)}`">
+      <!-- Engagement stats — website maqolalarida share/like/reaction/score yo'q -->
+      <div v-if="!isWeb" class="dc-stats" :title="`Score formulasi: forward × 5 + reaction × 1 + view × 0.01 = ${fmtScore(post.rawScore)}`">
         <div class="dc-stat" title="Ko'rishlar">
           <AppIcon name="Eye" :size="11"/>
           <span class="tabular">{{ fmtCompact(post.views) }}</span>
@@ -73,8 +81,8 @@
         </div>
       </div>
 
-      <!-- AI bars -->
-      <div class="dc-ai">
+      <!-- AI bars — website maqolalarida ko'rsatilmaydi -->
+      <div v-if="!isWeb" class="dc-ai">
         <div class="dc-ai-head">
           <AppIcon name="Sparkle" :size="11" :style="{ color: 'var(--accent)' }"/>
           <span>AI tahlil · {{ post.ai.total }}/100</span>
@@ -91,7 +99,11 @@
 
       <!-- Footer actions -->
       <div class="dc-foot">
-        <button class="dc-ghost" @click.stop="$emit('preview')">
+        <a v-if="isWeb && post.articleUrl" class="dc-ghost" :href="post.articleUrl" target="_blank" rel="noopener" @click.stop>
+          <AppIcon name="Globe" :size="11"/>
+          Maqola
+        </a>
+        <button v-else class="dc-ghost" @click.stop="$emit('preview')">
           <AppIcon name="Eye" :size="11"/>
           Ko'rish
         </button>
@@ -106,7 +118,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps({
@@ -116,6 +128,11 @@ const props = defineProps({
   selected: { type: Boolean, default: false },
 })
 defineEmits(['toggle', 'preview'])
+
+const imgFailed = ref(false)
+const isWeb = computed(() => !!props.post.isWebsite)
+// Website rasmi bor va yuklanmay qolmagan bo'lsa — <img> ko'rsatamiz.
+const hasImg = computed(() => isWeb.value && !!props.post.imageUrl && !imgFailed.value)
 
 const metrics = [
   { k: 'relevance', l: 'Dolzarb' },
@@ -131,8 +148,8 @@ const toneColor = computed(() => {
   return '#F59E0B'
 })
 
-const mediaIcon = computed(() => props.post.media === 'video' ? 'Eye' : props.post.media === 'chart' ? 'Chart' : 'Layers')
-const mediaLabel = computed(() => props.post.media === 'video' ? 'Video' : props.post.media === 'chart' ? 'Diagramma' : 'Rasm')
+const mediaIcon = computed(() => isWeb.value ? 'Globe' : props.post.media === 'video' ? 'Eye' : props.post.media === 'chart' ? 'Chart' : 'Layers')
+const mediaLabel = computed(() => isWeb.value ? 'Maqola' : props.post.media === 'video' ? 'Video' : props.post.media === 'chart' ? 'Diagramma' : 'Rasm')
 
 function fmtCompact(n) {
   if (n === null || n === undefined) return '0'
@@ -182,12 +199,24 @@ function barColor(v) {
   height: 320px;
   background: var(--panel-2);
 }
+.dc-media.dc-media-img {
+  height: 170px;
+  background: var(--panel-2);
+}
 .dc-embed {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
+  display: block;
+}
+.dc-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 .dc-stripes {
@@ -345,8 +374,9 @@ function barColor(v) {
 
 .dc-foot {
   display: flex; align-items: center; gap: 6px;
-  margin-top: 4px;
+  margin-top: auto;
 }
+.dc-foot a.dc-ghost { text-decoration: none; }
 .dc-ghost {
   height: 28px; padding: 0 10px;
   display: inline-flex; align-items: center; gap: 5px;

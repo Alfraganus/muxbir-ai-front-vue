@@ -73,7 +73,7 @@
   <div v-else class="cd-root">
     <PageHeader
       title="Topilgan postlar"
-      :subtitle="`AI ${discoveredSources.length} ta Telegram manbadan ${totalPostsCount} ta eng yaxshi postni topdi · davr: ${currentRangeLabel}`">
+      :subtitle="`AI ${discoveredSources.length} ta ${sourceTypeLabel ? sourceTypeLabel + ' ' : ''}manbadan ${totalPostsCount} ta ${config.sourceType === 'website' ? 'soʻnggi' : 'eng yaxshi'} postni topdi · davr: ${currentRangeLabel}`">
       <template #right>
         <AppButton variant="secondary" size="md" @click="phase = 'setup'">
           <template #icon><AppIcon name="Settings" :size="13"/></template>
@@ -566,11 +566,13 @@ function mapBackendPost(p) {
     ? `${Math.max(1, Math.round(ageH * 60))} daq`
     : ageH < 24 ? `${Math.round(ageH)} soat`
     : `${Math.round(ageH / 24)} kun`
+  // Website maqolasi telegram emas — embed/score/metrikalar yo'q, rasm image_url'dan.
+  const isWebsite = p.source_type === 'website' || p.media_type === 'webpage'
   const cleanUsername = (p.source_username || '').replace(/^@+/, '')
-  const embedUrl = cleanUsername && p.external_message_id
+  const embedUrl = !isWebsite && cleanUsername && p.external_message_id
     ? `https://t.me/${cleanUsername}/${p.external_message_id}?embed=1&single=1`
     : null
-  const tmePostUrl = cleanUsername && p.external_message_id
+  const tmePostUrl = !isWebsite && cleanUsername && p.external_message_id
     ? `https://t.me/${cleanUsername}/${p.external_message_id}`
     : null
   return {
@@ -590,6 +592,9 @@ function mapBackendPost(p) {
     rawScore: Number(p.score) || 0,
     embedUrl,
     tmePostUrl,
+    isWebsite,
+    imageUrl: p.image_url || null,
+    articleUrl: isWebsite ? (p.media_url || null) : null,
     _raw: p,
   }
 }
@@ -648,6 +653,8 @@ const averageScore = computed(() => {
 })
 
 const currentRangeLabel = computed(() => TIME_RANGES.find(t => t.id === config.timeRange)?.label || config.timeRange)
+const sourceTypeLabel = computed(() =>
+  config.sourceType === 'website' ? 'Website' : config.sourceType === 'telegram' ? 'Telegram' : '')
 const selectedCount = computed(() => Object.values(selected.value).filter(Boolean).length)
 const selectedAvg = computed(() => {
   const list = mappedPosts.value.filter(p => selected.value[p.id])
