@@ -55,10 +55,10 @@ export const postsApi = {
   adaptTelegram: (companyId, postId) =>
     http.post(`/companies/${companyId}/posts/${postId}/telegram-adapt`).then(r => r.data),
 
-  /** AI: post matnini Telegram uchun qisqartiradi va saqlaydi. Qaytaradi: { lang, content_json } */
-  aiShorten: (companyId, postId, lang = 'uz') =>
-    http.post(`/companies/${companyId}/posts/${postId}/ai/shorten`, { lang },
-              { timeout: 120000 }).then(r => r.data),
+  /** AI: post matnini QISQARTIRADI — qayta yozish bilan bir xil (prompt + provider + model). */
+  aiShorten: (companyId, postId, payload) =>
+    http.post(`/companies/${companyId}/posts/${postId}/ai/shorten`, payload, { timeout: 120000 })
+      .then(r => r.data),
 
   /** AI: prompt + provider + model tanlash bilan qayta yozish. payload: {lang, prompt_group_id, provider, model} */
   aiRewrite: (companyId, postId, payload) =>

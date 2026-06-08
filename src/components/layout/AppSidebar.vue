@@ -231,7 +231,7 @@ const clientMain = computed(() => [
   { id: 'overview',   icon: 'Home',     label: t.value('nav.client.overview'),  path: '/client/overview' },
   { id: 'channels',   icon: 'Telegram', label: t.value('nav.client.channels'),  path: '/client/channels', count: channelsCount.value ?? undefined },
   { id: 'posts',      icon: 'Send',     label: t.value('nav.client.posts'),     path: '/client/posts', count: postsUsage.used || undefined },
-  { id: 'discover',   icon: 'Sparkle',  label: 'Post ovlash',                   path: '/client/discover' },
+  { id: 'discover',   icon: 'Sparkle',  label: 'Xabar qidirish',                path: '/client/discover' },
   { id: 'categories', icon: 'Tag',      label: 'Kategoriyalar',                 path: '/client/categories' },
   { id: 'settings',   icon: 'Settings', label: 'Sozlamalar',                    path: '/client/settings' },
 ])
@@ -239,7 +239,7 @@ const clientMain = computed(() => [
 const clientInsights = computed(() => [
   { id: 'schedule',   icon: 'Calendar', label: t.value('nav.client.schedule'),  path: null },
   { id: 'sources',    icon: 'Globe2',   label: t.value('nav.client.sources'),   path: null },
-  { id: 'analytics',  icon: 'Chart',    label: t.value('nav.client.analytics'), path: null },
+  { id: 'analytics',  icon: 'Chart',    label: t.value('nav.client.analytics'), path: '/client/analytics' },
 ])
 
 const clientAccount = computed(() => [

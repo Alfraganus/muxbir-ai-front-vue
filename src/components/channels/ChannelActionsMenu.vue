@@ -1,23 +1,39 @@
 <template>
   <div style="position:relative;">
     <button class="cam-btn" :class="{ open }" @click.stop="open = !open" aria-label="Amallar">
-      <AppIcon name="More" :size="15"/>
+      <AppIcon name="More" :size="18"/>
     </button>
     <template v-if="open">
       <div class="cam-scrim" @click="open = false"/>
       <div class="cam-menu" role="menu">
-        <button class="cam-item" @click="pick('posts')"><AppIcon name="Eye" :size="13"/>Postlarni ko'rish</button>
-        <button class="cam-item" @click="pick('signature')"><AppIcon name="Edit" :size="13"/>Imzo va shablon</button>
-        <button class="cam-item" @click="pick('sources')"><AppIcon name="Layers" :size="13"/>Manbalar</button>
+        <button class="cam-item" @click="pick('posts')">
+          <span class="cam-ic" style="--c:#0EA5E9"><AppIcon name="Eye" :size="15"/></span>
+          <span class="cam-txt"><b>Postlarni ko'rish</b><small>Yuborilgan postlar oqimi</small></span>
+        </button>
+        <button class="cam-item" @click="pick('signature')">
+          <span class="cam-ic" style="--c:#8B5CF6"><AppIcon name="Edit" :size="15"/></span>
+          <span class="cam-txt"><b>Imzo va shablon</b><small>Post oxiridagi imzo</small></span>
+        </button>
+        <button class="cam-item" @click="pick('sources')">
+          <span class="cam-ic" style="--c:#22C55E"><AppIcon name="Layers" :size="15"/></span>
+          <span class="cam-txt"><b>Manbalar</b><small>Telegram / website manbalar</small></span>
+        </button>
         <button v-if="mode === 'auto' && active" class="cam-item" @click="pick('settings')">
-          <AppIcon name="Settings" :size="13"/>Sozlash
+          <span class="cam-ic" style="--c:#F59E0B"><AppIcon name="Settings" :size="15"/></span>
+          <span class="cam-txt"><b>Sozlash</b><small>Avto-post sozlamalari</small></span>
         </button>
         <button class="cam-item" @click="pick('toggle-mode')">
-          <AppIcon :name="mode === 'auto' ? 'Edit' : 'Bolt'" :size="13"/>
-          {{ mode === 'auto' ? "Manualga o'tkazish" : "Avtoga o'tkazish" }}
+          <span class="cam-ic" style="--c:#6366F1"><AppIcon :name="mode === 'auto' ? 'Edit' : 'Bolt'" :size="15"/></span>
+          <span class="cam-txt">
+            <b>{{ mode === 'auto' ? "Manualga o'tkazish" : "Avtoga o'tkazish" }}</b>
+            <small>{{ mode === 'auto' ? "Qo'lda boshqarish" : "Avtomatik yuborish" }}</small>
+          </span>
         </button>
         <div class="cam-div"/>
-        <button class="cam-item danger" @click="pick('remove')"><AppIcon name="Trash" :size="13"/>O'chirish</button>
+        <button class="cam-item danger" @click="pick('remove')">
+          <span class="cam-ic" style="--c:#EF4444"><AppIcon name="Trash" :size="15"/></span>
+          <span class="cam-txt"><b>O'chirish</b><small>Kanalni ro'yxatdan olib tashlash</small></span>
+        </button>
       </div>
     </template>
   </div>
@@ -44,28 +60,38 @@ function pick(ev) {
 
 <style scoped>
 .cam-btn {
-  width: 28px; height: 28px; border-radius: 6px;
-  border: 1px solid transparent; background: transparent;
+  width: 36px; height: 36px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--panel);
   color: var(--muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
+  transition: all .15s;
 }
-.cam-btn:hover, .cam-btn.open { background: var(--panel-2); }
+.cam-btn:hover, .cam-btn.open { background: var(--panel-2); color: var(--text); border-color: var(--accent); }
 .cam-scrim { position: fixed; inset: 0; z-index: 19; }
 .cam-menu {
-  position: absolute; top: 100%; right: 0; margin-top: 4px; z-index: 20;
-  min-width: 184px; padding: 5px;
+  position: absolute; top: 100%; right: 0; margin-top: 6px; z-index: 20;
+  min-width: 268px; padding: 7px;
   background: var(--panel); border: 1px solid var(--border);
-  border-radius: 8px; box-shadow: var(--shadow-lg, 0 12px 40px rgba(15,23,42,.18));
-  display: flex; flex-direction: column; gap: 1px;
+  border-radius: 13px; box-shadow: var(--shadow-lg, 0 18px 50px rgba(15,23,42,.22));
+  display: flex; flex-direction: column; gap: 2px;
+  animation: camIn .16s ease;
 }
+@keyframes camIn { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
 .cam-item {
-  display: flex; align-items: center; gap: 9px;
-  width: 100%; padding: 7px 9px;
-  background: transparent; border: none; border-radius: 6px;
-  font-size: 12.5px; color: var(--text-2); cursor: pointer;
-  text-align: left; font-family: inherit;
+  display: flex; align-items: center; gap: 11px;
+  width: 100%; padding: 9px 10px;
+  background: transparent; border: none; border-radius: 10px;
+  cursor: pointer; text-align: left; font-family: inherit;
 }
-.cam-item:hover { background: var(--panel-2); color: var(--text); }
-.cam-item.danger { color: var(--danger, #ef4444); }
-.cam-div { height: 1px; background: var(--border-2); margin: 3px 0; }
+.cam-item:hover { background: var(--panel-2); }
+.cam-ic {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c);
+}
+.cam-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cam-txt b { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.cam-txt small { font-size: 11px; color: var(--muted); line-height: 1.2; }
+.cam-item.danger .cam-txt b { color: var(--danger, #EF4444); }
+.cam-div { height: 1px; background: var(--border-2); margin: 4px 6px; }
 </style>
