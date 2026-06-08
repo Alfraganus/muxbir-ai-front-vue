@@ -72,8 +72,8 @@
 
   <div v-else class="cd-root">
     <PageHeader
-      title="Topilgan postlar"
-      :subtitle="`AI ${discoveredSources.length} ta ${sourceTypeLabel ? sourceTypeLabel + ' ' : ''}manbadan ${totalPostsCount} ta ${config.sourceType === 'website' ? 'soʻnggi' : 'eng yaxshi'} postni topdi · davr: ${currentRangeLabel}`">
+      title="Topilgan xabarlar"
+      :subtitle="`AI ${discoveredSources.length} ta ${sourceTypeLabel ? sourceTypeLabel + ' ' : ''}manbadan ${totalPostsCount} ta ${config.sourceType === 'website' ? 'soʻnggi' : 'eng yaxshi'} xabarni topdi · davr: ${currentRangeLabel}`">
       <template #right>
         <AppButton variant="secondary" size="md" @click="phase = 'setup'">
           <template #icon><AppIcon name="Settings" :size="13"/></template>
@@ -303,6 +303,8 @@ const router = useRouter()
 const phase = ref('setup') // setup | scanning | results
 
 const TIME_RANGES = [
+  { id: '15m', label: "So'nggi 15 daqiqa", hint: 'Eng so\'nggi xabarlar' },
+  { id: '1h',  label: "So'nggi 1 soat",  hint: 'Tezkor yangiliklar' },
   { id: '3h',  label: "So'nggi 3 soat",  hint: 'Yangi qaynoq postlar' },
   { id: '6h',  label: "So'nggi 6 soat",  hint: 'Yarim kun ichidagi yangiliklar' },
   { id: '24h', label: "So'nggi 24 soat", hint: 'Bugun va kechagi postlar' },

@@ -121,8 +121,15 @@
               <span class="ccx-stat-val tabular">{{ c.posts_7d ?? 0 }}</span>
             </div>
             <div class="ccx-stat">
-              <span class="ccx-stat-lbl">Manba</span>
-              <span class="ccx-stat-val tabular">{{ c.sources_count ?? 0 }}</span>
+              <span class="ccx-stat-lbl">Manbalar ({{ c.sources_count ?? 0 }})</span>
+              <span class="ccx-src-breakdown">
+                <span class="ccx-src-chip tg" :title="`${c.sources_telegram ?? 0} ta Telegram manba`">
+                  <AppIcon name="Telegram" :size="11"/>{{ c.sources_telegram ?? 0 }}
+                </span>
+                <span class="ccx-src-chip web" :title="`${c.sources_website ?? 0} ta Website manba`">
+                  <AppIcon name="Globe2" :size="11"/>{{ c.sources_website ?? 0 }}
+                </span>
+              </span>
             </div>
           </div>
 
@@ -145,22 +152,22 @@
               <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">So'nggi: {{ lastPostRelative(c) }}</span>
             </span>
             <template v-if="!isActive(c)">
-              <AppButton variant="primary" size="sm" @click="openReactivateModal(c)" title="Botni kanalga qayta admin qilish">
-                <template #icon><AppIcon name="Sparkle" :size="12"/></template>
+              <AppButton variant="primary" size="md" @click="openReactivateModal(c)" title="Botni kanalga qayta admin qilish">
+                <template #icon><AppIcon name="Sparkle" :size="14"/></template>
                 Faollashtirish
               </AppButton>
             </template>
             <template v-else>
-              <AppButton variant="ghost" size="sm" @click="openRecent(c)" title="Oxirgi 3 kunlik postlar va ko'rishlar">
-                <template #icon><AppIcon name="Eye" :size="12"/></template>
+              <AppButton variant="ghost" size="md" @click="openRecent(c)" title="Oxirgi 3 kunlik postlar va ko'rishlar">
+                <template #icon><AppIcon name="Eye" :size="14"/></template>
                 So'nggi postlar
               </AppButton>
-              <AppButton variant="secondary" size="sm" @click="openSources(c)">
-                <template #icon><AppIcon name="Layers" :size="12"/></template>
+              <AppButton variant="secondary" size="md" @click="openSources(c)">
+                <template #icon><AppIcon name="Layers" :size="14"/></template>
                 Manbalar
               </AppButton>
-              <AppButton variant="primary" size="sm" @click="openAutoSettings(c)">
-                <template #icon><AppIcon name="Settings" :size="12"/></template>
+              <AppButton variant="primary" size="md" @click="openAutoSettings(c)">
+                <template #icon><AppIcon name="Settings" :size="14"/></template>
                 Sozlash
               </AppButton>
             </template>
@@ -197,7 +204,12 @@
                 </div>
               </div>
             </td>
-            <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ c.sources_count ?? 0 }} manba</td>
+            <td style="padding:10px;vertical-align:middle;">
+              <span class="ccx-src-breakdown">
+                <span class="ccx-src-chip tg" :title="`${c.sources_telegram ?? 0} ta Telegram manba`"><AppIcon name="Telegram" :size="11"/>{{ c.sources_telegram ?? 0 }}</span>
+                <span class="ccx-src-chip web" :title="`${c.sources_website ?? 0} ta Website manba`"><AppIcon name="Globe2" :size="11"/>{{ c.sources_website ?? 0 }}</span>
+              </span>
+            </td>
             <td style="padding:10px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtCompact(c.subscriber_count || 0) }}</td>
             <td style="padding:10px;vertical-align:middle;text-align:right;" class="tabular">{{ c.posts_7d ?? 0 }}</td>
             <td style="padding:10px;vertical-align:middle;color:var(--muted);">{{ lastPostRelative(c) }}</td>
@@ -392,12 +404,15 @@
                   <!-- Filtrlar -->
                   <div class="cc-auto-row">
                     <div class="cc-field" style="flex:1;min-width:160px;">
-                      <label class="cc-field-label">Vaqt oraligi</label>
+                      <label class="cc-field-label">Qancha vaqt oralig'idagi ma'lumotlar izlansin</label>
                       <div class="cc-chip-row">
                         <button v-for="o in TIME_RANGE_OPTIONS" :key="o.value" type="button"
                           class="cc-chip"
                           :class="{ active: autoFilters.time_range === o.value }"
-                          @click="autoFilters.time_range = o.value">{{ o.label }}</button>
+                          @click="setTimeRange(o.value)">{{ o.label }}</button>
+                      </div>
+                      <div v-if="autoFilters.time_range === 'unlimited'" class="cc-field-hint">
+                        Vaqt cheklanmaydi — eng <strong>qiziqarli</strong> (ballli) postlar tanlanadi, eng oxirgisi emas.
                       </div>
                     </div>
                     <div class="cc-field" style="flex:0 0 150px;">
@@ -650,11 +665,14 @@
                 <!-- Filtrlar -->
                 <div class="cc-auto-row">
                   <div class="cc-field" style="flex:1;min-width:160px;">
-                    <label class="cc-field-label">Vaqt oraligi</label>
+                    <label class="cc-field-label">Qancha vaqt oralig'idagi ma'lumotlar izlansin</label>
                     <div class="cc-chip-row">
                       <button v-for="o in TIME_RANGE_OPTIONS" :key="o.value" type="button"
                         class="cc-chip" :class="{ active: autoFilters.time_range === o.value }"
-                        @click="autoFilters.time_range = o.value">{{ o.label }}</button>
+                        @click="setTimeRange(o.value)">{{ o.label }}</button>
+                    </div>
+                    <div v-if="autoFilters.time_range === 'unlimited'" class="cc-field-hint">
+                      Vaqt cheklanmaydi — eng <strong>qiziqarli</strong> (ballli) postlar tanlanadi, eng oxirgisi emas.
                     </div>
                   </div>
                   <div class="cc-field" style="flex:0 0 150px;">
@@ -1091,7 +1109,15 @@ const TIME_RANGE_OPTIONS = [
   { value: '6h',  label: '6 soat' },
   { value: '12h', label: '12 soat' },
   { value: '24h', label: '24 soat' },
+  { value: 'unlimited', label: '♾️ Cheklanmagan' },
 ]
+
+// Vaqt oralig'ini tanlash. "Cheklanmagan" tanlansa — maqsad eng qiziqarli
+// (ballli) post bo'ladi, shu sababli saralash majburan "best"ga o'tadi.
+function setTimeRange(v) {
+  autoFilters.value.time_range = v
+  if (v === 'unlimited') autoFilters.value.sort_mode = 'best'
+}
 const SOURCE_TYPE_OPTIONS = [
   { value: 'all',      label: 'Hammasi' },
   { value: 'telegram', label: 'Telegram' },
@@ -1463,10 +1489,10 @@ const filteredList = computed(() => {
 
 // Kanal soniga qarab grid: 1 → butun ekran, 2 → 50%, 3+ → 3 ustun
 const gridClass = computed(() => {
+  // Kartalar kattaroq ko'rinishi uchun ko'pi bilan 2 ustun.
   const n = filteredList.value.length
   if (n <= 1) return 'ccx-grid-1'
-  if (n === 2) return 'ccx-grid-2'
-  return 'ccx-grid-3'
+  return 'ccx-grid-2'
 })
 
 // ── Data loading ──────────────────────────────────────────────────
@@ -2010,13 +2036,21 @@ onBeforeUnmount(() => {
 .ccx-stat { display: flex; flex-direction: column; gap: 2px; }
 .ccx-stat-lbl { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
 .ccx-stat-val { font-size: 15px; font-weight: 600; color: var(--text); }
+.ccx-src-breakdown { display: inline-flex; align-items: center; gap: 6px; }
+.ccx-src-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ccx-src-chip.tg { background: rgba(36,160,225,0.14); color: #1Fa1de; }
+.ccx-src-chip.web { background: rgba(34,197,94,0.14); color: #16a34a; }
 .ccx-spark { padding: 0 16px 12px; }
 .ccx-spark-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .ccx-spark-lbl { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .ccx-trend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; }
 .ccx-foot {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 16px; margin-top: auto;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 12px 16px; margin-top: auto;
   background: var(--panel-2); border-top: 1px solid var(--border-2);
   border-radius: 0 0 var(--r-lg) var(--r-lg);
 }

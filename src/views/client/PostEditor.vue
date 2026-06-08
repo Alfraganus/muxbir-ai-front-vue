@@ -125,11 +125,17 @@
           <!-- ─── AI amallar + til holati (sarlavha tepasida) ─── -->
           <div class="pe-toolbar pe-toolbar-ai">
             <div class="pe-toolbar-left">
-              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite" title="AI bilan qayta yozish — prompt va model tanlash">
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite('rewrite')" title="AI bilan qayta yozish — prompt va model tanlash">
                 <span class="pe-chip-ic pe-chip-ic-ai">
                   <AppIcon name="Sparkle" :size="11"/>
                 </span>
-                <span class="pe-chip-text">{{ aiShortening ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
+                <span class="pe-chip-text">{{ aiShortening && aiMode === 'rewrite' ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
+              </button>
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite('shorten')" title="AI bilan qisqartirish — prompt va model tanlash">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon name="Edit" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ aiShortening && aiMode === 'shorten' ? 'Qisqartirilmoqda…' : 'AI bilan qisqartirish' }}</span>
               </button>
               <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
                 <span class="pe-chip-ic pe-chip-ic-ai">
@@ -453,8 +459,8 @@
 
     <!-- ─── AI rewrite modal — prompt + provider + model ─── -->
     <AppModal v-model="showAiRewrite"
-              title="AI bilan qayta yozish"
-              subtitle="Promptni, AI provayderini va modelni tanlang"
+              :title="aiModalTitle"
+              :subtitle="aiModalSubtitle"
               width="560px">
       <div style="display:flex;flex-direction:column;gap:14px;">
         <!-- Prompt -->
@@ -598,7 +604,7 @@
                   border: 'none', cursor: canRunAiRewrite ? 'pointer' : 'default',
                   fontSize: '12.5px', fontWeight: 600,
                 }">
-          {{ aiShortening ? 'Yozilmoqda…' : '✨ Qayta yozish' }}
+          {{ aiShortening ? (aiMode === 'shorten' ? 'Qisqartirilmoqda…' : 'Yozilmoqda…') : aiRunLabel }}
         </button>
       </template>
     </AppModal>
@@ -749,6 +755,13 @@ const lastSavedAt = ref(null)
 // AI rewrite modal — oxirgi tanlov localStorage'da saqlanadi
 const AI_REWRITE_LS_KEY = 'muxbir.ai-rewrite.preferences'
 const showAiRewrite = ref(false)
+// 'rewrite' (qayta yozish) yoki 'shorten' (qisqartirish) — bitta modal, ikki rejim.
+const aiMode = ref('rewrite')
+const aiModalTitle = computed(() => aiMode.value === 'shorten' ? 'AI bilan qisqartirish' : 'AI bilan qayta yozish')
+const aiModalSubtitle = computed(() => aiMode.value === 'shorten'
+  ? 'Matnni qisqartirish uchun prompt, provayder va modelni tanlang'
+  : 'Promptni, AI provayderini va modelni tanlang')
+const aiRunLabel = computed(() => aiMode.value === 'shorten' ? '✂️ Qisqartirish' : '✨ Qayta yozish')
 const aiPromptGroups = ref([])
 const aiSavedPrefs = (() => {
   try { return JSON.parse(localStorage.getItem(AI_REWRITE_LS_KEY) || '{}') }
@@ -1493,30 +1506,9 @@ async function onStatusChange() {
   }
 }
 
-async function aiShortenContent() {
-  aiError.value = ''
-  if (!await ensurePostSaved()) {
-    aiError.value = formError.value || 'Avval postni saqlash kerak'
-    return
-  }
-  aiShortening.value = true
-  try {
-    const res = await postsApi.aiShorten(company.value.id, postId.value, activeLang.value)
-    if (res?.content_json) {
-      activeTr.value.content_json = res.content_json
-      editorReloadKey.value++ // editor'ni majburiy re-mount qilamiz, yangi kontent ko'rinsin
-    }
-    aiUsageStore.refresh()
-  } catch (e) {
-    const msg = e?.response?.data?.message || 'Qisqartirishda xato'
-    aiError.value = Array.isArray(msg) ? msg.join('. ') : msg
-  } finally {
-    aiShortening.value = false
-  }
-}
-
-// AI rewrite modal'ni ochish
-async function openAiRewrite() {
+// AI rewrite/shorten modal'ni ochish (mode = 'rewrite' | 'shorten')
+async function openAiRewrite(mode = 'rewrite') {
+  aiMode.value = mode === 'shorten' ? 'shorten' : 'rewrite'
   aiError.value = ''
   if (!await ensurePostSaved()) {
     aiError.value = formError.value || 'Avval postni saqlash kerak'
@@ -1625,7 +1617,7 @@ async function runAiRewrite() {
   // "Qaytarish" uchun TARGET tabning hozirgi holatini saqlab qo'yamiz.
   const prevTargetJson = JSON.parse(JSON.stringify(translations[target]?.content_json || { html: '' }))
   try {
-    const res = await postsApi.aiRewrite(company.value.id, postId.value, {
+    const payload = {
       lang: target,                       // backend natijani shu til tarjimasiga yozadi
       prompt_group_id: aiRewriteForm.useRecommended ? undefined : aiRewriteForm.groupId,
       provider: aiRewriteForm.provider,
@@ -1636,7 +1628,11 @@ async function runAiRewrite() {
       // Sarlavha va teglar ham birga tarjima qilinishi uchun manbani yuboramiz
       source_title: activeTr.value.title || '',
       source_tags: Array.isArray(tagsArr.value) ? [...tagsArr.value] : [],
-    })
+    }
+    // Rejimga qarab — qisqartirish yoki qayta yozish (ikkalasi bir xil logikada).
+    const res = aiMode.value === 'shorten'
+      ? await postsApi.aiShorten(company.value.id, postId.value, payload)
+      : await postsApi.aiRewrite(company.value.id, postId.value, payload)
     // Oxirgi tanlovni eslab qolamiz
     try {
       localStorage.setItem(AI_REWRITE_LS_KEY, JSON.stringify({
@@ -1659,7 +1655,8 @@ async function runAiRewrite() {
       activeLang.value = target
       editorReloadKey.value++ // editor'ni majburiy re-mount qilamiz
       const lbl = (AI_OUTPUT_LANGS.find(l => l.id === target) || {}).label || target
-      showAiBanner('success', `Sarlavha, matn va teglar "${lbl}" tiliga qayta yozildi`, prevTargetJson)
+      const verb = aiMode.value === 'shorten' ? 'qisqartirildi' : 'qayta yozildi'
+      showAiBanner('success', `Sarlavha, matn va teglar "${lbl}" tilida ${verb}`, prevTargetJson)
     }
     aiUsageStore.refresh()
     showAiRewrite.value = false

@@ -1,8 +1,8 @@
 <template>
   <div class="ds-root">
     <PageHeader
-      title="Postlarni topish"
-      subtitle="AI tanlangan kanal manbalaridan eng yaxshi postlarni topib beradi. Avval qaysi kanal uchun qidirayotganingizni tanlang."
+      title="Xabar qidirish"
+      subtitle="AI tanlangan kanal manbalaridan eng yaxshi xabarlarni topib beradi. Avval qaysi kanal uchun qidirayotganingizni tanlang."
     />
 
     <div class="ds-grid">
@@ -143,6 +143,17 @@
               <span class="ds-time-hint">{{ t.hint }}</span>
             </button>
           </div>
+          <!-- Ixtiyoriy vaqt — foydalanuvchi o'zi daqiqa kiritadi -->
+          <div class="ds-custom-time" :class="{ active: isCustomRange }">
+            <AppIcon name="Calendar" :size="14" :style="{ color: isCustomRange ? 'var(--accent)' : 'var(--muted)', flexShrink: 0 }"/>
+            <span class="ds-custom-lbl">Yoki o'zingiz kiriting:</span>
+            <input type="number" min="1" max="1440" v-model.number="customMinutes"
+              class="ds-custom-input" placeholder="masalan 10"/>
+            <span class="ds-custom-unit">daqiqa</span>
+            <button type="button" class="ds-custom-apply" :disabled="!customMinutes" @click="applyCustomMinutes">
+              Qo'llash
+            </button>
+          </div>
         </AppPanel>
 
         <!-- 5. Video filter -->
@@ -250,7 +261,7 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
@@ -272,6 +283,17 @@ defineEmits(['run', 'select-channel'])
 
 function channelLabel(c) {
   return c.display_name || (c.username ? '@' + String(c.username).replace(/^@/, '') : 'Kanal')
+}
+
+// Ixtiyoriy vaqt (daqiqa) — preset ro'yxatda bo'lmagan qiymat tanlanganda faol.
+const customMinutes = ref(null)
+const isCustomRange = computed(() =>
+  !props.timeRanges.some((t) => t.id === props.config.timeRange))
+function applyCustomMinutes() {
+  const n = Math.max(1, Math.min(1440, Number(customMinutes.value) || 0))
+  if (!n) return
+  // 60 daqiqaga bo'linsa soat, aks holda daqiqa kodida yuboramiz (backend '<son>m|h' ni parslaydi)
+  props.config.timeRange = n % 60 === 0 ? `${n / 60}h` : `${n}m`
 }
 
 const TYPE_OPTS = [
@@ -450,6 +472,24 @@ function scoreColor(v) {
 .ds-time-lbl { font-size: 12px; font-weight: 600; color: var(--text); }
 .ds-time-lbl.active { color: var(--accent); }
 .ds-time-hint { font-size: 10.5px; color: var(--muted); }
+.ds-custom-time {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 10px; padding: 10px 12px;
+  border: 1px dashed var(--border); border-radius: 10px; background: var(--panel-2, transparent);
+}
+.ds-custom-time.active { border-style: solid; border-color: var(--accent); background: var(--accent-bg); }
+.ds-custom-lbl { font-size: 12px; color: var(--text-2, var(--text)); }
+.ds-custom-input {
+  width: 84px; padding: 6px 8px; font-size: 13px;
+  border: 1px solid var(--border); border-radius: 7px; background: var(--panel); color: var(--text);
+}
+.ds-custom-input:focus { outline: none; border-color: var(--accent); }
+.ds-custom-unit { font-size: 12px; color: var(--muted); }
+.ds-custom-apply {
+  margin-left: auto; padding: 6px 14px; font-size: 12px; font-weight: 600;
+  border: none; border-radius: 7px; background: var(--accent); color: #fff; cursor: pointer;
+}
+.ds-custom-apply:disabled { opacity: .5; cursor: not-allowed; }
 
 .ds-score-box {
   display: flex; flex-direction: column; align-items: center;

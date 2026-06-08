@@ -127,6 +127,14 @@
               </div>
             </td>
             <td style="padding:10px 14px;vertical-align:middle;color:var(--muted);">{{ publishLabel(p) }}</td>
+            <td style="padding:10px 14px;vertical-align:middle;">
+              <span v-if="fmtViews(p.view_count)" class="cp-views"
+                :title="p.views_updated_at ? `Oxirgi yangilanish: ${publishLabel({ publish_at: p.views_updated_at })}` : 'Ko\'rishlar (kuniga 2 marta yangilanadi)'">
+                <AppIcon name="Eye" :size="12"/>
+                <span class="tabular">{{ fmtViews(p.view_count) }}</span>
+              </span>
+              <span v-else style="color:var(--muted);font-size:12px;">—</span>
+            </td>
             <td style="padding:10px 14px;vertical-align:middle;" @click.stop>
               <span class="cp-status-pill" :class="`tone-${statusTone(p.status)}`" :title="tt('pe.field.statusHint')">
                 <span class="cp-status-dot"/>
@@ -296,9 +304,19 @@ const headers = computed(() => [
   { key: 'original', label: 'Asl manba' },
   { key: 'langs',    label: tt('posts.col.langs') },
   { key: 'time',     label: tt('posts.col.publishAt') },
+  { key: 'views',    label: 'Ko\'rishlar' },
   { key: 'status',   label: tt('posts.col.status') },
   { key: 'actions',  label: '' },
 ])
+
+/** View sonini ixcham formatlaydi: 1234 → "1.2K", 277000 → "277K". */
+function fmtViews(n) {
+  const v = Number(n) || 0
+  if (v <= 0) return null
+  if (v < 1000) return String(v)
+  if (v < 1e6) return (v / 1e3).toFixed(v < 1e4 ? 1 : 0).replace(/\.0$/, '') + 'K'
+  return (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M'
+}
 
 // Manba URL'idan host ajratish (qalampir.uz, daryo.uz, t.me)
 function hostOf(url) {
@@ -474,6 +492,18 @@ async function removePost(p) {
   color: var(--muted);
 }
 
+.cp-views {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--success-soft, rgba(34,197,94,0.12));
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 600;
+}
+.cp-views :deep(svg) { opacity: 0.85; }
 .cp-platform-pill {
   display: inline-flex;
   align-items: center;

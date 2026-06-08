@@ -17,6 +17,7 @@ import ClientBilling from '@/views/client/ClientBilling.vue'
 import ClientTeam from '@/views/client/ClientTeam.vue'
 import ClientCategories from '@/views/client/ClientCategories.vue'
 import ClientDiscover from '@/views/client/ClientDiscover.vue'
+import ClientAnalytics from '@/views/client/ClientAnalytics.vue'
 import ClientAiPrompt from '@/views/client/ClientAiPrompt.vue'
 import ClientTelegramApi from '@/views/client/ClientTelegramApi.vue'
 import ClientSettings from '@/views/client/ClientSettings.vue'
@@ -45,6 +46,7 @@ const routes = [
   { path: '/client/channels',  component: ClientChannels },
   { path: '/client/posts',     component: ClientPosts },
   { path: '/client/discover',  component: ClientDiscover },
+  { path: '/client/analytics', component: ClientAnalytics },
   { path: '/client/posts/new',         component: PostEditor },
   { path: '/client/posts/:id/edit',    component: PostEditor },
   { path: '/client/billing',   component: ClientBilling },
