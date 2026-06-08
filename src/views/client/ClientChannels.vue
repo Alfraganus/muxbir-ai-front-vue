@@ -151,10 +151,9 @@
               </AppButton>
             </template>
             <template v-else>
-              <AppButton variant="ghost" size="sm" @click="togglePostingMode(c)"
-                :title="modeOf(c) === 'auto' ? 'Qoʻl rejimiga oʻtkazish' : 'Avto rejimga oʻtkazish'">
-                <template #icon><AppIcon :name="modeOf(c) === 'auto' ? 'Edit' : 'Bolt'" :size="12"/></template>
-                {{ modeOf(c) === 'auto' ? 'Manualga' : 'Avtoga' }}
+              <AppButton variant="ghost" size="sm" @click="openRecent(c)" title="Oxirgi 3 kunlik postlar va ko'rishlar">
+                <template #icon><AppIcon name="Eye" :size="12"/></template>
+                So'nggi postlar
               </AppButton>
               <AppButton variant="secondary" size="sm" @click="openSources(c)">
                 <template #icon><AppIcon name="Layers" :size="12"/></template>
@@ -978,6 +977,54 @@
       :channel="sourcesModalChannel"
       @close="sourcesModalChannel = null"
     />
+
+    <!-- ─── So'nggi postlar (3 kun) modal ─── -->
+    <Teleport to="body">
+      <Transition name="cc-modal">
+        <div v-if="recentOpen" class="cc-modal-backdrop" @click.self="closeRecent">
+          <div class="cc-modal cc-recent" role="dialog" aria-modal="true">
+            <button class="cc-modal-close" @click="closeRecent" aria-label="Yopish">
+              <AppIcon name="Close" :size="14"/>
+            </button>
+
+            <div class="cc-recent-head">
+              <span class="cc-recent-head-icon"><AppIcon name="Eye" :size="16"/></span>
+              <div style="min-width:0;">
+                <div class="cc-recent-title">So'nggi postlar · 3 kun</div>
+                <div class="cc-recent-sub">{{ recentChannel ? displayName(recentChannel) : '' }}</div>
+              </div>
+            </div>
+
+            <div class="cc-recent-body">
+              <div v-if="recentLoading" class="cc-recent-state">
+                <span class="cc-spinner"/> Yuklanmoqda…
+              </div>
+              <div v-else-if="recentError" class="cc-recent-state" style="color:var(--danger);">
+                {{ recentError }}
+              </div>
+              <div v-else-if="!recentPosts.length" class="cc-recent-state">
+                Oxirgi 3 kunda Telegramga yuborilgan post yo'q.
+              </div>
+              <ul v-else class="cc-recent-list">
+                <li v-for="p in recentPosts" :key="p.id" class="cc-recent-item">
+                  <div class="cc-recent-item-main">
+                    <a v-if="p.url" :href="p.url" target="_blank" rel="noopener" class="cc-recent-item-title">{{ p.title }}</a>
+                    <span v-else class="cc-recent-item-title">{{ p.title }}</span>
+                    <div class="cc-recent-item-meta">
+                      <span><AppIcon name="Calendar" :size="10"/> {{ fmtPostTime(p.sent_at) }}</span>
+                    </div>
+                  </div>
+                  <div class="cc-recent-views" :title="p.views_label ? 'Hozirgi ko\'rishlar' : 'Ko\'rish soni mavjud emas (private kanal?)'">
+                    <AppIcon name="Eye" :size="12"/>
+                    <span class="tabular">{{ p.views_label ?? '—' }}</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -1322,6 +1369,45 @@ function lastPostRelative(c) {
 }
 function gotoPosts(c) {
   router.push({ path: '/client/posts', query: { channel: c.id } })
+}
+
+// ── So'nggi postlar (3 kun) modal ─────────────────────────────────
+const recentOpen = ref(false)
+const recentLoading = ref(false)
+const recentChannel = ref(null)
+const recentPosts = ref([])
+const recentError = ref('')
+
+async function openRecent(c) {
+  recentChannel.value = c
+  recentOpen.value = true
+  recentLoading.value = true
+  recentError.value = ''
+  recentPosts.value = []
+  try {
+    recentPosts.value = await channelsApi.recentPosts(company.value.id, c.id)
+  } catch (e) {
+    recentError.value = e?.response?.data?.message || 'Postlarni yuklab bo\'lmadi'
+  } finally {
+    recentLoading.value = false
+  }
+}
+function closeRecent() {
+  recentOpen.value = false
+  recentChannel.value = null
+  recentPosts.value = []
+}
+function fmtPostTime(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  const now = new Date()
+  const sameDay = d.toDateString() === now.toDateString()
+  const y = new Date(now); y.setDate(now.getDate() - 1)
+  const isYesterday = d.toDateString() === y.toDateString()
+  const hm = d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })
+  if (sameDay) return `Bugun ${hm}`
+  if (isYesterday) return `Kecha ${hm}`
+  return `${d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' })} ${hm}`
 }
 
 // ── Tab'lar ───────────────────────────────────────────────────────
@@ -1839,7 +1925,8 @@ function stopAddPolling() {
 // ESC bilan yopish
 function handleKey(e) {
   if (e.key !== 'Escape') return
-  if (addModalOpen.value) closeAddModal()
+  if (recentOpen.value) closeRecent()
+  else if (addModalOpen.value) closeAddModal()
   else if (autoModalOpen.value) closeAutoModal()
   else if (reactivateModalOpen.value) closeReactivateModal()
 }
@@ -2644,5 +2731,50 @@ onBeforeUnmount(() => {
 @keyframes ccModalIn {
   from { opacity: 0; transform: translateY(20px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── So'nggi postlar modal ── */
+.cc-recent { max-width: 560px; }
+.cc-recent-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 48px 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.cc-recent-head-icon {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent-soft, rgba(99,102,241,0.12)); color: var(--accent);
+}
+.cc-recent-title { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.cc-recent-sub { font-size: 12px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-recent-body { padding: 12px 16px 18px; }
+.cc-recent-state {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 36px 0; color: var(--muted); font-size: 13px;
+}
+.cc-recent-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cc-recent-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 10px;
+  background: var(--panel-2, rgba(148,163,184,0.06));
+  border: 1px solid var(--border-2, transparent);
+}
+.cc-recent-item-main { flex: 1; min-width: 0; }
+.cc-recent-item-title {
+  display: block; font-size: 13px; font-weight: 500; color: var(--text);
+  text-decoration: none; line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+a.cc-recent-item-title:hover { color: var(--accent); text-decoration: underline; }
+.cc-recent-item-meta {
+  display: flex; align-items: center; gap: 4px; margin-top: 4px;
+  font-size: 11px; color: var(--muted);
+}
+.cc-recent-item-meta :deep(svg) { vertical-align: middle; opacity: 0.7; }
+.cc-recent-views {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  padding: 5px 10px; border-radius: 999px;
+  background: var(--success-soft, rgba(34,197,94,0.12));
+  color: var(--success); font-size: 12px; font-weight: 600;
 }
 </style>

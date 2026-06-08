@@ -50,7 +50,7 @@
           <input
             v-model="newValue"
             type="text"
-            :placeholder="newType === 'website' ? 'https://kun.uz (news portal manzili)' : '@kunuz yoki t.me/kunuz'"
+            :placeholder="newType === 'website' ? 'https://muxbir.ai (news portal manzili)' : '@kunuz yoki t.me/kunuz'"
             :disabled="adding"
             class="csm-input"
           />

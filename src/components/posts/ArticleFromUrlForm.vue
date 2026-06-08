@@ -18,7 +18,7 @@
       <input
         v-model="form.url"
         type="url"
-        placeholder="https://kun.uz/news/2026/..."
+        placeholder="https://muxbir.ai/news/2026/..."
         :disabled="busy"
         style="padding:10px 12px;border:1px solid var(--border-2);border-radius:6px;
                background:var(--bg);color:var(--text);font-size:13px;

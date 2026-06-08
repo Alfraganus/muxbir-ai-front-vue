@@ -28,6 +28,10 @@ export const channelsApi = {
   verify: (companyId, channelId) =>
     http.post(`/companies/${companyId}/channels/${channelId}/verify`).then(r => r.data),
 
+  /** Oxirgi 3 kunda Telegramga yuborilgan postlar — vaqti va view soni bilan */
+  recentPosts: (companyId, channelId) =>
+    http.get(`/companies/${companyId}/channels/${channelId}/recent-posts`).then(r => r.data),
+
   // ── Kanalga biriktirilgan manbalar (har kanal o'z manbalarini boshqaradi) ──
   /** Kanal manbalari ro'yxati */
   listSources: (companyId, channelId) =>
