@@ -26,10 +26,6 @@
           <NavItem v-for="n in clientInsights" :key="n.id" v-bind="n"
                    :active="isActive(n.path)" @click="navigate(n.path)" />
         </NavSection>
-        <NavSection label="Hisob">
-          <NavItem v-for="n in clientAccount" :key="n.id" v-bind="n"
-                   :active="isActive(n.path)" @click="navigate(n.path)" />
-        </NavSection>
       </template>
     </div>
 
@@ -234,17 +230,14 @@ const clientMain = computed(() => [
   { id: 'discover',   icon: 'Sparkle',  label: 'Xabar qidirish',                path: '/client/discover' },
   { id: 'categories', icon: 'Tag',      label: 'Kategoriyalar',                 path: '/client/categories' },
   { id: 'settings',   icon: 'Settings', label: 'Sozlamalar',                    path: '/client/settings' },
-])
-
-const clientInsights = computed(() => [
-  { id: 'schedule',   icon: 'Calendar', label: t.value('nav.client.schedule'),  path: null },
+  // Manbalar — sozlamalar ostida (har kanalning manbalari Kanallar > Manbalar orqali boshqariladi)
   { id: 'sources',    icon: 'Globe2',   label: t.value('nav.client.sources'),   path: null },
-  { id: 'analytics',  icon: 'Chart',    label: t.value('nav.client.analytics'), path: '/client/analytics' },
 ])
 
-const clientAccount = computed(() => [
-  { id: 'team',       icon: 'Users',    label: t.value('nav.client.team'),      path: '/client/team' },
-  { id: 'billing',    icon: 'Coin',     label: t.value('nav.client.billing'),   path: '/client/billing' },
+// Jadval (schedule), Komanda (team), Tarif va to'lov (billing) — dummy sahifalar,
+// menyudan olib tashlandi. Manbalar yuqorida, sozlamalar ostiga ko'chirildi.
+const clientInsights = computed(() => [
+  { id: 'analytics',  icon: 'Chart',    label: t.value('nav.client.analytics'), path: '/client/analytics' },
 ])
 
 // Sozlamalar nav item — tab parametri bilan keladigan barcha sub-route'lar uchun ham faol
