@@ -1234,6 +1234,18 @@ async function loadInitial() {
           translations[l].is_complete = !!tr.is_complete
         }
       }
+      // Faol til bo'sh-u, boshqa tilda kontent bo'lsa — o'sha tilni ochamiz.
+      // Masalan material faqat uz-kirillda bo'lsa, default uz-latin bo'sh form
+      // chiqarmasin: store.lang → uz → uz_cyr → ru → en tartibida birinchi
+      // kontentli til tanlanadi (URL'da ?lang= aniq berilmagan bo'lsa).
+      const langFromQuery = typeof route.query.lang === 'string' && route.query.lang in translations
+      if (!langFromQuery && !hasAnyContent(activeLang.value)) {
+        const firstFilled = [store.lang, 'uz', 'uz_cyr', 'ru', 'en'].find(l => hasAnyContent(l))
+        if (firstFilled && firstFilled !== activeLang.value) {
+          activeLang.value = firstFilled
+          editorReloadKey.value++ // editor yangi til kontenti bilan qayta yaratilsin
+        }
+      }
     }
   } finally {
     initLoading.value = false
