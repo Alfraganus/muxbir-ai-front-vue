@@ -85,10 +85,6 @@
           <span style="color:var(--muted);font-weight:400;">/ {{ formatBytes(storage.limit) }}</span>
         </div>
         <AppProgress :value="storage.used" :max="storage.limit || 1" :tone="storageTone" />
-
-        <button style="font-size:11.5px;color:var(--accent);background:transparent;border:none;padding:0;text-align:left;cursor:pointer;font-weight:500;">
-          Tarifni yangilash →
-        </button>
       </div>
     </div>
   </aside>
