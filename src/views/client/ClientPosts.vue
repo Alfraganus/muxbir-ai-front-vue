@@ -337,14 +337,19 @@ function sourceHostOf(p) {
 
 // ── Helpers ────────────────────────────────────────────────
 function titleOf(p) {
-  // Tanlangan tilning sarlavhasini ko'rsatamiz (fallback yo'q —
-  // agar bo'sh bo'lsa, foydalanuvchi shu tilda hali to'ldirmagan).
-  const tr = p.translations?.find(t => t.lang === store.lang)
-  if (tr?.title) return tr.title
-  // Hech qaysi tilda title bo'lmagan post — joker
-  const any = p.translations?.find(t => t.title)
-  if (!any) return '— ' + tt('pe.lang.notFilled')
-  return '— ' + tt('pe.lang.notFilled') + ' (' + store.lang.toUpperCase() + ')'
+  const trs = p.translations || []
+  // Sarlavha hech qachon bo'sh qolmasin: avval tanlangan til, keyin
+  // uz-latin → uz-kirill → ru → en tartibida birinchi sarlavhasi bor tilni olamiz.
+  const order = [store.lang, 'uz', 'uz_cyr', 'ru', 'en']
+  for (const lang of order) {
+    const tr = trs.find(t => t.lang === lang)
+    if (tr?.title) return tr.title
+  }
+  // Yuqoridagilarda yo'q bo'lsa — istalgan boshqa tildan
+  const any = trs.find(t => t.title)
+  if (any?.title) return any.title
+  // Hech qaysi tilda sarlavha yo'q
+  return '— ' + tt('pe.lang.notFilled')
 }
 
 function langChipState(p, l) {
