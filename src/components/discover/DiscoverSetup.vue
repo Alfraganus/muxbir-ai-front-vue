@@ -80,28 +80,53 @@
                style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px;">
             Bu turdagi manba yo'q. Boshqa turni tanlang yoki Kanallar &gt; Manbalar orqali qo'shing.
           </div>
-          <div v-else style="display:flex;flex-direction:column;gap:6px;">
-            <button v-for="s in visibleSources" :key="s.id"
-              class="ds-src" :class="{ active: config.sources.includes(s.id) }"
-              @click="toggleSrc(s.id)">
-              <span class="ds-cb" :class="{ active: config.sources.includes(s.id) }">
-                <AppIcon v-if="config.sources.includes(s.id)" name="Check" :size="11"/>
-              </span>
-              <span class="ds-src-avatar" :style="{ background: s.color }">{{ s.name.charAt(0) }}</span>
-              <div style="display:flex;flex-direction:column;flex:1;min-width:0;text-align:left;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span class="ds-srctype" :class="s.type === 'website' ? 'web' : 'tg'">
-                    <AppIcon :name="s.type === 'website' ? 'Globe' : 'Telegram'" :size="10"/>
-                  </span>
-                  <span style="font-size:13px;font-weight:600;">{{ s.name }}</span>
-                  <span class="mono" style="font-size:11px;color:var(--muted);">{{ s.handle }}</span>
-                </div>
-                <span style="font-size:11px;color:var(--muted);">
-                  {{ s.type === 'website' ? 'Veb-sayt manba' : (fmtCompact(s.subs) + ' obunachi') }}
+          <div v-else>
+            <!-- Tanlash boshqaruvi: hammasini belgilash / olib tashlash -->
+            <div class="ds-srcbar">
+              <button type="button" class="ds-srcbar-btn" @click="selectAllSrc">
+                <AppIcon name="Check" :size="11"/> Hammasini belgilash
+              </button>
+              <button type="button" class="ds-srcbar-btn" @click="clearAllSrc">
+                <AppIcon name="Close" :size="11"/> Belgini olib tashlash
+              </button>
+              <span class="ds-srcbar-count mono tabular">{{ selectedVisibleCount }}/{{ visibleSources.length }}</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <button v-for="s in visibleSources" :key="s.id"
+                class="ds-src" :class="{ active: config.sources.includes(s.id) }"
+                @click="toggleSrc(s.id)">
+                <span class="ds-cb" :class="{ active: config.sources.includes(s.id) }">
+                  <AppIcon v-if="config.sources.includes(s.id)" name="Check" :size="11"/>
                 </span>
-              </div>
-              <AppBadge :tone="config.sources.includes(s.id) ? 'accent' : 'muted'" dot>Faol</AppBadge>
-            </button>
+                <span class="ds-src-avatar" :style="{ background: s.color }">{{ s.name.charAt(0) }}</span>
+                <div style="display:flex;flex-direction:column;flex:1;min-width:0;text-align:left;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="ds-srctype" :class="s.type === 'website' ? 'web' : 'tg'">
+                      <AppIcon :name="s.type === 'website' ? 'Globe' : 'Telegram'" :size="10"/>
+                    </span>
+                    <span style="font-size:13px;font-weight:600;">{{ s.name }}</span>
+                    <span class="mono" style="font-size:11px;color:var(--muted);">{{ s.handle }}</span>
+                  </div>
+                  <span style="font-size:11px;color:var(--muted);">
+                    {{ s.type === 'website' ? 'Veb-sayt manba' : (fmtCompact(s.subs) + ' obunachi') }}
+                  </span>
+                </div>
+                <AppBadge :tone="config.sources.includes(s.id) ? 'accent' : 'muted'" dot>Faol</AppBadge>
+              </button>
+            </div>
+
+            <!-- Website manbalar: sanasi aniqlanmagan postlarni ham olish (scan oldidan saqlanadi) -->
+            <label class="ds-undated">
+              <input type="checkbox" v-model="config.allowUndated"/>
+              <span class="ds-undated-box" :class="{ active: config.allowUndated }">
+                <AppIcon v-if="config.allowUndated" name="Check" :size="11"/>
+              </span>
+              <span class="ds-undated-txt">
+                <span class="ds-undated-lbl">Sanasi aniqlanmagan postlarni ham qo'shish</span>
+                <span class="ds-undated-hint">Faqat veb-sayt manbalar uchun — sana topilmasa scan vaqti qo'yiladi. "Hoziroq scan qil"da qo'llanadi.</span>
+              </span>
+            </label>
           </div>
 
           <div class="ds-add-src">
@@ -309,6 +334,21 @@ const visibleSources = computed(() => {
   return props.sources.filter((s) => (s.type || 'telegram') === t)
 })
 
+// Ko'rinayotgan (filtrlangan) manbalardan nechtasi tanlangan — check-all hisobi
+const selectedVisibleCount = computed(() =>
+  visibleSources.value.filter((s) => props.config.sources.includes(s.id)).length)
+
+// Hammasini belgilash — ko'rinayotgan manbalarni mavjud tanlovga qo'shadi
+function selectAllSrc() {
+  const ids = visibleSources.value.map((s) => s.id)
+  props.config.sources = Array.from(new Set([...props.config.sources, ...ids]))
+}
+// Belgini olib tashlash — faqat ko'rinayotgan manbalarni tanlovdan chiqaradi
+function clearAllSrc() {
+  const vis = new Set(visibleSources.value.map((s) => s.id))
+  props.config.sources = props.config.sources.filter((id) => !vis.has(id))
+}
+
 // Tur o'zgarsa — tanlovni o'sha turdagi manbalarga moslaymiz (summary to'g'ri bo'lsin)
 watch(
   () => props.config.sourceType,
@@ -405,6 +445,39 @@ function scoreColor(v) {
   display: inline-flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 13px; flex-shrink: 0;
 }
+.ds-srcbar {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.ds-srcbar-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 26px; padding: 0 10px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--panel-2); color: var(--text-2);
+  font-size: 11.5px; font-weight: 500; cursor: pointer; font-family: inherit;
+  transition: all .12s;
+}
+.ds-srcbar-btn:hover { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 30%, var(--border)); }
+.ds-srcbar-count {
+  margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--muted);
+  padding: 2px 8px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border);
+}
+.ds-undated {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-top: 10px; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--panel-2);
+  cursor: pointer;
+}
+.ds-undated input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ds-undated-box {
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0; margin-top: 1px;
+  background: var(--panel); border: 1.5px solid var(--border);
+  display: inline-flex; align-items: center; justify-content: center; color: white;
+}
+.ds-undated-box.active { background: var(--accent); border-color: var(--accent); }
+.ds-undated-txt { display: flex; flex-direction: column; gap: 2px; }
+.ds-undated-lbl { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.ds-undated-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
 .ds-add-src {
   margin-top: 10px; padding: 10px 12px;
   background: var(--panel-2); border: 1px dashed var(--border);

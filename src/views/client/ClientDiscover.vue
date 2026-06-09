@@ -312,6 +312,7 @@ const TIME_RANGES = [
   { id: '7d',  label: "So'nggi 7 kun",   hint: 'Haftalik trend', recommended: true },
   { id: '30d', label: "So'nggi 30 kun",  hint: 'Oylik tahlil uchun' },
   { id: '90d', label: "So'nggi 3 oy",    hint: 'Mavsumiy kontent' },
+  { id: 'all', label: "Cheklanmagan",    hint: '3 oydan ortiq — barcha vaqt' },
 ]
 const CATEGORIES = [
   { id: 'all', label: 'Hammasi' },
@@ -326,6 +327,7 @@ const config = reactive({
   includeVideos: false,
   sortMode: 'best', // 'best' — eng yaxshi postlar; 'latest' — eng yangi postlar
   sourceType: 'all', // 'all' | 'telegram' | 'website'
+  allowUndated: false, // website manbalar: sanasi aniqlanmagan postlarni ham olish
 })
 
 // ── Channels + sources from backend ──────────────────────
@@ -490,6 +492,14 @@ async function scanFromEmpty(s) {
   if (!company.value || !selectedChannelId.value || !s?.ownedId) return
   scanningOwnedId.value = s.ownedId
   try {
+    // Website manba uchun "sanasiz postlar ham" sozlamasini scan oldidan saqlaymiz —
+    // shunda undated maqolalarga scan vaqti qo'yilib, ular ham natijaga tushadi.
+    // (Telegram manbada ahamiyatsiz — postlar har doim sanali.)
+    if (s.type === 'website') {
+      await channelsApi.updateSource(company.value.id, selectedChannelId.value, s.ownedId, {
+        allow_undated: !!config.allowUndated,
+      }).catch(() => {})
+    }
     await channelsApi.scanSource(company.value.id, selectedChannelId.value, s.ownedId)
     // Bir necha soniya kutib, manbalarni qayta yuklaymiz (last_scanned_at yangilanadi)
     await new Promise(r => setTimeout(r, 3000))
