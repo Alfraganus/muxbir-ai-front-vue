@@ -336,6 +336,20 @@ function sourceHostOf(p) {
 }
 
 // ── Helpers ────────────────────────────────────────────────
+// Sarlavhada HTML teglar (<b>, <i>...) yoki entity'lar bo'lsa — tozalaymiz.
+// Ro'yxatda title oddiy matn bo'lib chiqishi kerak, teg ko'rinmasin.
+function stripTitleHtml(s) {
+  if (!s) return ''
+  let t = String(s)
+    .replace(/<[^>]+>/g, '')      // teglar
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+  return t.replace(/\s+/g, ' ').trim()
+}
 function titleOf(p) {
   const trs = p.translations || []
   // Sarlavha hech qachon bo'sh qolmasin: avval tanlangan til, keyin
@@ -343,11 +357,12 @@ function titleOf(p) {
   const order = [store.lang, 'uz', 'uz_cyr', 'ru', 'en']
   for (const lang of order) {
     const tr = trs.find(t => t.lang === lang)
-    if (tr?.title) return tr.title
+    const clean = stripTitleHtml(tr?.title)
+    if (clean) return clean
   }
   // Yuqoridagilarda yo'q bo'lsa — istalgan boshqa tildan
-  const any = trs.find(t => t.title)
-  if (any?.title) return any.title
+  const any = trs.find(t => stripTitleHtml(t.title))
+  if (any) return stripTitleHtml(any.title)
   // Hech qaysi tilda sarlavha yo'q
   return '— ' + tt('pe.lang.notFilled')
 }
