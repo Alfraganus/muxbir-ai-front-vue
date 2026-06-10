@@ -1520,6 +1520,26 @@ async function loadAll() {
   }
 }
 
+// Bitta-kanal endpointlari (getStatus / setPostingMode / setSignature / saveAuto…)
+// backendda attachMetrics chaqirmaydi — sources_count, sources_telegram/website,
+// posts_7d, last_post_at, activity_series kabi HISOBLANGAN maydonlar ularda
+// bo'lmaydi. Ro'yxatdagi kanalni shunday "yalang'och" obyekt bilan to'g'ridan-to'g'ri
+// almashtirsak, UI'da manbalar 0 bo'lib ko'rinadi (refresh bosilganda tiklanadi).
+// Shu sabab eski obyektdagi metrikalarni saqlab qolib birlashtiramiz.
+const METRIC_KEYS = ['sources_count', 'sources_telegram', 'sources_website', 'posts_7d', 'last_post_at', 'activity_series']
+function replaceChannel(fresh) {
+  if (!fresh) return
+  const idx = channels.value.findIndex(x => x.id === fresh.id)
+  if (idx < 0) return false
+  const prev = channels.value[idx] || {}
+  const merged = { ...prev, ...fresh }
+  for (const k of METRIC_KEYS) {
+    if (merged[k] == null && prev[k] != null) merged[k] = prev[k]
+  }
+  channels.value.splice(idx, 1, merged)
+  return true
+}
+
 async function togglePostingMode(c) {
   const current = c.posting_mode || 'auto'
   const next = current === 'auto' ? 'manual' : 'auto'
@@ -1533,8 +1553,7 @@ async function togglePostingMode(c) {
   // auto → manual: darhol saqlaymiz
   try {
     const updated = await channelsApi.setPostingMode(company.value.id, c.id, next)
-    const idx = channels.value.findIndex(x => x.id === c.id)
-    if (idx >= 0) channels.value.splice(idx, 1, updated)
+    replaceChannel(updated)
   } catch {}
 }
 
@@ -1564,8 +1583,7 @@ async function saveSignature(htmlOrNull) {
       htmlOrNull,
     )
     // Channels ro'yxatida yangilangan kanalni almashtiramiz
-    const idx = channels.value.findIndex(x => x.id === updated.id)
-    if (idx >= 0) channels.value.splice(idx, 1, updated)
+    replaceChannel(updated)
     sigModalOpen.value = false
   } catch (e) {
     const msg = e?.response?.data?.message
@@ -1693,8 +1711,7 @@ async function saveAutoSettings() {
       auto_active_to_hour: autoWindowEnabled.value ? autoActiveToHour.value : null,
     })
 
-    const idx = channels.value.findIndex(x => x.id === updated.id)
-    if (idx >= 0) channels.value.splice(idx, 1, updated)
+    replaceChannel(updated)
     closeAutoModal()
   } catch (err) {
     const msg = err?.response?.data?.message
@@ -1729,8 +1746,7 @@ async function openReactivateModal(c) {
     const res = await channelsApi.initTelegram(company.value.id, url, c.posting_mode || 'auto')
     reactivateChannelData.value = res.channel
     reactivateDeepLink.value = res.deep_link
-    const idx = channels.value.findIndex(x => x.id === res.channel.id)
-    if (idx >= 0) channels.value.splice(idx, 1, res.channel)
+    replaceChannel(res.channel)
     if (res.channel.status !== 'connected' || (res.channel.bot_status !== 'administrator' && res.channel.bot_status !== 'creator')) {
       startReactivatePolling()
     }
@@ -1758,8 +1774,7 @@ function startReactivatePolling() {
       const fresh = await channelsApi.getStatus(company.value.id, reactivateChannelData.value.id)
       reactivateChannelData.value = fresh
       reactivateAttempts.value += 1
-      const idx = channels.value.findIndex(c => c.id === fresh.id)
-      if (idx >= 0) channels.value.splice(idx, 1, fresh)
+      replaceChannel(fresh)
       if (fresh.status === 'connected' && (fresh.bot_status === 'administrator' || fresh.bot_status === 'creator')) {
         stopReactivatePolling()
       }
@@ -1774,8 +1789,7 @@ async function checkReactivateNow() {
     const fresh = await channelsApi.getStatus(company.value.id, reactivateChannelData.value.id)
     reactivateChannelData.value = fresh
     reactivateAttempts.value += 1
-    const idx = channels.value.findIndex(c => c.id === fresh.id)
-    if (idx >= 0) channels.value.splice(idx, 1, fresh)
+    replaceChannel(fresh)
     if (fresh.status === 'connected' && (fresh.bot_status === 'administrator' || fresh.bot_status === 'creator')) {
       stopReactivatePolling()
     }
@@ -1909,9 +1923,7 @@ async function submitAdd() {
 
     // ro'yxatga ham qo'shamiz (yoki yangilaymiz)
     const finalCh = addedChannel.value
-    const idx = channels.value.findIndex(c => c.id === finalCh.id)
-    if (idx >= 0) channels.value.splice(idx, 1, finalCh)
-    else channels.value.unshift(finalCh)
+    if (!replaceChannel(finalCh)) channels.value.unshift(finalCh)
 
     if (res.channel.status === 'connected') {
       addStage.value = 'success'
@@ -1934,8 +1946,7 @@ function startAddPolling() {
     try {
       const fresh = await channelsApi.getStatus(company.value.id, addedChannel.value.id)
       addedChannel.value = fresh
-      const idx = channels.value.findIndex(c => c.id === fresh.id)
-      if (idx >= 0) channels.value.splice(idx, 1, fresh)
+      replaceChannel(fresh)
       if (fresh.status === 'connected') {
         stopAddPolling()
         addStage.value = 'success'
