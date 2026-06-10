@@ -22,7 +22,7 @@
           <NavItem v-for="n in clientMain" :key="n.id" v-bind="n"
                    :active="isActive(n.path)" @click="navigate(n.path)" />
         </NavSection>
-        <NavSection label="Insights">
+        <NavSection>
           <NavItem v-for="n in clientInsights" :key="n.id" v-bind="n"
                    :active="isActive(n.path)" @click="navigate(n.path)" />
         </NavSection>

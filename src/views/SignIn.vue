@@ -22,74 +22,97 @@
   </Transition>
 
   <div class="signin-root">
-    <!-- Left — brand canvas -->
+    <!-- ── Left — brand / product canvas ───────────────────────────── -->
     <aside class="signin-hero">
+      <div aria-hidden class="signin-hero-aurora a1"/>
+      <div aria-hidden class="signin-hero-aurora a2"/>
       <div aria-hidden class="signin-hero-dots"/>
-      <div aria-hidden class="signin-hero-glow"/>
 
+      <!-- brand row -->
       <div class="signin-hero-brand">
-        <div class="signin-hero-logo">
-          <AppIcon name="Sparkle" :size="14"/>
-        </div>
-        <span style="font-size:14px;font-weight:600;letter-spacing:-0.01em;">Muxbir AI</span>
-        <span class="signin-hero-pill">Console v2.4</span>
+        <img :src="logoWordmarkWhite" alt="Muxbir.ai" class="signin-hero-logo-img"/>
       </div>
 
-      <div style="position:relative;display:flex;flex-direction:column;gap:24px;">
-        <h1 class="signin-hero-title">{{ t('signin.hero.title') }}</h1>
-        <p class="signin-hero-sub">{{ t('signin.hero.sub') }}</p>
+      <!-- headline + pipeline -->
+      <div class="signin-hero-mid">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <span class="signin-hero-badge">
+            <AppIcon name="Robot" :size="13" style="color:var(--mx-cyan);"/>
+            Sun'iy intellektli muxbir
+          </span>
+          <h1 class="signin-hero-title">{{ t('signin.hero.title') }}</h1>
+          <p class="signin-hero-sub">{{ t('signin.hero.sub') }}</p>
+        </div>
 
-        <!-- Live feed preview -->
-        <div class="signin-feed">
-          <div class="signin-feed-head">
-            <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;">
-              <span class="signin-feed-pulse"/>
-              {{ t('signin.hero.live') }}
+        <!-- Live AI pipeline -->
+        <div class="pipe">
+          <div class="pipe-head">
+            <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:500;">
+              <span class="pipe-pulse"/>
+              Avtomatik oqim
             </div>
-            <span class="mono" style="font-size:10.5px;color:rgba(255,255,255,0.55);">auto · 12s</span>
+            <span class="mono" style="font-size:10.5px;color:rgba(255,255,255,0.5);">real-time · auto</span>
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <div v-for="(it, i) in feedItems" :key="i" class="signin-feed-item">
-              <span class="signin-feed-avatar" :style="{ background: `oklch(0.7 0.14 ${i * 80 + 30})` }">{{ it.ch[0] }}</span>
-              <div style="flex:1;min-width:0;">
-                <div class="signin-feed-meta">
-                  <span style="font-weight:500;color:rgba(255,255,255,0.92);">{{ it.ch }}</span>
-                  <span>·</span>
-                  <span>{{ it.tag }}</span>
-                </div>
-                <div class="signin-feed-title">{{ it.title }}</div>
+
+          <!-- stage rail -->
+          <div class="pipe-rail">
+            <template v-for="(s, i) in pipeStages" :key="s.id">
+              <div class="pipe-stage">
+                <span class="pipe-stage-ic"
+                  :class="{ done: i < pipeStage }"
+                  :style="i === pipeStage ? {
+                    background: `linear-gradient(140deg, ${s.tone}, rgba(255,255,255,0.1))`,
+                    color: 'var(--mx-navy)', borderColor: s.tone,
+                    boxShadow: `0 0 16px -2px ${s.tone}`,
+                  } : null">
+                  <AppIcon :name="i < pipeStage ? 'Check' : s.icon" :size="13"/>
+                </span>
+                <span class="pipe-stage-lbl" :class="{ active: i === pipeStage }">{{ s.label }}</span>
               </div>
-              <span class="signin-feed-tag" :class="it.ok ? 'ok' : 'warn'">
-                {{ it.ok ? 'Joylandi' : 'Tahrirlanmoqda' }}
-              </span>
-              <span style="font-size:10.5px;color:rgba(255,255,255,0.5);white-space:nowrap;">{{ it.time }}</span>
+              <div v-if="i < pipeStages.length - 1" class="pipe-conn">
+                <div class="pipe-conn-fill"
+                  :style="{ width: i < pipeStage ? '100%' : '0%',
+                            background: `linear-gradient(90deg, ${s.tone}, ${pipeStages[i+1].tone})` }"/>
+              </div>
+            </template>
+          </div>
+
+          <!-- live card -->
+          <div class="pipe-card" :style="{ borderColor: pipeCard.tint + '40' }">
+            <span class="pipe-card-ic" :style="{ background: pipeCard.tint + '22', color: pipeCard.tint }">
+              <AppIcon :name="pipeStages[pipeStage].icon" :size="13"/>
+            </span>
+            <div style="flex:1;min-width:0;">
+              <div class="pipe-card-top">
+                <span class="pipe-card-tag" :style="{ color: pipeCard.tint }">{{ pipeCard.tag.toUpperCase() }}</span>
+                <span v-if="pipeCard.typing" class="pipe-typing">
+                  <span class="mx-dot1" :style="{ background: pipeCard.tint }"/>
+                  <span class="mx-dot2" :style="{ background: pipeCard.tint }"/>
+                  <span class="mx-dot3" :style="{ background: pipeCard.tint }"/>
+                </span>
+                <AppIcon v-if="pipeCard.posted" name="Check" :size="12" :style="{ color: pipeCard.tint }"/>
+              </div>
+              <div class="pipe-card-body">{{ pipeCard.body }}</div>
+              <span class="mono pipe-card-badge">{{ pipeCard.badge }}</span>
+            </div>
+          </div>
+
+          <!-- stats footer -->
+          <div class="pipe-stats">
+            <div v-for="(s, i) in pipeStats" :key="i" class="pipe-stat" :class="{ bl: i > 0 }">
+              <div class="tabular pipe-stat-v">{{ s.v }}</div>
+              <div class="pipe-stat-l">{{ s.l }}</div>
             </div>
           </div>
         </div>
-
-        <!-- Stats strip -->
-        <div class="signin-stats">
-          <div v-for="(s, i) in stats" :key="i" class="signin-stat" :class="{ 'with-border': i > 0 }">
-            <div class="tabular" style="font-size:22px;font-weight:600;letter-spacing:-0.02em;">{{ t(s.vKey) }}</div>
-            <div style="font-size:11.5px;color:rgba(255,255,255,0.7);">{{ t(s.lKey) }}</div>
-          </div>
-        </div>
       </div>
 
-      <div class="signin-hero-foot">
-        <div style="display:flex;">
-          <span v-for="(n, i) in avatars" :key="i" class="signin-hero-avatar"
-            :style="{ background: `oklch(0.75 0.12 ${i * 60})`, marginLeft: i ? '-6px' : 0 }">{{ n }}</span>
-        </div>
-        <span>{{ t('signin.hero.clients') }}</span>
-      </div>
     </aside>
 
-    <!-- Right — sign-in form -->
+    <!-- ── Right — sign-in form ────────────────────────────────────── -->
     <section class="signin-form-wrap">
       <div aria-hidden class="signin-form-dots"/>
       <div aria-hidden class="signin-form-glow-1"/>
-      <div aria-hidden class="signin-form-glow-2"/>
 
       <header class="signin-header">
         <div class="signin-status">
@@ -110,22 +133,20 @@
       </header>
 
       <div class="signin-center">
+        <!-- brand logo above card -->
+        <div class="signin-form-logo">
+          <img :src="logoLockup" alt="Muxbir.ai" class="signin-form-logo-img"/>
+        </div>
+
         <div class="signin-card">
           <div aria-hidden class="signin-card-accent"/>
 
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-            <span class="signin-card-icon">
-              <AppIcon name="Shield" :size="15"/>
-            </span>
-            <div style="display:flex;flex-direction:column;">
-              <h2 style="font-size:20px;font-weight:600;letter-spacing:-0.022em;margin:0;">
-                {{ t('signin.title') }}
-              </h2>
-              <span style="font-size:11.5px;color:var(--muted);">
-                {{ t('signin.subtitle') }}
-              </span>
-            </div>
-          </div>
+          <h2 style="font-size:21px;font-weight:600;letter-spacing:-0.025em;margin:0 0 3px;">
+            {{ t('signin.title') }}
+          </h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 18px;">
+            {{ t('signin.subtitle') }}
+          </p>
 
           <!-- Method tabs -->
           <div class="signin-tabs">
@@ -144,7 +165,7 @@
           </div>
 
           <!-- Password method -->
-          <div v-if="method === 'password'" style="display:flex;flex-direction:column;gap:12px;">
+          <div v-if="method === 'password'" style="display:flex;flex-direction:column;gap:13px;">
             <div class="signin-field">
               <label class="signin-field-label">{{ t('signin.email') }}</label>
               <AppInput v-model="email" :placeholder="t('signin.emailPlaceholder')" type="email">
@@ -168,14 +189,14 @@
               <input type="checkbox" v-model="remember" style="accent-color:var(--accent);"/>
               <span>{{ t('signin.rememberMe') }}</span>
             </label>
-            <AppButton variant="primary" size="lg" :loading="loading" :style="{ width: '100%', marginTop: '6px', justifyContent: 'center' }" @click="onLogin">
+            <AppButton variant="primary" size="lg" :loading="loading" :style="{ width: '100%', marginTop: '4px', justifyContent: 'center' }" @click="onLogin">
               {{ t('signin.loginBtn') }}
               <template #icon-right><AppIcon name="Arrow" :size="14"/></template>
             </AppButton>
           </div>
 
           <!-- Magic link method -->
-          <div v-else-if="method === 'magic'" style="display:flex;flex-direction:column;gap:12px;">
+          <div v-else-if="method === 'magic'" style="display:flex;flex-direction:column;gap:13px;">
             <template v-if="!magicSent">
               <div class="signin-field">
                 <label class="signin-field-label">{{ t('signin.email') }}</label>
@@ -188,7 +209,7 @@
                   {{ t('signin.magicNote') }}
                 </div>
               </div>
-              <AppButton variant="primary" size="lg" :loading="loading" :style="{ width: '100%', marginTop: '6px', justifyContent: 'center' }" @click="onSendMagicLink">
+              <AppButton variant="primary" size="lg" :loading="loading" :style="{ width: '100%', marginTop: '4px', justifyContent: 'center' }" @click="onSendMagicLink">
                 {{ t('signin.sendLink') }}
                 <template #icon-right><AppIcon name="Arrow" :size="14"/></template>
               </AppButton>
@@ -204,31 +225,6 @@
             </div>
           </div>
 
-          <!-- Divider -->
-          <div class="signin-divider">
-            <div class="signin-divider-line"/>
-            <span>{{ t('signin.orQuick') }}</span>
-            <div class="signin-divider-line"/>
-          </div>
-
-          <!-- OAuth row -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <AppButton variant="secondary" size="lg" :style="{ justifyContent: 'center' }" @click="onTelegramClick">
-              <template #icon><AppIcon name="Telegram" :size="14" style="color:#229ED9;"/></template>
-              Telegram
-            </AppButton>
-            <AppButton variant="secondary" size="lg" :style="{ justifyContent: 'center' }">
-              <template #icon>
-                <svg width="14" height="14" viewBox="0 0 48 48">
-                  <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.5 13.3 17.7 9.5 24 9.5z"/>
-                  <path fill="#4285F4" d="M46.9 24.5c0-1.6-.2-3.2-.5-4.7H24v9h12.9c-.6 3-2.3 5.5-4.9 7.2l7.5 5.8c4.4-4.1 6.9-10.1 6.9-17.3z"/>
-                  <path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.9-6.1C1 16.4 0 20.1 0 24c0 3.9 1 7.6 2.6 10.8l7.9-6.1z"/>
-                  <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.5-3.8-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/>
-                </svg>
-              </template>
-              Google
-            </AppButton>
-          </div>
         </div>
 
         <!-- Trust strip -->
@@ -258,7 +254,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -270,6 +266,8 @@ import { resolveRole, homePathForRole } from '@/utils/authRole.js'
 import { DICT } from '@/i18n/index.js'
 import { useAppStore } from '@/stores/app.js'
 import { useAuthStore } from '@/stores/auth.js'
+import logoWordmarkWhite from '@/assets/muxbir-wordmark-white.png'
+import logoLockup from '@/assets/muxbir-logo.png'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -300,19 +298,27 @@ const methods = [
   { id: 'magic',    labelKey: 'signin.methodMagic',    icon: 'Sparkle' },
 ]
 
-const stats = [
-  { vKey: 'signin.hero.stat1v', lKey: 'signin.hero.stat1l' },
-  { vKey: 'signin.hero.stat2v', lKey: 'signin.hero.stat2l' },
-  { vKey: 'signin.hero.stat3v', lKey: 'signin.hero.stat3l' },
+// ── Live AI pipeline (topildi → AI tahrir → tarjima → joylandi) ──────
+const pipeStages = [
+  { id: 'find',  icon: 'Search',   label: 'Topildi',   tone: '#4AA3FF' },
+  { id: 'edit',  icon: 'Sparkle',  label: 'AI tahrir', tone: '#46E0FF' },
+  { id: 'trans', icon: 'Globe2',   label: 'Tarjima',   tone: '#9af3c5' },
+  { id: 'post',  icon: 'Telegram', label: 'Joylandi',  tone: '#34d399' },
 ]
-
-const avatars = ['AL', 'MK', 'RZ', 'SH']
-
-const feedItems = [
-  { ch: 'Daryo.uz',      tag: 'Yangiliklar',   title: "Toshkentda yangi metro stansiyasi ochildi", time: '2 daq', ok: true },
-  { ch: 'Olcha Express', tag: 'E-commerce',    title: 'Black Friday — bugun kechki soat 22:00',    time: '5 daq', ok: true },
-  { ch: 'Sport.uz',      tag: "Ko'ngil ochar", title: "Pakhtakor — Bunyodkor o'yini natijasi",     time: '8 daq', ok: false },
+const pipeCards = [
+  { tag: 'Manba topildi',      badge: 'Daryo.uz · RSS · 2 daq',   body: "Toshkentda yangi metro bekati ochildi — rasmiy ma'lumot", tint: '#4AA3FF' },
+  { tag: 'AI qayta yozmoqda',  badge: 'GPT tahrir · ohang: rasmiy', body: 'Poytaxtda yangi metro bekati foydalanishga topshirildi', tint: '#46E0FF', typing: true },
+  { tag: 'Tarjima qilinmoqda', badge: 'UZ → RU · EN',             body: 'В столице открыта новая станция метро', tint: '#9af3c5' },
+  { tag: 'Kanalga joylandi',   badge: '@Jurnalist24uz · 184K',    body: 'Poytaxtda yangi metro bekati foydalanishga topshirildi', tint: '#34d399', posted: true },
 ]
+const pipeStats = [
+  { v: '4.8M', l: 'Oylik post' },
+  { v: '240+', l: 'Faol kanal' },
+  { v: '92%',  l: 'Vaqt tejaldi' },
+]
+const pipeStage = ref(0)
+const pipeCard = computed(() => pipeCards[pipeStage.value])
+let pipeTimer = null
 
 async function onLogin() {
   error.value = ''
@@ -346,40 +352,9 @@ async function onLogin() {
   }
 }
 
-function onTelegramClick() {
-  if (!window.Telegram?.Login) {
-    error.value = t('signin.err.telegramNotReady')
-    return
-  }
-  window.Telegram.Login.auth(
-    { bot_id: import.meta.env.VITE_TELEGRAM_BOT_ID, request_access: true },
-    async (data) => {
-      if (!data) return
-      error.value = ''
-      loading.value = true
-      try {
-        const res = await authApi.telegramAuth(data)
-        authStore.setTokens(res)
-        const target = homePathForRole(resolveRole(res.user))
-        showWelcome.value = true
-        await new Promise((r) => setTimeout(r, 1600))
-        showWelcome.value = false
-        await router.push(target)
-      } catch {
-        error.value = t('signin.err.generic')
-      } finally {
-        loading.value = false
-      }
-    },
-  )
-}
-
 onMounted(() => {
-  const script = document.createElement('script')
-  script.src = 'https://telegram.org/js/telegram-widget.js?22'
-  script.async = true
-  document.head.appendChild(script)
-  onUnmounted(() => script.remove())
+  pipeTimer = setInterval(() => { pipeStage.value = (pipeStage.value + 1) % 4 }, 2100)
+  onUnmounted(() => { if (pipeTimer) clearInterval(pipeTimer) })
 })
 
 async function onSendMagicLink() {
@@ -410,166 +385,204 @@ async function onSendMagicLink() {
 
 <style scoped>
 .signin-root {
+  /* Muxbir.ai brand palette (yangi ko'k wordmark + glow) */
+  --mx-navy: #081834;
+  --mx-deep: #0E2A66;
+  --mx-blue: #2F6FED;
+  --mx-sky:  #4AA3FF;
+  --mx-cyan: #46E0FF;
+  --mx-glow: rgba(74,163,255,0.55);
+
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1.05fr 1fr;
+  grid-template-columns: 1.04fr 0.96fr;
   background: var(--bg);
 }
 
 /* ── Hero (left) ─────────────────────────────────────────────── */
 .signin-hero {
   position: relative;
-  background: linear-gradient(155deg,
-    color-mix(in oklab, var(--accent) 92%, black) 0%,
-    color-mix(in oklab, var(--accent) 70%, #111) 55%,
-    #0b1430 100%);
+  background: linear-gradient(157deg, var(--mx-navy) 0%, var(--mx-deep) 52%, #061026 100%);
   color: white;
-  padding: 40px 56px;
+  padding: 40px 52px 38px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   overflow: hidden;
+}
+.signin-hero-aurora {
+  position: absolute; border-radius: 999px; pointer-events: none;
+}
+.signin-hero-aurora.a1 {
+  top: -18%; right: -12%; width: 520px; height: 520px;
+  background: radial-gradient(circle, var(--mx-blue) 0%, transparent 62%);
+  opacity: 0.55; filter: blur(8px);
+  animation: mxAurora 16s ease-in-out infinite;
+}
+.signin-hero-aurora.a2 {
+  bottom: -22%; left: -10%; width: 460px; height: 460px;
+  background: radial-gradient(circle, var(--mx-cyan) 0%, transparent 60%);
+  opacity: 0.22; filter: blur(10px);
+  animation: mxAurora 20s ease-in-out infinite reverse;
+}
+@keyframes mxAurora {
+  0%   { transform: translate(0,0) rotate(0deg); }
+  50%  { transform: translate(4%,-3%) rotate(8deg); }
+  100% { transform: translate(0,0) rotate(0deg); }
 }
 .signin-hero-dots {
   position: absolute; inset: 0;
   background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
-  background-size: 22px 22px;
-  mask-image: radial-gradient(ellipse 80% 60% at 30% 30%, black 30%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 30% 30%, black 30%, transparent 75%);
-}
-.signin-hero-glow {
-  position: absolute; top: -120px; right: -120px;
-  width: 480px; height: 480px; border-radius: 999px;
-  background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 60%);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse 90% 70% at 35% 25%, black 25%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 35% 25%, black 25%, transparent 78%);
 }
 .signin-hero-brand {
   position: relative;
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 13px;
 }
-.signin-hero-logo {
-  width: 28px; height: 28px; border-radius: 8px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
-  display: inline-flex; align-items: center; justify-content: center;
+.signin-hero-logo-img {
+  height: 30px; width: auto; display: block; user-select: none;
+}
+.signin-hero-mid {
+  position: relative;
+  display: flex; flex-direction: column; gap: 22px;
+  max-width: 500px;
+  margin-top: clamp(28px, 7vh, 72px);
+}
+.signin-hero-badge {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11.5px; font-weight: 500; color: rgba(255,255,255,0.82);
+  padding: 5px 11px; border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.16);
   backdrop-filter: blur(8px);
 }
-.signin-hero-pill {
-  margin-left: 6px; font-size: 10px; padding: 2px 7px; border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.2);
-  text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
-}
 .signin-hero-title {
-  font-size: 38px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.08;
-  margin: 0; max-width: 520px; text-wrap: balance;
+  font-size: 37px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.08;
+  margin: 0; text-wrap: balance;
 }
 .signin-hero-sub {
   margin: 0; font-size: 14.5px; line-height: 1.55;
-  color: rgba(255,255,255,0.78); max-width: 460px;
+  color: rgba(255,255,255,0.72);
 }
 
-/* Stats */
-.signin-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  padding: 14px 0;
-}
-.signin-stat { padding: 0 18px; }
-.signin-stat.with-border { border-left: 1px solid rgba(255,255,255,0.12); }
-
-/* Hero footer */
-.signin-hero-foot {
-  position: relative; display: flex; align-items: center; gap: 14px;
-  font-size: 12px; color: rgba(255,255,255,0.65);
-}
-.signin-hero-avatar {
-  width: 22px; height: 22px; border-radius: 999px;
-  font-size: 9.5px; font-weight: 600; color: white;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1.5px solid color-mix(in oklab, var(--accent) 70%, #111);
-}
-
-/* Live feed */
-.signin-feed {
-  background: rgba(255,255,255,0.08);
+/* ── AI pipeline ─────────────────────────────────────────────── */
+.pipe {
+  position: relative;
+  background: rgba(255,255,255,0.07);
   border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 14px;
-  padding: 12px;
-  backdrop-filter: blur(14px);
-  box-shadow: 0 20px 60px -20px rgba(0,0,0,0.4);
+  border-radius: 16px; padding: 14px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 24px 60px -24px rgba(0,0,0,0.5);
 }
-.signin-feed-head {
+.pipe-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 2px 6px 10px;
+  padding: 0 2px 11px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
-.signin-feed-pulse {
+.pipe-pulse {
   width: 7px; height: 7px; border-radius: 999px;
   background: #34d399;
   box-shadow: 0 0 0 3px rgba(52,211,153,0.25);
 }
-.signin-feed-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
+.pipe-rail {
+  display: flex; align-items: center; margin-bottom: 12px;
 }
-.signin-feed-avatar {
-  width: 24px; height: 24px; border-radius: 6px;
-  font-size: 10px; font-weight: 600;
-  display: inline-flex; align-items: center; justify-content: center;
+.pipe-stage {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
   flex-shrink: 0;
 }
-.signin-feed-meta {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 10.5px; color: rgba(255,255,255,0.65);
+.pipe-stage-ic {
+  width: 30px; height: 30px; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.14);
+  transition: all .4s ease;
 }
-.signin-feed-title {
-  font-size: 12px; color: white;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  margin-top: 1px;
+.pipe-stage-ic.done {
+  background: rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.92);
 }
-.signin-feed-tag {
-  font-size: 10px; padding: 2px 6px; border-radius: 4px;
-  font-weight: 500; white-space: nowrap;
+.pipe-stage-lbl {
+  font-size: 9.5px; font-weight: 500; color: rgba(255,255,255,0.5);
+  transition: color .3s;
 }
-.signin-feed-tag.ok   { background: rgba(52,211,153,0.18); color: #9af3c5; }
-.signin-feed-tag.warn { background: rgba(255,180,80,0.18); color: #ffd58a; }
+.pipe-stage-lbl.active { color: white; }
+.pipe-conn {
+  flex: 1; height: 2px; margin: 0 4px 18px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px; overflow: hidden;
+}
+.pipe-conn-fill { height: 100%; transition: width .5s ease; }
+
+.pipe-card {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid transparent; border-radius: 11px;
+  transition: border-color .4s ease;
+}
+.pipe-card-ic {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.pipe-card-top {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 3px;
+}
+.pipe-card-tag {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+}
+.pipe-typing { display: inline-flex; gap: 2px; }
+.pipe-typing > span { width: 3px; height: 3px; border-radius: 999px; }
+.pipe-card-body {
+  font-size: 12.5px; color: white; line-height: 1.35; margin-bottom: 5px;
+}
+.pipe-card-badge { font-size: 10px; color: rgba(255,255,255,0.55); }
+
+.pipe-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  margin-top: 12px; padding-top: 11px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.pipe-stat { padding: 0 14px; }
+.pipe-stat.bl { border-left: 1px solid rgba(255,255,255,0.1); }
+.pipe-stat-v { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+.pipe-stat-l { font-size: 10.5px; color: rgba(255,255,255,0.6); }
+
+.mx-dot1 { animation: mxDots 1.1s infinite; }
+.mx-dot2 { animation: mxDots 1.1s infinite .18s; }
+.mx-dot3 { animation: mxDots 1.1s infinite .36s; }
+@keyframes mxDots {
+  0%, 80%, 100% { opacity: .25; transform: translateY(0); }
+  40%           { opacity: 1;  transform: translateY(-2px); }
+}
 
 /* ── Form (right) ────────────────────────────────────────────── */
 .signin-form-wrap {
   position: relative;
   display: flex; flex-direction: column;
-  padding: 28px 48px 24px;
+  padding: 26px 48px 22px;
   background: var(--bg);
   overflow: hidden;
 }
 .signin-form-dots {
   position: absolute; inset: 0;
-  background-image: radial-gradient(color-mix(in oklab, var(--text) 8%, transparent) 1px, transparent 1px);
+  background-image: radial-gradient(color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px);
   background-size: 24px 24px;
-  mask-image: radial-gradient(ellipse 80% 90% at 50% 50%, black 20%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 90% at 50% 50%, black 20%, transparent 80%);
+  mask-image: radial-gradient(ellipse 80% 90% at 50% 45%, black 15%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 90% at 50% 45%, black 15%, transparent 80%);
   opacity: 0.6;
   pointer-events: none;
 }
 .signin-form-glow-1 {
-  position: absolute; top: -120px; right: -100px;
+  position: absolute; top: -130px; right: -90px;
   width: 360px; height: 360px; border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in oklab, var(--accent) 16%, transparent) 0%, transparent 60%);
-  filter: blur(20px);
-  pointer-events: none;
-}
-.signin-form-glow-2 {
-  position: absolute; bottom: -140px; left: -80px;
-  width: 320px; height: 320px; border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in oklab, #6E56CF 12%, transparent) 0%, transparent 60%);
-  filter: blur(20px);
+  background: radial-gradient(circle, color-mix(in oklab, var(--mx-blue) 16%, transparent) 0%, transparent 62%);
+  filter: blur(18px);
   pointer-events: none;
 }
 
@@ -579,8 +592,8 @@ async function onSendMagicLink() {
   gap: 16px;
 }
 .signin-status {
-  display: inline-flex; align-items: center; gap: 6px;
-  height: 26px; padding: 0 10px;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 27px; padding: 0 11px;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -605,31 +618,31 @@ async function onSendMagicLink() {
   position: relative;
   flex: 1;
   display: flex; flex-direction: column; justify-content: center;
-  max-width: 420px; width: 100%; margin: 0 auto;
-  padding: 24px 0;
+  max-width: 416px; width: 100%; margin: 0 auto;
+  padding: 20px 0;
+}
+.signin-form-logo {
+  display: flex; align-items: center; margin-bottom: 20px;
+}
+.signin-form-logo-img {
+  height: 52px; width: auto; display: block; user-select: none;
 }
 
 .signin-card {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 28px 28px 26px;
+  border-radius: 18px;
+  padding: 26px 26px 24px;
   box-shadow:
-    0 30px 80px -28px rgba(15,23,42,0.18),
-    0 8px 24px -12px rgba(15,23,42,0.08),
-    0 0 0 1px rgba(255,255,255,0.6) inset;
+    0 30px 80px -28px rgba(8,24,52,0.22),
+    0 8px 24px -12px rgba(8,24,52,0.10),
+    0 0 0 1px rgba(255,255,255,0.55) inset;
   position: relative;
 }
 .signin-card-accent {
-  position: absolute; top: -1px; left: 24px; right: 24px; height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--accent) 50%, transparent), transparent);
-}
-.signin-card-icon {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: var(--accent-bg);
-  color: var(--accent);
-  border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent);
-  display: inline-flex; align-items: center; justify-content: center;
+  position: absolute; top: -1px; left: 26px; right: 26px; height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--mx-blue), var(--mx-cyan), transparent);
 }
 
 /* Tabs */
@@ -637,17 +650,17 @@ async function onSendMagicLink() {
   display: flex; padding: 3px;
   background: var(--panel-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 9px;
   margin-bottom: 16px;
 }
 .signin-tab {
-  flex: 1; height: 28px;
+  flex: 1; height: 30px;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   font-size: 12px; font-weight: 500;
   background: transparent;
   color: var(--muted);
   border: 1px solid transparent;
-  border-radius: 6px; cursor: pointer;
+  border-radius: 7px; cursor: pointer;
 }
 .signin-tab.active {
   background: var(--panel);
@@ -681,7 +694,7 @@ async function onSendMagicLink() {
   border: 1px solid color-mix(in oklab, var(--danger) 25%, transparent);
   border-radius: 8px;
   font-size: 12px; color: var(--danger);
-  margin-bottom: 4px;
+  margin-bottom: 12px;
 }
 
 /* Magic sent */
@@ -699,16 +712,8 @@ async function onSendMagicLink() {
   padding: 10px 12px;
   background: var(--accent-bg);
   border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
-  border-radius: 8px;
+  border-radius: 9px;
 }
-
-/* Divider */
-.signin-divider {
-  display: flex; align-items: center; gap: 10px;
-  color: var(--muted); font-size: 11px;
-  margin: 16px 0 12px;
-}
-.signin-divider-line { flex: 1; height: 1px; background: var(--border); }
 
 /* Trust strip */
 .signin-trust {
@@ -725,7 +730,7 @@ async function onSendMagicLink() {
 
 .signin-terms {
   font-size: 11px; color: var(--muted); text-align: center;
-  margin: 10px auto 0; line-height: 1.6; max-width: 380px;
+  margin: 10px auto 0; line-height: 1.6; max-width: 360px;
 }
 .signin-terms a {
   color: var(--text-2); text-decoration: underline; cursor: pointer;
@@ -742,10 +747,7 @@ async function onSendMagicLink() {
 .welcome-overlay {
   position: fixed; inset: 0; z-index: 9999;
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(155deg,
-    color-mix(in oklab, var(--accent) 92%, black) 0%,
-    color-mix(in oklab, var(--accent) 70%, #111) 55%,
-    #0b1430 100%);
+  background: linear-gradient(157deg, #081834 0%, #0E2A66 52%, #061026 100%);
   color: white;
   overflow: hidden;
 }
@@ -761,7 +763,7 @@ async function onSendMagicLink() {
   width: 720px; height: 720px;
   transform: translate(-50%, -50%);
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 60%);
+  background: radial-gradient(circle, rgba(74,163,255,0.30) 0%, transparent 60%);
   filter: blur(10px);
   animation: welcomeGlow 2s ease-out forwards;
 }
