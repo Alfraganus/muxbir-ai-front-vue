@@ -21,6 +21,7 @@ import ClientAnalytics from '@/views/client/ClientAnalytics.vue'
 import ClientAiPrompt from '@/views/client/ClientAiPrompt.vue'
 import ClientTelegramApi from '@/views/client/ClientTelegramApi.vue'
 import ClientSettings from '@/views/client/ClientSettings.vue'
+import PostsQueue from '@/views/client/PostsQueue.vue'
 import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
 import MagicAuth from '@/views/MagicAuth.vue'
@@ -55,6 +56,7 @@ const routes = [
   { path: '/client/ai-prompt',  component: ClientAiPrompt },
   { path: '/client/telegram-api', component: ClientTelegramApi },
   { path: '/client/settings', component: ClientSettings },
+  { path: '/client/queue',   component: PostsQueue },
   { path: '/signup',           component: Onboarding },
 ]
 

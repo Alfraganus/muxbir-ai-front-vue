@@ -224,6 +224,9 @@
 
       <!-- RIGHT: sticky summary -->
       <div class="ds-side">
+        <!-- Internetdan qidirish (Google-ga o'xshash) — xulosadan tepada -->
+        <slot name="side-top"/>
+
         <AppPanel :padding="0">
           <div class="ds-side-head">
             <span class="ds-side-ic">

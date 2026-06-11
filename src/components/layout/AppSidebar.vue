@@ -105,6 +105,7 @@ import WorkspaceSwitcher from './WorkspaceSwitcher.vue'
 import NavItem from './NavItem.vue'
 import NavSection from './NavSection.vue'
 import { useAppStore } from '@/stores/app.js'
+import { queueApi } from '@/api/queue.js'
 import { useStorageStore } from '@/stores/storage.js'
 import { useAiUsageStore } from '@/stores/aiUsage.js'
 import { usePostsUsageStore } from '@/stores/postsUsage.js'
@@ -172,6 +173,7 @@ function refreshAll() {
   ai.refresh()
   postsUsage.refresh()
   loadChannelsCount()
+  loadQueueCounts()
 }
 
 onMounted(() => {
@@ -201,6 +203,18 @@ const adminNav = computed(() => [
   { id: 'system',    icon: 'Server',   label: t.value('nav.admin.system'),     path: null },
 ])
 
+// Navbat soni (pending)
+const counts = ref({ pending: 0, approved: 0 })
+
+async function loadQueueCounts() {
+  try {
+    const cid = store.companyId
+    if (!cid) return
+    const c = await queueApi.counts(cid)
+    counts.value = c ?? counts.value
+  } catch {}
+}
+
 // Real kanal soni — backend'dan onMounted'da yuklanadi
 const channelsCount = ref(null)
 
@@ -223,6 +237,7 @@ const clientMain = computed(() => [
   { id: 'overview',   icon: 'Home',     label: t.value('nav.client.overview'),  path: '/client/overview' },
   { id: 'channels',   icon: 'Telegram', label: t.value('nav.client.channels'),  path: '/client/channels', count: channelsCount.value ?? undefined },
   { id: 'posts',      icon: 'Send',     label: t.value('nav.client.posts'),     path: '/client/posts', count: postsUsage.used || undefined },
+  { id: 'queue',      icon: 'Check',    label: 'Navbat',                        path: '/client/queue', count: counts.value?.pending || undefined },
   { id: 'discover',   icon: 'Sparkle',  label: 'Xabar qidirish',                path: '/client/discover' },
   { id: 'categories', icon: 'Tag',      label: 'Kategoriyalar',                 path: '/client/categories' },
   { id: 'settings',   icon: 'Settings', label: 'Sozlamalar',                    path: '/client/settings' },

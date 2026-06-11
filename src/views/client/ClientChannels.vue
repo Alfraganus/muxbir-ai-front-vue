@@ -317,8 +317,68 @@
                     </div>
                   </div>
 
-                  <!-- Interval -->
+                  <!-- Tasdiqlash usuli -->
                   <div class="cc-field">
+                    <label class="cc-field-label">
+                      <AppIcon name="Shield" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                      Tasdiqlash usuli
+                    </label>
+                    <div class="cc-delivery-grid">
+                      <button type="button" class="cc-delivery-card"
+                        :class="{ active: autoDeliveryMode === 'approval' }"
+                        @click="autoDeliveryMode = 'approval'">
+                        <span class="cc-delivery-icon">
+                          <AppIcon name="Check" :size="15"/>
+                        </span>
+                        <div style="flex:1;min-width:0;">
+                          <div class="cc-delivery-title">Tasdiqdan keyin</div>
+                          <div class="cc-delivery-sub">Mobil ilovada ko'rib, siz tasdiqlagan post yuboriladi</div>
+                        </div>
+                        <span v-if="autoDeliveryMode === 'approval'" class="cc-mode-card-check">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                      </button>
+                      <button type="button" class="cc-delivery-card"
+                        :class="{ active: autoDeliveryMode === 'direct' }"
+                        @click="autoDeliveryMode = 'direct'">
+                        <span class="cc-delivery-icon direct">
+                          <AppIcon name="Bolt" :size="15"/>
+                        </span>
+                        <div style="flex:1;min-width:0;">
+                          <div class="cc-delivery-title">To'g'ridan-to'g'ri</div>
+                          <div class="cc-delivery-sub">AI postlar avtomatik Telegramga yuboriladi</div>
+                        </div>
+                        <span v-if="autoDeliveryMode === 'direct'" class="cc-mode-card-check">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                      </button>
+                    </div>
+                    <div v-if="autoDeliveryMode === 'direct'"
+                      style="margin-top:8px;padding:9px 11px;border-radius:7px;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);color:#854d0e;font-size:11.5px;line-height:1.5;">
+                      ⚡ <b>Diqqat:</b> AI xatosi bo'lsa — to'g'ridan-to'g'ri kanalga chiqadi, tasdiq yo'q.
+                    </div>
+                  </div>
+
+                  <!-- Yuborish rejimi -->
+                  <div class="cc-field">
+                    <label class="cc-field-label">
+                      <AppIcon name="Bolt" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                      Yuborish rejimi
+                    </label>
+                    <div class="cc-chip-row">
+                      <button type="button" class="cc-chip" :class="{ active: autoMode === 'interval' }"
+                        @click="autoMode = 'interval'">Interval</button>
+                      <button type="button" class="cc-chip" :class="{ active: autoMode === 'scheduled' }"
+                        @click="autoMode = 'scheduled'">Belgilangan vaqt</button>
+                    </div>
+                    <div class="cc-field-hint">
+                      {{ autoDeliveryMode === 'approval' ? "Topilgan postlar mobil ilovada tasdiqlangach yuboriladi." : "Postlar avtomatik yuboriladi." }}
+                      Interval — har N daqiqada; Belgilangan vaqt — kuniga tanlangan soatlarda to'plam.
+                    </div>
+                  </div>
+
+                  <!-- Interval -->
+                  <div v-if="autoMode === 'interval'" class="cc-field">
                     <label class="cc-field-label">
                       <AppIcon name="Bolt" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
                       Yuborish intervali
@@ -333,6 +393,51 @@
                       <input type="number" min="1" max="10080" v-model.number="autoInterval"
                         class="cc-inline-num"/>
                       daqiqa
+                    </div>
+                    <div class="cc-field-hint" style="margin-top:6px;">
+                      Tayyor turadigan post (buffer):
+                      <input type="number" min="1" max="20" v-model.number="autoIntervalBatchCount"
+                        class="cc-inline-num"/>
+                      ta
+                    </div>
+                  </div>
+
+                  <!-- Belgilangan vaqtlar (scheduled) -->
+                  <div v-if="autoMode === 'scheduled'" class="cc-field">
+                    <label class="cc-field-label">
+                      <AppIcon name="Calendar" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                      Yuborish vaqtlari
+                    </label>
+                    <div v-if="autoScheduleTimes.length" class="cc-chip-row">
+                      <span v-for="t in autoScheduleTimes" :key="t" class="cc-chip active"
+                        style="cursor:default;gap:6px;">
+                        {{ t }}
+                        <span @click="removeScheduleTime(t)"
+                          style="cursor:pointer;font-weight:700;opacity:.75;">×</span>
+                      </span>
+                    </div>
+                    <div class="cc-window-row">
+                      <input type="time" v-model="newScheduleTime" class="cc-window-select"/>
+                      <button type="button" class="cc-chip" @click="addScheduleTime">+ Qo'shish</button>
+                    </div>
+                    <div class="cc-auto-row" style="margin-top:8px;">
+                      <div class="cc-field" style="flex:1;min-width:140px;">
+                        <label class="cc-field-label">Har vaqt uchun nechta post</label>
+                        <div class="cc-num-input">
+                          <button type="button" @click="autoBatchCount = Math.max(1, autoBatchCount - 1)">−</button>
+                          <input type="number" min="1" max="100" v-model.number="autoBatchCount"/>
+                          <button type="button" @click="autoBatchCount = Math.min(100, autoBatchCount + 1)">+</button>
+                        </div>
+                      </div>
+                      <div class="cc-field" style="flex:1;min-width:140px;">
+                        <label class="cc-field-label">Necha daqiqa oldin yig'ilsin</label>
+                        <input type="number" min="0" max="1440" v-model.number="autoCollectLeadMinutes"
+                          class="cc-inline-num"/>
+                      </div>
+                    </div>
+                    <div class="cc-field-hint">
+                      Tanlangan vaqtlarda (Toshkent) shuncha post tayyorlanadi. Yig'ish belgilangan
+                      vaqtdan {{ autoCollectLeadMinutes }} daqiqa oldin boshlanadi.
                     </div>
                   </div>
 
@@ -590,282 +695,433 @@
             </div>
 
             <div class="cc-modal-body">
-              <div class="cc-auto" style="background:transparent;border:none;padding:0;">
-                <!-- Interval -->
-                <div class="cc-field">
-                  <label class="cc-field-label">
-                    <AppIcon name="Bolt" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                    Yuborish intervali
-                  </label>
-                  <div class="cc-chip-row">
-                    <button v-for="o in INTERVAL_PRESETS" :key="o.value" type="button"
-                      class="cc-chip" :class="{ active: autoInterval === o.value }"
-                      @click="autoInterval = o.value">{{ o.label }}</button>
-                  </div>
-                  <div class="cc-field-hint">
-                    Boshqa qiymat:
-                    <input type="number" min="1" max="10080" v-model.number="autoInterval" class="cc-inline-num"/>
-                    daqiqa
-                  </div>
-                </div>
+              <div class="cc-settings-wrap">
 
-                <!-- Faol vaqt oynasi -->
-                <div class="cc-field">
-                  <label class="cc-field-label">
-                    <AppIcon name="Calendar" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                    Faol vaqt oynasi
-                  </label>
-                  <label class="cc-window-toggle">
-                    <input type="checkbox" v-model="autoWindowEnabled"/>
-                    <span>Faqat belgilangan soatlar oralig'ida yuborilsin</span>
-                  </label>
-                  <div v-if="autoWindowEnabled" class="cc-window-row">
-                    <select v-model.number="autoActiveFromHour" class="cc-window-select">
-                      <option v-for="h in HOUR_OPTIONS" :key="'f'+h.value" :value="h.value">{{ h.label }}</option>
-                    </select>
-                    <span class="cc-window-sep">dan</span>
-                    <select v-model.number="autoActiveToHour" class="cc-window-select">
-                      <option v-for="h in HOUR_OPTIONS" :key="'t'+h.value" :value="h.value">{{ h.label }}</option>
-                    </select>
-                    <span class="cc-window-sep">gacha</span>
+                <!-- ═══ 1. YETKAZISH USULI ═══ -->
+                <div class="cc-section">
+                  <div class="cc-section-head">
+                    <span class="cc-section-icon" style="background:color-mix(in oklab,var(--success) 14%,transparent);color:var(--success);">
+                      <AppIcon name="Send" :size="14"/>
+                    </span>
+                    <div>
+                      <div class="cc-section-title">Yetkazish usuli</div>
+                      <div class="cc-section-sub">Tayyor post Telegramga qanday chiqadi</div>
+                    </div>
                   </div>
-                  <div class="cc-field-hint">
-                    Autopost faqat shu soatlar oralig'ida ishlaydi (Toshkent vaqti). Masalan 08:00 dan 22:00 gacha.
-                  </div>
-                </div>
 
-                <!-- Kategoriyalar -->
-                <div class="cc-field">
-                  <label class="cc-field-label">
-                    <AppIcon name="Hash" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                    Mavzular (kategoriyalar)
-                  </label>
-                  <div v-if="!categories.length" class="cc-field-hint" style="padding:6px 0;">
-                    Hali kategoriya yo'q —
-                    <a href="#/client/categories" class="cc-modal-link" style="display:inline;padding:0;">
-                      kategoriyalar bo'limidan qo'shing
-                    </a>
-                  </div>
-                  <div v-else class="cc-chip-row">
-                    <button v-for="cat in categories" :key="cat.id" type="button"
-                      class="cc-chip" :class="{ active: autoCategoryIds.includes(cat.id) }"
-                      :style="autoCategoryIds.includes(cat.id) && cat.color
-                        ? { borderColor: cat.color, background: cat.color + '1f', color: cat.color }
-                        : null"
-                      @click="toggleAutoCategory(cat.id)">
-                      <span v-if="cat.color" class="cc-chip-dot" :style="{background: cat.color}"/>
-                      {{ cat.name }}
+                  <div class="cc-delivery-grid">
+                    <button type="button" class="cc-delivery-card" :class="{ active: autoDeliveryMode === 'approval' }" @click="autoDeliveryMode = 'approval'">
+                      <span class="cc-delivery-icon"><AppIcon name="Check" :size="15"/></span>
+                      <div style="flex:1;min-width:0;">
+                        <div class="cc-delivery-title">Tasdiqdan keyin</div>
+                        <div class="cc-delivery-sub">Postlar avval mobil ilovada ko'rinadi — siz OK bergandan keyingina yuboriladi</div>
+                      </div>
+                      <span v-if="autoDeliveryMode === 'approval'" class="cc-mode-card-check">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                      </span>
+                    </button>
+                    <button type="button" class="cc-delivery-card" :class="{ active: autoDeliveryMode === 'direct' }" @click="autoDeliveryMode = 'direct'">
+                      <span class="cc-delivery-icon direct"><AppIcon name="Bolt" :size="15"/></span>
+                      <div style="flex:1;min-width:0;">
+                        <div class="cc-delivery-title">To'g'ridan-to'g'ri</div>
+                        <div class="cc-delivery-sub">AI tayyor qilgan post darhol kanalga chiqadi, tasdiq kutmaydi</div>
+                      </div>
+                      <span v-if="autoDeliveryMode === 'direct'" class="cc-mode-card-check">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                      </span>
                     </button>
                   </div>
-                  <div v-if="categories.length" class="cc-field-hint">
-                    Bo'sh qoldirilsa — hamma mavzulardan post tanlanadi
+                  <div class="cc-info-box" :class="autoDeliveryMode === 'direct' ? 'warn' : 'info'">
+                    <template v-if="autoDeliveryMode === 'approval'">
+                      💡 <b>Tavsiya etiladi.</b> AI topgan post mobil ilovada <b>Navbat</b> tabida ko'rinadi.
+                      Siz matnni tahrirlash, qisqartirish yoki rad etish imkoniga egasiz.
+                      Tasdiqlagan post belgilangan vaqtda kanalga yuboriladi.
+                    </template>
+                    <template v-else>
+                      ⚡ <b>Diqqat:</b> postlar mobil ilovada ko'rinmaydi va tasdiqsiz kanalga chiqadi.
+                      AI xatosi yoki noto'g'ri matn bo'lsa ham to'g'ridan-to'g'ri abonentlarga boradi.
+                      Faqat ishonchli prompt bo'lganda yoqing.
+                    </template>
                   </div>
                 </div>
 
-                <!-- Filtrlar -->
-                <div class="cc-auto-row">
-                  <div class="cc-field" style="flex:1;min-width:160px;">
-                    <label class="cc-field-label">Qancha vaqt oralig'idagi ma'lumotlar izlansin</label>
+                <!-- ═══ 2. REJALASHTIRISH ═══ -->
+                <div class="cc-section">
+                  <div class="cc-section-head">
+                    <span class="cc-section-icon" style="background:color-mix(in oklab,var(--accent) 14%,transparent);color:var(--accent);">
+                      <AppIcon name="Calendar" :size="14"/>
+                    </span>
+                    <div>
+                      <div class="cc-section-title">Rejalashtirish</div>
+                      <div class="cc-section-sub">Postlar qachon va qancha chiqadi</div>
+                    </div>
+                  </div>
+
+                  <!-- Rejim tanlash -->
+                  <div class="cc-field">
+                    <label class="cc-field-label">Yuborish rejimi</label>
+                    <div class="cc-mode-grid">
+                      <button type="button" class="cc-mode-card" :class="{ active: autoMode === 'interval' }" @click="autoMode = 'interval'">
+                        <span class="cc-mode-card-icon"><AppIcon name="Bolt" :size="14"/></span>
+                        <div style="flex:1;min-width:0;">
+                          <div class="cc-mode-card-title">Interval</div>
+                          <div class="cc-mode-card-sub">Har N soatda bir marta</div>
+                        </div>
+                        <span v-if="autoMode === 'interval'" class="cc-mode-card-check">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                      </button>
+                      <button type="button" class="cc-mode-card" :class="{ active: autoMode === 'scheduled' }" @click="autoMode = 'scheduled'">
+                        <span class="cc-mode-card-icon"><AppIcon name="Calendar" :size="14"/></span>
+                        <div style="flex:1;min-width:0;">
+                          <div class="cc-mode-card-title">Belgilangan vaqt</div>
+                          <div class="cc-mode-card-sub">Kuniga aniq soatlarda to'plam</div>
+                        </div>
+                        <span v-if="autoMode === 'scheduled'" class="cc-mode-card-check">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- INTERVAL sozlamalari -->
+                  <template v-if="autoMode === 'interval'">
+                    <div class="cc-field">
+                      <label class="cc-field-label">Yuborish intervali</label>
+                      <div class="cc-chip-row">
+                        <button v-for="o in INTERVAL_PRESETS" :key="o.value" type="button"
+                          class="cc-chip" :class="{ active: autoInterval === o.value }"
+                          @click="autoInterval = o.value">{{ o.label }}</button>
+                      </div>
+                      <div class="cc-field-hint">
+                        Boshqa qiymat: <input type="number" min="1" max="10080" v-model.number="autoInterval" class="cc-inline-num"/> daqiqa
+                      </div>
+                      <div class="cc-info-box info" style="margin-top:8px;">
+                        💡 Har <b>{{ intervalPreviewText }}</b> bir post Telegramga yuboriladi.
+                        <template v-if="autoDeliveryMode === 'approval'"> Foydalanuvchi tasdiqlagan birinchi post ketadi.</template>
+                        <template v-else> Post tasdiqsiz avtomatik chiqadi.</template>
+                      </div>
+                    </div>
+
+                    <div v-if="autoDeliveryMode === 'approval'" class="cc-field">
+                      <label class="cc-field-label">Navbatdagi postlar (buffer)</label>
+                      <div style="display:flex;align-items:center;gap:12px;">
+                        <div class="cc-num-input" style="width:auto;">
+                          <button type="button" @click="autoIntervalBatchCount = Math.max(1, autoIntervalBatchCount - 1)">−</button>
+                          <input type="number" min="1" max="20" v-model.number="autoIntervalBatchCount" style="width:44px;"/>
+                          <button type="button" @click="autoIntervalBatchCount = Math.min(20, autoIntervalBatchCount + 1)">+</button>
+                        </div>
+                        <span style="font-size:12.5px;color:var(--text-2);">ta post doim tayyor turadi</span>
+                      </div>
+                      <div class="cc-info-box info" style="margin-top:8px;">
+                        💡 <b>Buffer nima?</b> Bot oldindan <b>{{ autoIntervalBatchCount }} ta</b> post yig'ib qo'yadi va mobil ilovaga yuboradi.
+                        Siz ularni ko'rib chiqasiz. Har intervalda bitta tasdiqlangan post kanalga ketadi.
+                        <br><br>
+                        <b>Misol:</b> buffer = 5, interval = 3 soat → ilovada 5 ta post navbatda turadi → har 3 soatda 1 tasi Telegramga chiqadi.
+                        Buferni oshirsa — keyin tasdiqlash uchun ko'proq vaqtingiz bo'ladi.
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- SCHEDULED sozlamalari -->
+                  <template v-if="autoMode === 'scheduled'">
+                    <div class="cc-field">
+                      <label class="cc-field-label">Yuborish vaqtlari <span style="color:var(--muted);font-weight:400;">(Toshkent vaqti)</span></label>
+                      <div v-if="autoScheduleTimes.length" class="cc-chip-row" style="margin-bottom:8px;">
+                        <span v-for="t in autoScheduleTimes" :key="t" class="cc-chip active" style="cursor:default;gap:6px;">
+                          {{ t }}
+                          <span @click="removeScheduleTime(t)" style="cursor:pointer;font-weight:700;opacity:.7;font-size:14px;line-height:1;">×</span>
+                        </span>
+                      </div>
+                      <div v-else class="cc-info-box warn" style="margin-bottom:8px;">
+                        ⏰ Hali vaqt qo'shilmagan. Quyida vaqt tanlang.
+                      </div>
+                      <div class="cc-window-row">
+                        <input type="time" v-model="newScheduleTime" class="cc-window-select"/>
+                        <button type="button" class="cc-chip" style="font-weight:600;" @click="addScheduleTime">+ Qo'shish</button>
+                      </div>
+                      <div class="cc-field-hint">Bir necha vaqt qo'shsa bo'ladi, masalan 08:00, 13:00, 19:00</div>
+                    </div>
+
+                    <div class="cc-auto-row" style="align-items:flex-start;">
+                      <div class="cc-field" style="flex:1;min-width:140px;">
+                        <label class="cc-field-label">Har vaqtda nechta post</label>
+                        <div class="cc-num-input">
+                          <button type="button" @click="autoBatchCount = Math.max(1, autoBatchCount - 1)">−</button>
+                          <input type="number" min="1" max="100" v-model.number="autoBatchCount"/>
+                          <button type="button" @click="autoBatchCount = Math.min(100, autoBatchCount + 1)">+</button>
+                        </div>
+                        <div class="cc-field-hint">Belgilangan har bir soatda shuncha post chiqadi</div>
+                      </div>
+                      <div class="cc-field" style="flex:1;min-width:140px;">
+                        <label class="cc-field-label">Oldindan yig'ish (daqiqa)</label>
+                        <input type="number" min="0" max="1440" v-model.number="autoCollectLeadMinutes" class="cc-inline-num" style="width:80px;"/>
+                        <div class="cc-field-hint">Bot bu vaqt oldin postlarni yig'a boshlaydi</div>
+                      </div>
+                    </div>
+
+                    <div v-if="scheduledPreviewText" class="cc-info-box info">
+                      📅 <b>Natija:</b> {{ scheduledPreviewText.timesStr }}. <br>
+                      ⏳ Har safar {{ scheduledPreviewText.leadStr }}.
+                      <template v-if="autoDeliveryMode === 'approval'"> Postlar mobil ilovada tasdiqlanadi.</template>
+                    </div>
+                    <div v-else class="cc-info-box info">
+                      💡 <b>Misol:</b> vaqtlar = 08:00 va 18:00, har vaqt = 5 ta → 08:00 da 5 ta, 18:00 da 5 ta post chiqadi. Bot 07:00 dan yig'a boshlaydi (60 daqiqa oldin).
+                    </div>
+                  </template>
+
+                  <!-- Faol soatlar -->
+                  <div class="cc-field">
+                    <label class="cc-field-label">Faol soatlar oynasi</label>
+                    <label class="cc-window-toggle">
+                      <input type="checkbox" v-model="autoWindowEnabled"/>
+                      <span>Faqat belgilangan soatlar ichida ishlaydi</span>
+                    </label>
+                    <div v-if="autoWindowEnabled" class="cc-window-row" style="margin-top:8px;">
+                      <select v-model.number="autoActiveFromHour" class="cc-window-select">
+                        <option v-for="h in HOUR_OPTIONS" :key="'f'+h.value" :value="h.value">{{ h.label }}</option>
+                      </select>
+                      <span class="cc-window-sep">dan</span>
+                      <select v-model.number="autoActiveToHour" class="cc-window-select">
+                        <option v-for="h in HOUR_OPTIONS" :key="'t'+h.value" :value="h.value">{{ h.label }}</option>
+                      </select>
+                      <span class="cc-window-sep">gacha</span>
+                    </div>
+                    <div class="cc-field-hint">
+                      <template v-if="autoWindowEnabled">
+                        Bot faqat {{ String(autoActiveFromHour).padStart(2,'0') }}:00 – {{ String(autoActiveToHour).padStart(2,'0') }}:00 orasida post yuboradi (Toshkent vaqti). Bu oraliqdan tashqarida yig'ilsa ham yuborilmaydi.
+                      </template>
+                      <template v-else>
+                        Yoqilmagan — bot kun bo'yi ishlaydi. Kechasi chiqishini xohlamasangiz yoqing.
+                      </template>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ═══ 3. KENGAYTIRILGAN FILTRLAR ═══ -->
+                <button type="button" class="cc-advanced-toggle" @click="advancedFiltersOpen = !advancedFiltersOpen">
+                  <span class="cc-advanced-toggle-icon" :style="{ transform: advancedFiltersOpen ? 'rotate(90deg)' : 'none' }">›</span>
+                  <span class="cc-section-icon sm" style="background:color-mix(in oklab,var(--accent) 10%,transparent);color:var(--accent);">
+                    <AppIcon name="Layers" :size="12"/>
+                  </span>
+                  <span>Qaysi postlar tanlansin</span>
+                  <span class="cc-advanced-badge">
+                    {{ [
+                      autoFilters.source_type !== 'all' ? autoFilters.source_type : null,
+                      autoCategoryIds.length ? autoCategoryIds.length + ' mavzu' : null,
+                      autoFilters.keywords ? 'kalit so\'z' : null,
+                    ].filter(Boolean).join(' · ') || 'barcha postlar' }}
+                  </span>
+                </button>
+
+                <div v-if="advancedFiltersOpen" class="cc-advanced-body">
+                  <!-- Mavzular -->
+                  <div class="cc-field">
+                    <label class="cc-field-label"><AppIcon name="Hash" :size="11" style="vertical-align:middle;margin-right:4px;"/>Mavzular (kategoriyalar)</label>
+                    <div v-if="!categories.length" class="cc-field-hint" style="padding:4px 0;">
+                      Hali kategoriya yo'q —
+                      <a href="#/client/categories" class="cc-modal-link" style="display:inline;padding:0;">qo'shing</a>
+                    </div>
+                    <div v-else class="cc-chip-row">
+                      <button v-for="cat in categories" :key="cat.id" type="button"
+                        class="cc-chip" :class="{ active: autoCategoryIds.includes(cat.id) }"
+                        :style="autoCategoryIds.includes(cat.id) && cat.color ? { borderColor: cat.color, background: cat.color + '1f', color: cat.color } : null"
+                        @click="toggleAutoCategory(cat.id)">
+                        <span v-if="cat.color" class="cc-chip-dot" :style="{background: cat.color}"/>
+                        {{ cat.name }}
+                      </button>
+                    </div>
+                    <div class="cc-field-hint">Bo'sh — hamma mavzulardan tanlanadi. Tanlansa — faqat shu kategoriyalarga mos postlar o'tadi.</div>
+                  </div>
+
+                  <!-- Vaqt oralig'i + har kanaldan -->
+                  <div class="cc-auto-row" style="align-items:flex-start;">
+                    <div class="cc-field" style="flex:1;min-width:160px;">
+                      <label class="cc-field-label">Qaysi vaqt doirasidagi postlar izlansin</label>
+                      <div class="cc-chip-row">
+                        <button v-for="o in TIME_RANGE_OPTIONS" :key="o.value" type="button"
+                          class="cc-chip" :class="{ active: autoFilters.time_range === o.value }"
+                          @click="setTimeRange(o.value)">{{ o.label }}</button>
+                      </div>
+                      <div class="cc-field-hint">
+                        <template v-if="autoFilters.time_range === 'unlimited'">
+                          ♾️ Cheklanmagan — barcha saqlangan postlardan eng <b>qiziqarlisi</b> (reyting bo'yicha) tanlanadi.
+                        </template>
+                        <template v-else>
+                          Manbalarda so'nggi <b>{{ {'3h':'3 soat','6h':'6 soat','12h':'12 soat','24h':'24 soat'}[autoFilters.time_range] || autoFilters.time_range }}</b> ichida chiqgan postlar ko'rib chiqiladi.
+                        </template>
+                      </div>
+                    </div>
+                    <div class="cc-field" style="flex:0 0 140px;">
+                      <label class="cc-field-label">Har bir manbadan</label>
+                      <div class="cc-num-input">
+                        <button type="button" @click="autoFilters.per_channel = Math.max(1, autoFilters.per_channel - 1)">−</button>
+                        <input type="number" min="1" max="30" v-model.number="autoFilters.per_channel"/>
+                        <button type="button" @click="autoFilters.per_channel = Math.min(30, autoFilters.per_channel + 1)">+</button>
+                      </div>
+                      <div class="cc-field-hint">Ko'p manba bo'lsa bitta manbaga e'tibor qilmaydi</div>
+                    </div>
+                  </div>
+
+                  <!-- Saralash + Takrorlanish -->
+                  <div class="cc-auto-row" style="align-items:flex-start;">
+                    <div class="cc-field" style="flex:1;">
+                      <label class="cc-field-label">Saralash</label>
+                      <div class="cc-chip-row">
+                        <button v-for="o in SORT_MODE_OPTIONS" :key="o.value" type="button"
+                          class="cc-chip" :class="{ active: autoFilters.sort_mode === o.value }"
+                          @click="autoFilters.sort_mode = o.value">{{ o.label }}</button>
+                      </div>
+                      <div class="cc-field-hint">
+                        <b>⭐ Yuqori ballli</b> — ko'rish/like/ulashish soni yuqori postlar.
+                        <b>🕒 Eng oxirgi</b> — yangi chiqgan postlar (breaking news uchun yaxshi).
+                      </div>
+                    </div>
+                    <div class="cc-field" style="flex:1;">
+                      <label class="cc-field-label">Takrorlanishga sezgirlik</label>
+                      <div class="cc-chip-row">
+                        <button v-for="th in [{v:0.3,l:'Past'},{v:0.5,l:'O\'rta'},{v:0.7,l:'Yuqori'}]"
+                          :key="th.v" type="button" class="cc-chip"
+                          :class="{ active: autoFilters.similarity_threshold === th.v }"
+                          @click="autoFilters.similarity_threshold = th.v">{{ th.l }}</button>
+                      </div>
+                      <div class="cc-field-hint">
+                        <b>Past</b> — o'xshash postlar ham o'tadi (ko'proq tanlash).
+                        <b>Yuqori</b> — kanalda mavjud postga o'xshasa rad etadi (kam tanlash).
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Manba turi -->
+                  <div class="cc-field">
+                    <label class="cc-field-label">Manba turi</label>
                     <div class="cc-chip-row">
-                      <button v-for="o in TIME_RANGE_OPTIONS" :key="o.value" type="button"
-                        class="cc-chip" :class="{ active: autoFilters.time_range === o.value }"
-                        @click="setTimeRange(o.value)">{{ o.label }}</button>
+                      <button v-for="o in SOURCE_TYPE_OPTIONS" :key="o.value" type="button"
+                        class="cc-chip" :class="{ active: autoFilters.source_type === o.value }"
+                        @click="autoFilters.source_type = o.value">{{ o.label }}</button>
                     </div>
-                    <div v-if="autoFilters.time_range === 'unlimited'" class="cc-field-hint">
-                      Vaqt cheklanmaydi — eng <strong>qiziqarli</strong> (ballli) postlar tanlanadi, eng oxirgisi emas.
+                    <div class="cc-field-hint">Faqat Telegram, faqat website yoki ikkalasidan birdan tanlasin</div>
+                  </div>
+
+                  <!-- Til + media -->
+                  <div class="cc-auto-row" style="align-items:flex-start;">
+                    <div class="cc-field" style="flex:1;">
+                      <label class="cc-field-label">AI chiqish tili</label>
+                      <div class="cc-chip-row">
+                        <button v-for="l in LANG_OPTIONS" :key="l.value" type="button"
+                          class="cc-chip" :class="{ active: autoOutputLanguage === l.value }"
+                          @click="autoOutputLanguage = l.value">{{ l.label }}</button>
+                      </div>
+                      <div class="cc-field-hint">Manba qaysi tilda bo'lishidan qat'i nazar — post shu tilda chiqadi</div>
                     </div>
-                  </div>
-                  <div class="cc-field" style="flex:0 0 150px;">
-                    <label class="cc-field-label">Har kanaldan</label>
-                    <div class="cc-num-input">
-                      <button type="button" @click="autoFilters.per_channel = Math.max(1, autoFilters.per_channel - 1)">−</button>
-                      <input type="number" min="1" max="30" v-model.number="autoFilters.per_channel"/>
-                      <button type="button" @click="autoFilters.per_channel = Math.min(30, autoFilters.per_channel + 1)">+</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="cc-field">
-                  <label class="cc-field-label">Takrorlanishga sezgirlik</label>
-                  <div class="cc-chip-row">
-                    <button v-for="th in [{v:0.3,l:'Past (ko\'p tanlash)'},{v:0.5,l:'O\'rta'},{v:0.7,l:'Yuqori (kam tanlash)'}]"
-                      :key="th.v" type="button" class="cc-chip"
-                      :class="{ active: autoFilters.similarity_threshold === th.v }"
-                      @click="autoFilters.similarity_threshold = th.v">{{ th.l }}</button>
-                  </div>
-                  <div class="cc-field-hint">Yangi post o'zimizning eski post bilan o'xshashlik darajasi</div>
-                </div>
-
-                <div class="cc-field">
-                  <label class="cc-field-label">Saralash usuli</label>
-                  <div class="cc-chip-row">
-                    <button v-for="o in SORT_MODE_OPTIONS" :key="o.value" type="button"
-                      class="cc-chip" :class="{ active: autoFilters.sort_mode === o.value }"
-                      @click="autoFilters.sort_mode = o.value">{{ o.label }}</button>
-                  </div>
-                  <div class="cc-field-hint">
-                    "Eng oxirgi" — eng yangi maqolalar (sana bo'yicha) birinchi post qilinadi.
-                    "Yuqori ballli" — ko'rish/ulashish/reaksiyaga ko'ra eng yaxshi postlar.
-                  </div>
-                </div>
-
-                <div class="cc-field">
-                  <label class="cc-field-label">Til</label>
-                  <div class="cc-chip-row">
-                    <button v-for="l in LANG_OPTIONS" :key="l.value" type="button"
-                      class="cc-chip" :class="{ active: autoOutputLanguage === l.value }"
-                      @click="autoOutputLanguage = l.value">{{ l.label }}</button>
-                  </div>
-                  <div class="cc-field-hint">
-                    AI postni shu tilda chiqaradi. Manba qaysi tilda bo'lishidan qat'i nazar — tanlangan tilga tarjima qilinadi.
-                  </div>
-                </div>
-
-                <div class="cc-auto-row">
-                  <label class="cc-toggle-row">
-                    <input type="checkbox" v-model="autoFilters.include_videos"/>
-                    <span>Video postlarni qo'shish</span>
-                  </label>
-                  <label class="cc-toggle-row">
-                    <input type="checkbox" v-model="autoFilters.require_media"/>
-                    <span>Faqat media bilan</span>
-                  </label>
-                </div>
-
-                <div class="cc-auto-row">
-                  <div class="cc-field" style="flex:0 0 140px;">
-                    <label class="cc-field-label">Min. uzunlik</label>
-                    <div class="cc-num-input">
-                      <input type="number" min="0" v-model.number="autoFilters.min_length"/>
-                      <span style="padding:0 8px;font-size:11px;color:var(--muted);">belgi</span>
+                    <div class="cc-field" style="flex:0 0 160px;">
+                      <label class="cc-field-label">Media</label>
+                      <label class="cc-toggle-row"><input type="checkbox" v-model="autoFilters.include_videos"/><span>Video postlar</span></label>
+                      <label class="cc-toggle-row" style="margin-top:5px;"><input type="checkbox" v-model="autoFilters.require_media"/><span>Faqat media bilan</span></label>
                     </div>
                   </div>
-                  <div class="cc-field" style="flex:1;min-width:200px;">
-                    <label class="cc-field-label">Kalit so'zlar</label>
-                    <input type="text" class="cc-text-input" v-model="autoFilters.keywords"
-                      placeholder="iqtisod, valyuta, banki..."/>
-                    <div class="cc-field-hint">Vergul bilan ajrating — kamida bittasi matnda bo'lsa o'tadi</div>
+
+                  <!-- Min uzunlik + kalit so'zlar -->
+                  <div class="cc-auto-row" style="align-items:flex-start;">
+                    <div class="cc-field" style="flex:0 0 140px;">
+                      <label class="cc-field-label">Min. matn uzunligi</label>
+                      <div class="cc-num-input">
+                        <input type="number" min="0" v-model.number="autoFilters.min_length"/>
+                        <span style="padding:0 8px;font-size:11px;color:var(--muted);">belgi</span>
+                      </div>
+                      <div class="cc-field-hint">Qisqaroq postlar o'tkazilmaydi</div>
+                    </div>
+                    <div class="cc-field" style="flex:1;min-width:200px;">
+                      <label class="cc-field-label">Kalit so'zlar filtri</label>
+                      <input type="text" class="cc-text-input" v-model="autoFilters.keywords" placeholder="iqtisod, valyuta, bank..."/>
+                      <div class="cc-field-hint">Vergul bilan ajrating. Matnda kamida bitta kalit so'z bo'lsa o'tadi. Bo'sh — filtr yo'q.</div>
+                    </div>
                   </div>
                 </div>
 
-                <!-- ── AI sozlamalari (prompt + provider + model + recommended) ── -->
-                <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
-                  <label class="cc-field-label">
-                    <AppIcon name="Sparkle" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                    AI rewrite — prompt, provayder va model
-                  </label>
+                <!-- ═══ 4. AI SOZLAMALARI ═══ -->
+                <button type="button" class="cc-advanced-toggle" @click="advancedAiOpen = !advancedAiOpen">
+                  <span class="cc-advanced-toggle-icon" :style="{ transform: advancedAiOpen ? 'rotate(90deg)' : 'none' }">›</span>
+                  <span class="cc-section-icon sm" style="background:color-mix(in oklab,var(--accent) 10%,transparent);color:var(--accent);">
+                    <AppIcon name="Sparkle" :size="12"/>
+                  </span>
+                  <span>AI sozlamalari</span>
+                  <span class="cc-advanced-badge">{{ autoProvider }} · {{ autoModel || 'default' }}</span>
+                </button>
 
-                  <!-- Tavsiya etilgan prompt checkbox — faqat admin shu turdagi prompt yaratgan bo'lsa -->
-                  <label v-if="autoRecommended.exists" class="cc-recommend"
-                         :class="{ on: autoUseRecommended }">
+                <div v-if="advancedAiOpen" class="cc-advanced-body">
+                  <!-- Tavsiya etilgan prompt -->
+                  <label v-if="autoRecommended.exists" class="cc-recommend" :class="{ on: autoUseRecommended }">
                     <input type="checkbox" v-model="autoUseRecommended"/>
                     <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
                       <span style="font-size:13px;font-weight:600;color:var(--text);">
                         ✨ Tavsiya etilgan promptdan foydalanish
-                        <span v-if="autoRecommended.name" style="color:var(--muted);font-weight:400;">
-                          — {{ autoRecommended.name }}
-                        </span>
+                        <span v-if="autoRecommended.name" style="color:var(--muted);font-weight:400;">— {{ autoRecommended.name }}</span>
                       </span>
-                      <span style="font-size:11px;color:var(--muted);">
-                        Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi.
-                      </span>
+                      <span style="font-size:11px;color:var(--muted);">Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi.</span>
                     </div>
                   </label>
-                  <div v-else-if="autoRecommended.loaded"
-                       style="padding:9px 11px;border-radius:7px;background:rgba(245,158,11,.08);
-                              border:1px solid rgba(245,158,11,.25);color:#92400e;font-size:11.5px;
-                              line-height:1.5;margin-bottom:8px;">
-                    ⚠️ Tavsiya etilgan autopost prompti hali admin tomonidan yaratilmagan.
+                  <div v-else-if="autoRecommended.loaded" class="cc-info-box warn">
+                    ⚠️ Admin hali autopost uchun tavsiya etilgan prompt yaratmagan.
                   </div>
 
                   <!-- Prompt to'plami -->
-                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
-                    <span style="font-size:12px;font-weight:500;color:var(--muted);">Prompt to'plami</span>
-                    <div v-if="!aiPromptGroups.length && !autoUseRecommended"
-                         style="padding:10px 12px;border:1px dashed var(--border-2);border-radius:7px;
-                                font-size:12px;color:var(--muted);text-align:center;">
+                  <div class="cc-field">
+                    <label class="cc-field-label">Prompt to'plami</label>
+                    <div v-if="!aiPromptGroups.length && !autoUseRecommended" class="cc-info-box info">
                       Hali prompt to'plami yo'q.
-                      <a href="#/client/ai-prompt" class="cc-modal-link" style="display:inline;padding:0;">
-                        AI prompt sahifasida yarating
-                      </a>
+                      <a href="#/client/ai-prompt" class="cc-modal-link" style="display:inline;padding:0;margin-left:4px;">AI prompt sahifasida yarating</a>
                     </div>
-                    <select v-else v-model="autoPromptGroupId"
-                            :disabled="autoUseRecommended"
-                            :style="{
-                              padding: '9px 12px',
-                              border: '1px solid var(--border-2)',
-                              borderRadius: '7px',
-                              background: autoUseRecommended ? 'var(--panel-2, rgba(99,102,241,.04))' : 'var(--bg)',
-                              color: autoUseRecommended ? 'var(--muted)' : 'var(--text)',
-                              opacity: autoUseRecommended ? 0.5 : 1,
-                              cursor: autoUseRecommended ? 'not-allowed' : 'pointer',
-                              fontSize: '13px',
-                            }">
-                      <option value="">— tanlanmagan (default AI sozlamalari) —</option>
+                    <select v-else v-model="autoPromptGroupId" :disabled="autoUseRecommended" class="cc-select" :style="{ opacity: autoUseRecommended ? 0.5 : 1, cursor: autoUseRecommended ? 'not-allowed' : 'pointer' }">
+                      <option value="">— tanlanmagan (default AI) —</option>
                       <option v-for="g in aiPromptGroups" :key="g.id" :value="g.id">
                         {{ g.name }} · {{ g.prompts.length }} bo'lim{{ anyApplyBaseInGroup(g) ? ' · BASE' : '' }}
                       </option>
                     </select>
+                    <div class="cc-field-hint">Kanal uchun maxsus uslub/mazmun ko'rsatmasi. Bo'sh — faqat admin prompt ishlatiladi.</div>
                   </div>
 
-                  <!-- Provider radio -->
-                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
-                    <span style="font-size:12px;font-weight:500;color:var(--muted);">AI provayder</span>
-                    <div style="display:flex;gap:8px;">
-                      <label v-for="p in AI_PROVIDERS" :key="p.id"
-                             :style="{
-                               flex: '1', display: 'flex', alignItems: 'center', gap: '8px',
-                               padding: '9px 11px', cursor: 'pointer',
-                               border: '1px solid ' + (autoProvider === p.id ? 'var(--accent)' : 'var(--border-2)'),
-                               borderRadius: '7px',
-                               background: autoProvider === p.id ? 'rgba(99,102,241,.06)' : 'var(--bg)',
-                             }">
-                        <input type="radio" :value="p.id" v-model="autoProvider"
-                               @change="onAutoProviderChange"
-                               style="margin:0;cursor:pointer;"/>
-                        <div style="display:flex;flex-direction:column;gap:1px;">
-                          <span style="font-size:12.5px;font-weight:600;color:var(--text);">{{ p.label }}</span>
-                          <span style="font-size:10.5px;color:var(--muted);">{{ p.note }}</span>
-                        </div>
-                      </label>
+                  <!-- Provider + Model -->
+                  <div class="cc-auto-row" style="align-items:flex-start;">
+                    <div class="cc-field" style="flex:1;">
+                      <label class="cc-field-label">AI provayder</label>
+                      <div style="display:flex;gap:8px;">
+                        <label v-for="p in AI_PROVIDERS" :key="p.id" class="cc-provider-label"
+                          :style="{ borderColor: autoProvider === p.id ? 'var(--accent)' : 'var(--border-2)', background: autoProvider === p.id ? 'rgba(99,102,241,.06)' : 'var(--bg)' }">
+                          <input type="radio" :value="p.id" v-model="autoProvider" @change="onAutoProviderChange" style="margin:0;"/>
+                          <div>
+                            <div style="font-size:12.5px;font-weight:600;">{{ p.label }}</div>
+                            <div style="font-size:10.5px;color:var(--muted);">{{ p.note }}</div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="cc-field" style="flex:1;">
+                      <label class="cc-field-label">AI model</label>
+                      <select v-model="autoModel" class="cc-select mono">
+                        <option v-for="m in autoAvailableModels" :key="m.id" :value="m.id">{{ m.label }}{{ m.note ? ' — ' + m.note : '' }}</option>
+                      </select>
                     </div>
                   </div>
 
-                  <!-- Model dropdown -->
-                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
-                    <span style="font-size:12px;font-weight:500;color:var(--muted);">AI model</span>
-                    <select v-model="autoModel"
-                            style="padding:9px 12px;border:1px solid var(--border-2);border-radius:7px;
-                                   background:var(--bg);color:var(--text);font-size:13px;
-                                   font-family:'JetBrains Mono',Menlo,Consolas,monospace;">
-                      <option v-for="m in autoAvailableModels" :key="m.id" :value="m.id">
-                        {{ m.label }} {{ m.note ? '— ' + m.note : '' }}
-                      </option>
-                    </select>
+                  <!-- Test rejim -->
+                  <div class="cc-field" style="border-top:1px dashed var(--border);padding-top:12px;margin-top:4px;">
+                    <label class="cc-toggle-row">
+                      <input type="checkbox" v-model="autoTestShowOriginal"/>
+                      <span><b>Test rejim</b> — manba (ORIGINAL) postni ham yuborish</span>
+                    </label>
+                    <div class="cc-info-box info" style="margin-top:8px;">
+                      🔬 Yoqilsa: har AI postdan avval manba post ham kanalga chiqadi
+                      (<span style="color:#d97706;">🟡 ORIGINAL</span> → <span style="color:#16a34a;">🟢 AI VERSION</span>).
+                      AI sifatini asl matn bilan qiyoslash uchun. O'chirilsa — faqat AI versiyasi.
+                    </div>
                   </div>
                 </div>
 
-
-                <!-- Test rejim -->
-                <div class="cc-field" style="margin-top:8px;border-top:1px dashed var(--border);padding-top:14px;">
-                  <label class="cc-toggle-row">
-                    <input type="checkbox" v-model="autoTestShowOriginal"/>
-                    <span>
-                      <b>Test rejim</b> — manba (ORIGINAL) postni ham yuborish
-                    </span>
-                  </label>
-                  <div class="cc-field-hint">
-                    Yoqilsa: har bir AI postdan oldin manba post ham kanalga yuboriladi
-                    (<span style="color:#d97706;">🟡 TEST · ORIGINAL</span> +
-                    <span style="color:#16a34a;">🟢 TEST · AI VERSION</span>) —
-                    AI sifatini qiyoslash uchun. O'chirilsa: faqat tayyor AI versiyasi yuboriladi.
-                  </div>
-                </div>
               </div>
 
-              <div v-if="autoSaveError" class="cc-modal-error">
-                <AppIcon name="Close" :size="12"/>
-                {{ autoSaveError }}
+              <div v-if="autoSaveError" class="cc-modal-error" style="margin:0 16px 0;">
+                <AppIcon name="Close" :size="12"/>{{ autoSaveError }}
               </div>
 
               <div class="cc-modal-actions">
@@ -1156,6 +1412,56 @@ const autoFilters = ref({
   keywords: '',
 })
 
+// ── Yetkazish usuli: 'approval' — mobil tasdiq kerak; 'direct' — darhol Telegram ──
+const autoDeliveryMode = ref('approval')
+
+// ── Yig'ish rejimi (approve oqimi) ──────────────────────────────────────────
+// 'interval'  — har auto_interval_minutes'da yetkaziladi; buffer oldindan yig'iladi.
+// 'scheduled' — belgilangan vaqtlarda (auto_schedule_times) to'plam yuboriladi.
+const autoMode = ref('interval')
+const autoScheduleTimes = ref([])       // ['08:00', '18:30']
+const autoBatchCount = ref(10)          // scheduled: har vaqt uchun post soni
+const autoCollectLeadMinutes = ref(60)  // scheduled: necha daqiqa oldin yig'ish
+const autoIntervalBatchCount = ref(1)   // interval: tayyor turadigan buffer
+const newScheduleTime = ref('08:00')    // UI: vaqt qo'shish inputi
+
+function addScheduleTime() {
+  const t = (newScheduleTime.value || '').trim()
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) return
+  if (!autoScheduleTimes.value.includes(t)) {
+    autoScheduleTimes.value = [...autoScheduleTimes.value, t].sort()
+  }
+}
+function removeScheduleTime(t) {
+  autoScheduleTimes.value = autoScheduleTimes.value.filter(x => x !== t)
+}
+
+// ── Sozlamalar UI: kengaytirilgan bo'limlar ──────────────────────
+const advancedFiltersOpen = ref(false)
+const advancedAiOpen = ref(false)
+
+// Interval rejim uchun insoniy preview matni
+const intervalPreviewText = computed(() => {
+  const m = autoInterval.value || 60
+  let t
+  if (m < 60) t = `${m} daqiqada`
+  else if (m === 60) t = '1 soatda'
+  else if (m % 60 === 0) t = `${m / 60} soatda`
+  else t = `${Math.floor(m / 60)} soat ${m % 60} daqiqada`
+  return t
+})
+
+// Scheduled rejim uchun preview
+const scheduledPreviewText = computed(() => {
+  const times = autoScheduleTimes.value
+  const cnt = autoBatchCount.value
+  const lead = autoCollectLeadMinutes.value
+  if (!times.length) return null
+  const timesStr = times.map(t => `${t} da ${cnt} ta`).join(', ')
+  const leadStr = lead ? `${lead} daqiqa oldin yig'ish boshlanadi` : "yuborish vaqtida yig'iladi"
+  return { timesStr, leadStr }
+})
+
 // Auto-post qaysi postlarni tanlasin: eng oxirgi (sana) yoki eng yuqori ballli
 const SORT_MODE_OPTIONS = [
   { value: 'latest', label: '🕒 Eng oxirgi maqolalar' },
@@ -1221,6 +1527,12 @@ function toggleAutoLanguage(code) {
 }
 function resetAutoSettings() {
   autoInterval.value = 180
+  autoDeliveryMode.value = 'approval'
+  autoMode.value = 'interval'
+  autoScheduleTimes.value = []
+  autoBatchCount.value = 10
+  autoCollectLeadMinutes.value = 60
+  autoIntervalBatchCount.value = 1
   autoWindowEnabled.value = false
   autoActiveFromHour.value = 8
   autoActiveToHour.value = 22
@@ -1610,6 +1922,14 @@ async function openAutoSettings(channel, opts = {}) {
   autoWindowEnabled.value = hasWindow
   autoActiveFromHour.value = hasWindow ? channel.auto_active_from_hour : 8
   autoActiveToHour.value = hasWindow ? channel.auto_active_to_hour : 22
+  // Yetkazish usuli
+  autoDeliveryMode.value = channel.auto_delivery_mode === 'direct' ? 'direct' : 'approval'
+  // Yig'ish rejimi sozlamalari
+  autoMode.value = channel.auto_mode === 'scheduled' ? 'scheduled' : 'interval'
+  autoScheduleTimes.value = Array.isArray(channel.auto_schedule_times) ? [...channel.auto_schedule_times] : []
+  autoBatchCount.value = channel.auto_batch_count || 10
+  autoCollectLeadMinutes.value = channel.auto_collect_lead_minutes ?? 60
+  autoIntervalBatchCount.value = channel.auto_interval_batch_count || 1
   autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
   autoTestShowOriginal.value = !!channel.test_show_original
   const f = channel.auto_filters || {}
@@ -1685,7 +2005,13 @@ async function saveAutoSettings() {
     }
 
     updated = await channelsApi.updateAutoSettings(company.value.id, updated.id, {
+      auto_delivery_mode: autoDeliveryMode.value,
       auto_interval_minutes: autoInterval.value,
+      auto_mode: autoMode.value,
+      auto_schedule_times: autoMode.value === 'scheduled' ? [...autoScheduleTimes.value] : [],
+      auto_batch_count: autoBatchCount.value,
+      auto_collect_lead_minutes: autoCollectLeadMinutes.value,
+      auto_interval_batch_count: autoIntervalBatchCount.value,
       auto_category_ids: [...autoCategoryIds.value],
       auto_filters: {
         time_range: autoFilters.value.time_range,
@@ -1899,7 +2225,13 @@ async function submitAdd() {
     if (addMode.value === 'auto' && res.channel?.id) {
       try {
         const updated = await channelsApi.updateAutoSettings(company.value.id, res.channel.id, {
+          auto_delivery_mode: autoDeliveryMode.value,
           auto_interval_minutes: autoInterval.value,
+          auto_mode: autoMode.value,
+          auto_schedule_times: autoMode.value === 'scheduled' ? [...autoScheduleTimes.value] : [],
+          auto_batch_count: autoBatchCount.value,
+          auto_collect_lead_minutes: autoCollectLeadMinutes.value,
+          auto_interval_batch_count: autoIntervalBatchCount.value,
           auto_category_ids: [...autoCategoryIds.value],
           auto_filters: {
             time_range: autoFilters.value.time_range,
@@ -2377,6 +2709,43 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
+/* ── Yetkazish usuli kartalari ─────────────── */
+.cc-delivery-grid { display: flex; flex-direction: column; gap: 8px; }
+.cc-delivery-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 14px;
+  text-align: left;
+  background: var(--panel);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+}
+.cc-delivery-card:hover { border-color: var(--accent); }
+.cc-delivery-card.active {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 7%, var(--panel));
+}
+.cc-delivery-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--success) 15%, transparent);
+  color: var(--success);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cc-delivery-icon.direct {
+  background: color-mix(in oklab, #f59e0b 15%, transparent);
+  color: #d97706;
+}
+.cc-delivery-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.cc-delivery-sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
 /* ── Avto-post panel ───────────────────────── */
 .cc-auto {
   display: flex;
@@ -2822,4 +3191,197 @@ a.cc-recent-item-title:hover { color: var(--accent); text-decoration: underline;
   background: var(--success-soft, rgba(34,197,94,0.12));
   color: var(--success); font-size: 12px; font-weight: 600;
 }
+
+/* ── Redesigned auto settings modal ──────────────────────── */
+.cc-settings-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 4px 0 8px;
+}
+
+/* Sections */
+.cc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.cc-section:last-of-type { border-bottom: none; }
+
+.cc-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.cc-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.cc-section-icon.sm {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+.cc-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1px;
+}
+.cc-section-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Info / warn boxes */
+.cc-info-box {
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.cc-info-box.info {
+  background: color-mix(in oklab, var(--accent) 7%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 22%, transparent);
+  color: var(--text-2, var(--text));
+}
+.cc-info-box.warn {
+  background: rgba(234,179,8,.08);
+  border: 1px solid rgba(234,179,8,.3);
+  color: #854d0e;
+}
+
+/* Mode cards (interval vs scheduled) */
+.cc-mode-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.cc-mode-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1.5px solid var(--border-2);
+  background: var(--bg);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+  width: 100%;
+}
+.cc-mode-card:hover { border-color: var(--accent); }
+.cc-mode-card.active {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 6%, var(--panel));
+}
+.cc-mode-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.cc-mode-card-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1px;
+}
+.cc-mode-card-sub {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+/* Advanced collapsible sections */
+.cc-advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 18px;
+  background: color-mix(in oklab, var(--accent) 3%, var(--bg));
+  border: none;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  transition: background .15s;
+}
+.cc-advanced-toggle:hover { background: color-mix(in oklab, var(--accent) 7%, var(--bg)); }
+.cc-advanced-toggle-icon {
+  font-size: 18px;
+  color: var(--muted);
+  line-height: 1;
+  display: inline-block;
+  transition: transform .18s;
+  width: 14px;
+  text-align: center;
+}
+.cc-advanced-badge {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--panel-2, rgba(99,102,241,.06));
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-advanced-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--accent) 2%, var(--bg));
+}
+
+/* Select */
+.cc-select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-2);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+.cc-select.mono {
+  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+/* Provider label */
+.cc-provider-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  cursor: pointer;
+  border: 1.5px solid var(--border-2);
+  border-radius: 7px;
+  transition: border-color .15s, background .15s;
+}
+.cc-provider-label:hover { border-color: var(--accent); }
 </style>

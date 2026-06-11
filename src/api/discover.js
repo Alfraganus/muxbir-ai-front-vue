@@ -19,4 +19,15 @@ export const discoverApi = {
   /** Saqlangan discover sessiyasining to'liq snapshot'i */
   historyById: (companyId, historyId) =>
     http.get(`/companies/${companyId}/discover/history/${historyId}`).then(r => r.data),
+
+  /** Google'ga o'xshash erkin matnli yangilik qidiruvi (Google News RSS).
+   *  payload: { query, domain?, time_range?, limit?, lang? } */
+  webSearch: (companyId, payload) =>
+    http.post(`/companies/${companyId}/discover/web-search`, payload, { timeout: 60000 })
+      .then(r => r.data),
+
+  /** Google News redirect havolasini haqiqiy maqola URL'iga yechadi */
+  webResolve: (companyId, url) =>
+    http.post(`/companies/${companyId}/discover/web-search/resolve`, { url }, { timeout: 60000 })
+      .then(r => r.data),
 }

@@ -150,6 +150,11 @@ import { companiesApi } from '@/api/companies.js'
 import { aiApi } from '@/api/ai.js'
 import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
 
+const props = defineProps({
+  /** Web qidiruvdan kelganda URL oldindan to'ldiriladi */
+  initialUrl: { type: String, default: '' },
+})
+
 const emit = defineEmits(['created', 'goto'])
 
 const busy = ref(false)
@@ -185,7 +190,7 @@ const savedPrefs = (() => {
 })()
 
 const form = reactive({
-  url: '',
+  url: props.initialUrl || '',
   groupId:  savedPrefs.groupId  || '',
   provider: savedPrefs.provider || 'openai',
   model:    savedPrefs.model    || 'gpt-4o-mini',

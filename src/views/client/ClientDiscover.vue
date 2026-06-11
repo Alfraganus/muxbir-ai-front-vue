@@ -10,7 +10,12 @@
       :loading="loadingSources"
       :loading-channels="loadingChannels"
       @select-channel="onSelectChannel"
-      @run="startScan"/>
+      @run="startScan">
+      <template #side-top>
+        <!-- Internetdan qidirish (Google-ga o'xshash) — "AI qidiruvni boshlash"dan tepada -->
+        <DiscoverWebSearch v-if="company" :company-id="company.id" :sources="availableSources"/>
+      </template>
+    </DiscoverSetup>
 
     <!-- ─── Oxirgi qidiruvlar (tarix) ─── -->
     <div v-if="history.length" class="cd-history">
@@ -294,6 +299,7 @@ import DiscoverCard from '@/components/discover/DiscoverCard.vue'
 import DiscoverPreview from '@/components/discover/DiscoverPreview.vue'
 import DiscoverSetup from '@/components/discover/DiscoverSetup.vue'
 import DiscoverScanning from '@/components/discover/DiscoverScanning.vue'
+import DiscoverWebSearch from '@/components/discover/DiscoverWebSearch.vue'
 import { discoverApi } from '@/api/discover.js'
 import { companiesApi } from '@/api/companies.js'
 import { postsApi } from '@/api/posts.js'
