@@ -222,45 +222,57 @@
 
         <!-- ╔══════ RIGHT (sticky sidebar) ══════╗ -->
         <aside class="pe-sidebar">
-          <!-- ─── Telegram kanal tanlash (eng tepada, doim ko'rinadi) ─── -->
+          <!-- ─── Telegram kanal tanlash (ko'p kanal, checkbox) ─── -->
           <section v-if="form.platform === 'telegram'"
                    :style="{
                      padding: '14px',
                      borderRadius: '10px',
-                     border: '1px solid ' + (!form.telegram_channel_id ? 'rgba(245,158,11,.4)' : 'var(--border-2)'),
-                     background: !form.telegram_channel_id ? 'rgba(245,158,11,.05)' : 'var(--panel)',
+                     border: '1px solid ' + (!form.telegram_channel_ids.length ? 'rgba(245,158,11,.4)' : 'var(--border-2)'),
+                     background: !form.telegram_channel_ids.length ? 'rgba(245,158,11,.05)' : 'var(--panel)',
                      display: 'flex', flexDirection: 'column', gap: '8px',
                    }">
             <div style="display:flex;align-items:center;gap:8px;">
               <AppIcon name="Telegram" :size="13" :style="{ color: '#229ED9' }"/>
               <span style="font-size:11.5px;font-weight:600;color:var(--text);
                            text-transform:uppercase;letter-spacing:0.05em;">
-                Telegram kanal
+                Telegram kanallar
               </span>
-              <span v-if="!form.telegram_channel_id"
+              <span v-if="form.telegram_channel_ids.length"
+                    style="font-size:10px;color:#229ED9;font-weight:600;margin-left:auto;
+                           padding:2px 7px;background:rgba(34,158,217,.12);border-radius:999px;">
+                {{ form.telegram_channel_ids.length }} tanlandi
+              </span>
+              <span v-else
                     style="font-size:10px;color:#f59e0b;font-weight:600;margin-left:auto;
                            padding:2px 7px;background:rgba(245,158,11,.12);border-radius:999px;">
                 Tanlanmagan
               </span>
             </div>
-            <select v-model="form.telegram_channel_id"
-                    :style="{
-                      width: '100%',
-                      padding: '9px 11px',
-                      border: '1px solid ' + (!form.telegram_channel_id ? 'rgba(245,158,11,.5)' : 'var(--border-2)'),
-                      borderRadius: '7px',
-                      background: 'var(--bg)',
-                      color: 'var(--text)',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                    }">
-              <option :value="null">— Kanalni tanlang —</option>
-              <option v-for="ch in connectedTgChannels" :key="ch.id" :value="ch.id">
+
+            <div v-if="!connectedTgChannels.length"
+                 style="font-size:12px;color:var(--text-2);padding:6px 0;">
+              Ulangan Telegram kanal yo'q. Avval «Kanallar» bo'limidan kanal qo'shing.
+            </div>
+
+            <label v-for="ch in connectedTgChannels" :key="ch.id"
+                   :style="{
+                     display: 'flex', alignItems: 'center', gap: '9px',
+                     padding: '8px 10px', borderRadius: '7px', cursor: 'pointer',
+                     border: '1px solid ' + (form.telegram_channel_ids.includes(ch.id) ? 'rgba(34,158,217,.5)' : 'var(--border-2)'),
+                     background: form.telegram_channel_ids.includes(ch.id) ? 'rgba(34,158,217,.06)' : 'var(--bg)',
+                   }">
+              <input type="checkbox"
+                     :value="ch.id"
+                     v-model="form.telegram_channel_ids"
+                     style="width:15px;height:15px;accent-color:#229ED9;cursor:pointer;flex:none;"/>
+              <span style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                 {{ ch.display_name || ch.username }}
-              </option>
-            </select>
-            <span v-if="!form.telegram_channel_id" style="font-size:11px;color:#92400e;line-height:1.4;">
-              ⚠ Postni e'lon qilish uchun avval kanal tanlang
+              </span>
+            </label>
+
+            <span v-if="!form.telegram_channel_ids.length && connectedTgChannels.length"
+                  style="font-size:11px;color:#92400e;line-height:1.4;">
+              ⚠ Postni e'lon qilish uchun kamida bitta kanal tanlang
             </span>
           </section>
 
@@ -831,6 +843,7 @@ const form = reactive({
   publish_at: '',
   cover_image_url: '',
   telegram_channel_id: null,
+  telegram_channel_ids: [],
   telegram_raw_long_text: '',
   status: 'scheduled',
 })
@@ -1116,18 +1129,18 @@ const connectedTgChannels = computed(() =>
   allChannels.value.filter(c => (c.platform?.slug === 'telegram' || c.telegram_chat_id) && c.status === 'connected'),
 )
 
-const previewChannelName = computed(() => {
-  const ch = connectedTgChannels.value.find(c => c.id === form.telegram_channel_id)
-  return ch?.display_name || ch?.username || store.companyName || 'Mening kanalim'
-})
-const previewSubscriberCount = computed(() => {
-  const ch = connectedTgChannels.value.find(c => c.id === form.telegram_channel_id)
-  return typeof ch?.subscriber_count === 'number' ? ch.subscriber_count : null
-})
-const previewSignature = computed(() => {
-  const ch = connectedTgChannels.value.find(c => c.id === form.telegram_channel_id)
-  return ch?.signature || ''
-})
+// Preview ko'p kanaldan BIRINCHISIni ko'rsatadi (taxminiy ko'rinish).
+const primaryChannelId = computed(() => form.telegram_channel_ids[0] || null)
+const primaryChannel = computed(() =>
+  connectedTgChannels.value.find(c => c.id === primaryChannelId.value) || null,
+)
+const previewChannelName = computed(() =>
+  primaryChannel.value?.display_name || primaryChannel.value?.username || store.companyName || 'Mening kanalim',
+)
+const previewSubscriberCount = computed(() =>
+  typeof primaryChannel.value?.subscriber_count === 'number' ? primaryChannel.value.subscriber_count : null,
+)
+const previewSignature = computed(() => primaryChannel.value?.signature || '')
 
 function platformIcon(p) {
   return p === 'instagram' ? 'Instagram' : p === 'website' ? 'Globe' : 'Telegram'
@@ -1220,6 +1233,9 @@ async function loadInitial() {
       }
       form.cover_image_url = p.cover_image_url || ''
       form.telegram_channel_id = p.telegram_channel_id || null
+      form.telegram_channel_ids = (p.telegram_channel_ids && p.telegram_channel_ids.length)
+        ? [...p.telegram_channel_ids]
+        : (p.telegram_channel_id ? [p.telegram_channel_id] : [])
       form.telegram_raw_long_text = p.telegram_raw_long_text || ''
       form.status = p.status || 'scheduled'
       tagsArr.value = p.tags || []
@@ -1313,7 +1329,7 @@ async function saveAll() {
   const anyTitle = LANGS.some(l => translations[l].title && translations[l].title.trim())
   if (!anyTitle) { formError.value = tt('pe.err.noTitle'); return }
   // Telegram platformasi tanlangan bo'lsa, kanal majburiy — bo'lmasa xato.
-  if (form.platform === 'telegram' && !form.telegram_channel_id) {
+  if (form.platform === 'telegram' && !form.telegram_channel_ids.length) {
     formError.value = tt('pe.err.noChannel')
     return
   }
@@ -1338,7 +1354,8 @@ async function saveAll() {
       cover_image_url: form.cover_image_url || null,
       gallery: galleryArr.value,
       publish_at: form.publish_at ? new Date(form.publish_at).toISOString() : null,
-      telegram_channel_id: form.telegram_channel_id || null,
+      telegram_channel_id: form.telegram_channel_ids[0] || null,
+      telegram_channel_ids: [...form.telegram_channel_ids],
       telegram_raw_long_text: form.telegram_raw_long_text || null,
       status: derivedStatus,
     }
@@ -1427,9 +1444,9 @@ const publishableLangs = computed(() => LANGS.filter(l => hasAnyContent(l)))
 
 function onPublishClick() {
   if (!isEdit.value || !post.value) return
-  if (!form.telegram_channel_id) {
-    formError.value = 'Telegram kanal tanlanmagan — o\'ng tomondagi panel orqali kanalni tanlang'
-    alert('⚠ Telegram kanal tanlanmagan!\n\nO\'ng tomondagi panel orqali kanalni tanlang va qaytadan urinib ko\'ring.')
+  if (!form.telegram_channel_ids.length) {
+    formError.value = 'Telegram kanal tanlanmagan — o\'ng tomondagi panel orqali kanal(lar)ni tanlang'
+    alert('⚠ Telegram kanal tanlanmagan!\n\nO\'ng tomondagi panel orqali kamida bitta kanalni tanlang va qaytadan urinib ko\'ring.')
     return
   }
   // Default til: kompaniya sozlamasi → joriy tab → birinchi to'ldirilgan til
@@ -1453,7 +1470,7 @@ async function confirmPublishLang() {
 
 async function publishNow(lang) {
   if (!isEdit.value || !post.value) return
-  if (!form.telegram_channel_id) {
+  if (!form.telegram_channel_ids.length) {
     formError.value = tt('pe.tg.noConnected')
     return
   }
@@ -1471,7 +1488,16 @@ async function publishNow(lang) {
     if (lang && company.value) company.value.default_publish_lang = lang
     lastSavedAt.value = Date.now()
     const lbl = (AI_OUTPUT_LANGS.find(l => l.id === lang) || {}).label || lang
-    showAiBanner('success', `Post Telegram'ga e'lon qilindi (${lbl})`)
+    // Ko'p kanal natijasi: nechtasiga ketdi / nechtasida xato
+    const dels = Array.isArray(res?.deliveries) ? res.deliveries : []
+    const sent = dels.filter(d => d.status === 'sent').length
+    const failed = dels.filter(d => d.status === 'failed').length
+    if (dels.length > 1) {
+      if (failed) showAiBanner('success', `${sent} ta kanalga yuborildi, ${failed} tasida xato (${lbl})`)
+      else showAiBanner('success', `${sent} ta kanalga e'lon qilindi (${lbl})`)
+    } else {
+      showAiBanner('success', `Post Telegram'ga e'lon qilindi (${lbl})`)
+    }
   } catch (e) {
     const msg = e?.response?.data?.message
     formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
