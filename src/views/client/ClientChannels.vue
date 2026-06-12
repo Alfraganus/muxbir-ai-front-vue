@@ -1999,11 +1999,6 @@ async function saveAutoSettings() {
   try {
     let updated = autoModalChannel.value
 
-    // Manualdan auto'ga o'tish bo'lsa, avval posting_mode ni o'zgartiramiz
-    if (autoModalSwitching.value) {
-      updated = await channelsApi.setPostingMode(company.value.id, updated.id, 'auto')
-    }
-
     updated = await channelsApi.updateAutoSettings(company.value.id, updated.id, {
       auto_delivery_mode: autoDeliveryMode.value,
       auto_interval_minutes: autoInterval.value,
@@ -2036,6 +2031,13 @@ async function saveAutoSettings() {
       auto_active_from_hour: autoWindowEnabled.value ? autoActiveFromHour.value : null,
       auto_active_to_hour: autoWindowEnabled.value ? autoActiveToHour.value : null,
     })
+
+    // posting_mode ENG OXIRIDA yoqiladi — sozlamalar (jumladan tasdiqlash
+    // rejimi) saqlanib bo'lgach kanal dispatcher'ga ko'rinadi. Aks holda
+    // collect tick eski sozlamalar bilan post yig'ib yuborishi mumkin edi.
+    if (autoModalSwitching.value) {
+      updated = await channelsApi.setPostingMode(company.value.id, updated.id, 'auto')
+    }
 
     replaceChannel(updated)
     closeAutoModal()
