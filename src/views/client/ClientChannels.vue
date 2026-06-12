@@ -1912,7 +1912,10 @@ const autoSaveError = ref('')
 
 async function openAutoSettings(channel, opts = {}) {
   autoModalChannel.value = channel
-  autoModalSwitching.value = !!opts.switchFromManual
+  // Modal "auto-post" sozlamalari uchun — kanal hali 'auto' bo'lmasa, saqlashda
+  // posting_mode'ni 'auto'ga o'tkazish SHART. Aks holda worker (posting_mode='auto'
+  // filtri) kanalni ko'rmaydi va 'direct' tanlangan bo'lsa ham hech narsa yubormaydi.
+  autoModalSwitching.value = !!opts.switchFromManual || (channel.posting_mode || 'auto') !== 'auto'
   autoSaveError.value = ''
 
   // Kanal sozlamalari bilan oldindan to'ldiramiz
