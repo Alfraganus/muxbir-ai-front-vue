@@ -1260,11 +1260,151 @@
 
               <div class="cc-modal-actions">
                 <AppButton variant="secondary" size="md" @click="closeAutoModal">Bekor qilish</AppButton>
+                <AppButton variant="ghost" size="md" @click="openCompareModal(autoModalChannel)" style="margin-right:auto;">
+                  <template #icon><AppIcon name="Sparkle" :size="13"/></template>
+                  AI Solishtirish
+                </AppButton>
                 <AppButton variant="primary" size="md" :loading="autoSaving" @click="saveAutoSettings">
                   <template #icon><AppIcon name="Check" :size="13"/></template>
                   {{ autoModalSwitching ? "Auto'ga o'tkazish va saqlash" : 'Saqlash' }}
                 </AppButton>
               </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ────── AI Solishtirish Modal ────── -->
+    <Teleport to="body">
+      <Transition name="cc-modal">
+        <div v-if="compareModalOpen" class="cc-modal-backdrop" @click.self="closeCompareModal">
+          <div class="cc-modal" role="dialog" aria-modal="true" style="max-width:720px;width:96vw;">
+            <button class="cc-modal-close" @click="closeCompareModal" aria-label="Yopish">
+              <AppIcon name="Close" :size="14"/>
+            </button>
+
+            <div class="cc-modal-hero" :style="{ background: 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)' }">
+              <div aria-hidden class="cc-modal-hero-dots"/>
+              <div class="cc-modal-hero-inner">
+                <span class="cc-modal-hero-icon"><AppIcon name="Sparkle" :size="22"/></span>
+                <div>
+                  <div class="cc-modal-hero-title">AI Solishtirish</div>
+                  <div class="cc-modal-hero-sub">
+                    <b>{{ compareChannel?.display_name || compareChannel?.username }}</b>
+                    — bir xil matnni bir necha AI bilan qayta ishlatib natijalarni solishtiring
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cc-modal-body">
+              <div class="cc-settings-wrap">
+
+                <!-- Manba matni -->
+                <div class="cc-section">
+                  <div class="cc-section-head">
+                    <span class="cc-section-icon" style="background:color-mix(in oklab,var(--accent) 14%,transparent);color:var(--accent);">
+                      <AppIcon name="Edit" :size="14"/>
+                    </span>
+                    <div>
+                      <div class="cc-section-title">Manba matni</div>
+                      <div class="cc-section-sub">AI qayta ishlatishi uchun asl post matni</div>
+                    </div>
+                  </div>
+                  <div class="cc-field">
+                    <label class="cc-field-label">Manba nomi</label>
+                    <input v-model="compareSourceName" class="cc-input" placeholder="Manba nomi (masalan: Telegram kanal nomi)" style="max-width:320px;"/>
+                  </div>
+                  <div class="cc-field">
+                    <label class="cc-field-label">Manba matni</label>
+                    <textarea v-model="compareSourceText" class="cc-textarea" rows="5"
+                      placeholder="Bu yerga solishtirmoqchi bo'lgan manba postini joylashtiring..."/>
+                  </div>
+                </div>
+
+                <!-- Provider/model juftliklari -->
+                <div class="cc-section">
+                  <div class="cc-section-head">
+                    <span class="cc-section-icon" style="background:color-mix(in oklab,#8b5cf6 14%,transparent);color:#8b5cf6;">
+                      <AppIcon name="Sparkle" :size="14"/>
+                    </span>
+                    <div>
+                      <div class="cc-section-title">AI provayderlar</div>
+                      <div class="cc-section-sub">Parallel solishtirish uchun AI juftlarini tanlang</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div v-for="(pair, idx) in comparePairs" :key="idx"
+                      style="display:flex;gap:8px;align-items:center;">
+                      <select v-model="pair.provider" class="cc-select" style="flex:0 0 160px;"
+                        @change="onComparePairProviderChange(idx)">
+                        <option v-for="p in AI_PROVIDERS" :key="p.id" :value="p.id">{{ p.label }}</option>
+                      </select>
+                      <select v-model="pair.model" class="cc-select mono" style="flex:1;">
+                        <option v-for="m in (AI_MODELS_BY_PROVIDER[pair.provider] || [])" :key="m.id" :value="m.id">
+                          {{ m.label }}{{ m.note ? ' — ' + m.note : '' }}
+                        </option>
+                      </select>
+                      <button v-if="comparePairs.length > 1" type="button"
+                        @click="removeComparePair(idx)"
+                        style="flex:0 0 28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                        <AppIcon name="Close" :size="11"/>
+                      </button>
+                    </div>
+                  </div>
+                  <button v-if="comparePairs.length < 5" type="button"
+                    @click="addComparePair"
+                    style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--text-muted);cursor:pointer;font-size:13px;">
+                    + Juft qo'shish
+                  </button>
+                </div>
+
+                <!-- Natijalar -->
+                <div v-if="compareLoading" class="cc-info-box info" style="text-align:center;padding:20px;">
+                  ⏳ AI provayderlar ishlamoqda, iltimos kuting...
+                </div>
+
+                <template v-if="compareResults">
+                  <!-- Asl matn -->
+                  <div class="cc-section" style="background:color-mix(in oklab,#d97706 6%,transparent);border:1px solid color-mix(in oklab,#d97706 20%,transparent);border-radius:10px;padding:12px 14px;">
+                    <div style="font-size:11px;font-weight:600;color:#d97706;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">
+                      🟡 ORIGINAL — {{ compareSourceName }}
+                    </div>
+                    <div style="font-size:13px;white-space:pre-wrap;color:var(--text);line-height:1.6;">{{ compareResults.original }}</div>
+                  </div>
+
+                  <!-- Natijalar -->
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:4px;">
+                    <div v-for="r in compareResults.results" :key="r.label"
+                      class="cc-section"
+                      :style="r.error
+                        ? 'border:1px solid color-mix(in oklab,var(--error) 30%,transparent);background:color-mix(in oklab,var(--error) 5%,transparent);border-radius:10px;padding:12px 14px;'
+                        : 'border:1px solid color-mix(in oklab,var(--success) 20%,transparent);background:color-mix(in oklab,var(--success) 5%,transparent);border-radius:10px;padding:12px 14px;'">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">
+                        <div style="font-size:11px;font-weight:600;color:var(--success);text-transform:uppercase;letter-spacing:.06em;">
+                          🟢 {{ r.label }}
+                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;">{{ r.ms }}ms</div>
+                      </div>
+                      <div v-if="r.error" style="color:var(--error);font-size:13px;">❌ {{ r.error }}</div>
+                      <div v-else style="font-size:13px;white-space:pre-wrap;color:var(--text);line-height:1.6;">{{ r.text }}</div>
+                    </div>
+                  </div>
+                </template>
+
+              </div>
+            </div>
+
+            <div class="cc-modal-actions">
+              <AppButton variant="secondary" size="md" @click="closeCompareModal">Yopish</AppButton>
+              <AppButton variant="primary" size="md"
+                :loading="compareLoading"
+                :disabled="!compareSourceText.trim() || comparePairs.length === 0"
+                @click="runCompare">
+                <template #icon><AppIcon name="Sparkle" :size="13"/></template>
+                Solishtirish
+              </AppButton>
             </div>
           </div>
         </div>
@@ -2204,6 +2344,74 @@ async function saveAutoSettings() {
     autoSaveError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Sozlamalarni saqlab boʻlmadi')
   } finally {
     autoSaving.value = false
+  }
+}
+
+// ── AI Solishtirish modal ────────────────────────────────────
+const compareModalOpen = ref(false)
+const compareChannel = ref(null)
+const compareSourceText = ref('')
+const compareSourceName = ref('Manba')
+const comparePairs = ref([
+  { provider: 'gemini', model: 'gemini-2.5-pro' },
+  { provider: 'anthropic', model: 'claude-opus-4-8' },
+])
+const compareLoading = ref(false)
+const compareResults = ref(null)
+
+function openCompareModal(channel) {
+  compareChannel.value = channel
+  compareSourceText.value = ''
+  compareSourceName.value = 'Manba'
+  comparePairs.value = [
+    { provider: 'gemini', model: 'gemini-2.5-pro' },
+    { provider: 'anthropic', model: 'claude-opus-4-8' },
+  ]
+  compareLoading.value = false
+  compareResults.value = null
+  compareModalOpen.value = true
+}
+
+function closeCompareModal() {
+  compareModalOpen.value = false
+}
+
+function addComparePair() {
+  comparePairs.value.push({ provider: 'openai', model: 'gpt-4o-mini' })
+}
+
+function removeComparePair(idx) {
+  comparePairs.value.splice(idx, 1)
+}
+
+function onComparePairProviderChange(idx) {
+  const provider = comparePairs.value[idx].provider
+  const list = AI_MODELS_BY_PROVIDER[provider] || []
+  if (list.length) comparePairs.value[idx].model = list[0].id
+}
+
+async function runCompare() {
+  if (!compareChannel.value || !compareSourceText.value.trim()) return
+  compareLoading.value = true
+  compareResults.value = null
+  try {
+    const providers = comparePairs.value.map(p => ({
+      provider: p.provider,
+      model: p.model,
+      label: `${p.provider === 'gemini' ? 'Gemini' : p.provider === 'anthropic' ? 'Claude' : 'OpenAI'} / ${p.model}`,
+    }))
+    compareResults.value = await channelsApi.compareAutopost(
+      company.value.id,
+      compareChannel.value.id,
+      compareSourceText.value.trim(),
+      compareSourceName.value || 'Manba',
+      providers,
+    )
+  } catch (e) {
+    const msg = e?.response?.data?.message
+    alert(Array.isArray(msg) ? msg.join('. ') : (msg || 'Xato yuz berdi'))
+  } finally {
+    compareLoading.value = false
   }
 }
 
@@ -3622,6 +3830,29 @@ a.cc-recent-item-title:hover { color: var(--accent); text-decoration: underline;
 }
 .cc-select.mono {
   font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+.cc-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-2);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  box-sizing: border-box;
+}
+.cc-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-2);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+  line-height: 1.55;
 }
 
 /* Provider label */

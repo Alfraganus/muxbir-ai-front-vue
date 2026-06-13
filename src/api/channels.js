@@ -65,4 +65,8 @@ export const channelsApi = {
   /** Tanlangan Meta sahifalarni ulash */
   connectMeta: (companyId, session_token, items) =>
     http.post(`/companies/${companyId}/channels/meta/connect`, { session_token, items }).then(r => r.data),
+
+  /** Bir necha AI provider/model natijalarini parallel solishtirish */
+  compareAutopost: (companyId, channelId, source_text, source_name, providers) =>
+    http.post(`/companies/${companyId}/channels/${channelId}/autopost/compare`, { source_text, source_name, providers }).then(r => r.data),
 }
