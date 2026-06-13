@@ -1664,7 +1664,7 @@ const AI_MODELS_BY_PROVIDER = {
   gemini: [
     { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
     { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'kuchli' },
-    { id: 'gemini-3.1-pro',        label: 'gemini-3.1-pro',        note: 'eng kuchli Gemini' },
+    { id: 'gemini-3.1-pro-preview', label: 'gemini-3.1-pro-preview', note: 'eng kuchli Gemini' },
     { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon' },
     { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'eng yangi Flash' },
   ],
