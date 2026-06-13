@@ -25,6 +25,7 @@ import PostsQueue from '@/views/client/PostsQueue.vue'
 import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
 import MagicAuth from '@/views/MagicAuth.vue'
+import MetaDataDeletion from '@/views/public/MetaDataDeletion.vue'
 import axios from 'axios'
 import { API_BASE } from '@/api/base.js'
 import { isTokenValid, getUserRole, homePathForRole, isAdminRole, isCompanyRole } from '@/utils/authRole.js'
@@ -33,6 +34,7 @@ const routes = [
   { path: '/', redirect: () => homePathForRole(getUserRole()) },
   { path: '/signin',           component: SignIn },
   { path: '/auth/magic',       component: MagicAuth },
+  { path: '/meta/delete',      component: MetaDataDeletion },
   { path: '/admin/overview',   component: AdminOverview },
   { path: '/admin/companies',  component: AdminCompanies },
   { path: '/admin/tariffs',    component: AdminTariffs },
@@ -60,7 +62,7 @@ const routes = [
   { path: '/signup',           component: Onboarding },
 ]
 
-const PUBLIC_PATHS = ['/signin', '/signup', '/auth/magic']
+const PUBLIC_PATHS = ['/signin', '/signup', '/auth/magic', '/meta/delete']
 
 const router = createRouter({
   history: createWebHashHistory(),
