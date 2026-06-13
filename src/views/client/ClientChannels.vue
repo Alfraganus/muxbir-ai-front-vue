@@ -2532,20 +2532,23 @@ function handleKey(e) {
 }
 
 onMounted(async () => {
-  loadAll()
   document.addEventListener('keydown', handleKey)
 
-  // Meta OAuth callback natijasini URL parametrlardan tekshirish
   const metaSession = route.query.meta_session
   const metaCompany = route.query.meta_company
   const metaError = route.query.meta_error
 
   if (metaError) {
+    loadAll()
     metaNotify.value = decodeURIComponent(String(metaError))
     router.replace({ query: {} })
   } else if (metaSession && metaCompany) {
+    // Meta callback: avval company yuklanishini kutamiz
+    await loadAll()
     router.replace({ query: {} })
     await handleMetaSession(String(metaSession), String(metaCompany))
+  } else {
+    loadAll()
   }
 })
 onBeforeUnmount(() => {
