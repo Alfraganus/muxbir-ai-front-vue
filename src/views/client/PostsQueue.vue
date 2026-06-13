@@ -92,6 +92,30 @@
               </span>
             </div>
 
+            <!-- Compare results versiya tanlash -->
+            <div v-if="detailPost.compare_results?.length" style="margin-bottom:12px;">
+              <label style="font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:8px;">
+                AI versiyalari
+              </label>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <button
+                  v-for="(r, idx) in detailPost.compare_results"
+                  :key="idx"
+                  class="pq-compare-card"
+                  :class="{ active: compareSelectedIdx === idx }"
+                  @click="selectCompareVersion(r, idx)"
+                  :disabled="!!r.error"
+                >
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:11px;font-weight:600;">{{ r.label }}</span>
+                    <span style="font-size:10px;color:var(--muted);">{{ r.ms }}ms</span>
+                  </div>
+                  <div v-if="r.error" style="font-size:12px;color:var(--error);">❌ {{ r.error }}</div>
+                  <div v-else style="font-size:12px;color:var(--text-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:pre-wrap;">{{ r.text }}</div>
+                </button>
+              </div>
+            </div>
+
             <!-- Editable text -->
             <div style="margin-bottom:10px;">
               <label style="font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">
@@ -160,6 +184,7 @@ const detailPost = ref(null)
 const detailText = ref('')
 const aiLoading = ref(null)
 const modalActing = ref(false)
+const compareSelectedIdx = ref(-1)
 
 const tabs = computed(() => [
   { value: 'pending',  label: `Kutilmoqda${counts.value.pending ? ' · ' + counts.value.pending : ''}` },
@@ -255,6 +280,12 @@ function openDetail(post) {
   detailText.value = post.ai_text ?? ''
   aiLoading.value = null
   modalActing.value = false
+  compareSelectedIdx.value = -1
+}
+
+function selectCompareVersion(result, idx) {
+  compareSelectedIdx.value = idx
+  detailText.value = result.text
 }
 
 async function aiRewrite(mode) {
@@ -274,6 +305,10 @@ async function modalApprove() {
   if (!detailPost.value) return
   modalActing.value = true
   try {
+    // Matn o'zgargan bo'lsa avval saqlaymiz
+    if (detailText.value.trim() !== (detailPost.value.ai_text ?? '').trim()) {
+      await queueApi.updateText(companyId.value, detailPost.value.id, detailText.value)
+    }
     await queueApi.approve(companyId.value, detailPost.value.id)
     detailPost.value = null
     await load()
@@ -441,6 +476,20 @@ onBeforeUnmount(() => clearInterval(pollTimer))
 }
 .pq-ai-chip:hover:not(:disabled) { background: var(--panel-2); border-color: var(--accent); color: var(--accent); }
 .pq-ai-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pq-compare-card {
+  width: 100%;
+  text-align: left;
+  padding: 8px 11px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.pq-compare-card:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-bg); }
+.pq-compare-card.active { border-color: var(--accent); background: color-mix(in oklab,var(--accent) 8%,transparent); }
+.pq-compare-card:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .cp-spinner-xs {
   width: 11px;

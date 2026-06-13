@@ -27,4 +27,7 @@ export const queueApi = {
   rewrite: (companyId, postId, mode) =>
     http.post(`/companies/${companyId}/auto-queue/${postId}/rewrite`,
       { mode }, { timeout: 120000 }).then(r => r.data),
+
+  updateText: (companyId, postId, ai_text) =>
+    http.patch(`/companies/${companyId}/auto-queue/${postId}/text`, { ai_text }).then(r => r.data),
 }
