@@ -198,7 +198,8 @@ const modelsByProvider = {
   ],
   gemini: [
     { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
-    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'eng kuchli Gemini modeli' },
+    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'kuchli' },
+    { id: 'gemini-3.1-pro',        label: 'gemini-3.1-pro',        note: 'eng kuchli Gemini' },
     { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon, juda tezkor' },
     { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'doim eng yangi Flash' },
   ],
