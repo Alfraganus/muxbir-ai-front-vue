@@ -270,6 +270,38 @@
 
             <div class="cc-modal-body">
               <template v-if="addStage === 'input'">
+
+                <!-- Meta (Facebook / Instagram) platforma tanlanganda — OAuth tugmasi -->
+                <template v-if="addPlatformSlug === 'facebook' || addPlatformSlug === 'instagram'">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:12px 0 8px;">
+                    <div style="text-align:center;">
+                      <div style="font-size:14px;font-weight:600;margin-bottom:6px;">
+                        {{ addPlatformSlug === 'facebook' ? 'Facebook sahifangizni ulang' : 'Instagram akkauntingizni ulang' }}
+                      </div>
+                      <div style="font-size:12.5px;color:var(--muted);max-width:320px;line-height:1.5;">
+                        Facebook hisobingizga kirib, qaysi sahifani/akkauntni ulashni tanlaysiz.
+                        <br>Instagram ulash uchun akkaunt Facebook sahifasiga bog'langan bo'lishi kerak.
+                      </div>
+                    </div>
+                    <div v-if="addError" class="cc-modal-error">
+                      <AppIcon name="Close" :size="12"/>
+                      {{ addError }}
+                    </div>
+                    <div class="cc-modal-actions" style="width:100%;justify-content:center;">
+                      <AppButton variant="secondary" size="md" @click="closeAddModal">Bekor qilish</AppButton>
+                      <AppButton variant="primary" size="md" @click="startMetaOAuth" style="background:#1877F2;border-color:#1877F2;">
+                        <template #icon>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        </template>
+                        Facebook orqali ulash
+                        <template #icon-right><AppIcon name="Arrow" :size="13"/></template>
+                      </AppButton>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Telegram URL kiritish (odatiy oqim) -->
+                <template v-else>
                 <div class="cc-field">
                   <label class="cc-field-label">{{ tt('cc.modal.urlLabel') }}</label>
                   <div class="cc-url-input" :class="{ error: !!addError }">
@@ -606,6 +638,7 @@
                     <template #icon-right><AppIcon name="Arrow" :size="13"/></template>
                   </AppButton>
                 </div>
+                </template><!-- /v-else Telegram -->
               </template>
 
               <template v-else-if="addStage === 'pending'">
@@ -665,6 +698,107 @@
                   </div>
                 </div>
               </template>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ────── Meta OAuth xabar (muvaffaqiyatsiz / xato) ────── -->
+    <Teleport to="body">
+      <Transition name="cc-modal">
+        <div v-if="metaNotify" class="cc-modal-backdrop" @click.self="metaNotify = ''">
+          <div class="cc-modal" style="max-width:440px;" role="dialog">
+            <button class="cc-modal-close" @click="metaNotify = ''" aria-label="Yopish">
+              <AppIcon name="Close" :size="14"/>
+            </button>
+            <div class="cc-modal-hero" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">
+              <div aria-hidden class="cc-modal-hero-dots"/>
+              <div class="cc-modal-hero-inner">
+                <span class="cc-modal-hero-icon"><AppIcon name="Close" :size="22"/></span>
+                <div>
+                  <div class="cc-modal-hero-title">Meta ulashda xato</div>
+                  <div class="cc-modal-hero-sub">{{ metaNotify }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="cc-modal-body">
+              <div class="cc-modal-actions" style="justify-content:center;">
+                <AppButton variant="primary" size="md" @click="metaNotify = ''">OK</AppButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ────── Meta sahifalar tanlash modali ────── -->
+    <Teleport to="body">
+      <Transition name="cc-modal">
+        <div v-if="metaModalOpen" class="cc-modal-backdrop" @click.self="metaModalOpen = false">
+          <div class="cc-modal" style="max-width:500px;" role="dialog">
+            <button class="cc-modal-close" @click="metaModalOpen = false" aria-label="Yopish">
+              <AppIcon name="Close" :size="14"/>
+            </button>
+            <div class="cc-modal-hero" style="background:linear-gradient(135deg,#1877F2,#0C52A3)">
+              <div aria-hidden class="cc-modal-hero-dots"/>
+              <div class="cc-modal-hero-inner">
+                <span class="cc-modal-hero-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </span>
+                <div>
+                  <div class="cc-modal-hero-title">Facebook / Instagram kanallar</div>
+                  <div class="cc-modal-hero-sub">Ulashni xohlagan sahifa va akkauntlarni tanlang</div>
+                </div>
+              </div>
+            </div>
+            <div class="cc-modal-body">
+              <div v-if="metaPages.length" style="display:flex;flex-direction:column;gap:8px;">
+                <div v-for="pg in metaPages" :key="pg.page_id" style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+                  <!-- Facebook sahifa -->
+                  <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;"
+                    :style="isMetaItemSelected('facebook', pg) ? 'background:rgba(24,119,242,0.07)' : ''">
+                    <input type="checkbox" :checked="isMetaItemSelected('facebook', pg)"
+                      @change="toggleMetaItem('facebook', pg)" style="width:16px;height:16px;"/>
+                    <div style="width:32px;height:32px;border-radius:8px;background:#1877F2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:13px;font-weight:600;">{{ pg.page_name }}</div>
+                      <div style="font-size:11.5px;color:var(--muted);">Facebook sahifasi</div>
+                    </div>
+                  </label>
+                  <!-- IG akkaunt (agar bog'langan bo'lsa) -->
+                  <label v-if="pg.ig_user_id" style="display:flex;align-items:center;gap:10px;padding:10px 14px 12px;cursor:pointer;border-top:1px solid var(--border);"
+                    :style="isMetaItemSelected('instagram', pg) ? 'background:rgba(214,63,149,0.07)' : ''">
+                    <input type="checkbox" :checked="isMetaItemSelected('instagram', pg)"
+                      @change="toggleMetaItem('instagram', pg)" style="width:16px;height:16px;"/>
+                    <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                      <AppIcon name="Instagram" :size="14" style="color:white;"/>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:13px;font-weight:600;">@{{ pg.ig_username || pg.ig_user_id }}</div>
+                      <div style="font-size:11.5px;color:var(--muted);">Instagram Business akkaunt</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div v-else style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0;">
+                Hech qanday Facebook sahifa topilmadi
+              </div>
+              <div v-if="metaConnectError" class="cc-modal-error" style="margin-top:10px;">
+                <AppIcon name="Close" :size="12"/>
+                {{ metaConnectError }}
+              </div>
+              <div class="cc-modal-actions" style="margin-top:16px;">
+                <AppButton variant="secondary" size="md" @click="metaModalOpen = false">Bekor qilish</AppButton>
+                <AppButton variant="primary" size="md"
+                  :disabled="!metaSelected.length"
+                  :loading="metaConnecting"
+                  @click="connectMetaPages">
+                  Ulash ({{ metaSelected.length }} ta tanlandi)
+                </AppButton>
+              </div>
             </div>
           </div>
         </div>
@@ -1304,7 +1438,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
@@ -1323,6 +1457,7 @@ import { aiApi } from '@/api/ai.js'
 import { useAppStore } from '@/stores/app.js'
 
 const router = useRouter()
+const route = useRoute()
 const store = useAppStore()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
@@ -1346,6 +1481,15 @@ const addStage = ref('input')         // input | pending | success
 const addedChannel = ref(null)
 const addDeepLink = ref('')
 let addPollTimer = null
+
+// ── Meta (Facebook / Instagram) ulash ─────────────────────────
+const metaModalOpen = ref(false)
+const metaPages = ref([])          // { page_id, page_name, page_token, ig_user_id?, ig_username? }[]
+const metaSessionToken = ref('')
+const metaSelected = ref([])       // { type, name, page_id?, ig_user_id?, page_token }[]
+const metaConnecting = ref(false)
+const metaConnectError = ref('')
+const metaNotify = ref('')         // URL'dagi meta_error yoki success xabari
 
 // ── Avto-post sozlamalari (faqat auto rejimda) ─────────────────
 const INTERVAL_PRESETS = [
@@ -1621,7 +1765,7 @@ function connectedDateFull(c) {
 
 // ── Platforma helperlari ──────────────────────────────────────────
 function platformSlug(c) {
-  return c.platform?.slug || 'telegram' // fallback
+  return c.platform_type || c.platform?.slug || 'telegram'
 }
 
 function platformName(p) {
@@ -1630,14 +1774,16 @@ function platformName(p) {
 }
 
 function platformIconName(slug) {
-  return slug === 'instagram' ? 'Instagram'
-    : slug === 'website' ? 'Globe'
-    : 'Telegram'
+  if (slug === 'instagram') return 'Instagram'
+  if (slug === 'facebook') return 'Facebook'
+  if (slug === 'website') return 'Globe'
+  return 'Telegram'
 }
 
 function platformColor(c) {
   const slug = typeof c === 'string' ? c : platformSlug(c)
   if (slug === 'instagram') return '#E1306C'
+  if (slug === 'facebook') return '#1877F2'
   if (slug === 'website') return '#64748B'
   return '#2AABEE' // telegram
 }
@@ -1648,6 +1794,9 @@ function platformIconStyle(slug, size = 'md') {
   let bg, fg
   if (slug === 'instagram') {
     bg = 'linear-gradient(135deg,#f9ce34,#ee2a7b,#6228d7)'
+    fg = '#fff'
+  } else if (slug === 'facebook') {
+    bg = '#1877F2'
     fg = '#fff'
   } else if (slug === 'website') {
     bg = 'var(--panel-2)'
@@ -2166,6 +2315,9 @@ function heroGradient(slug) {
   if (slug === 'instagram') {
     return 'linear-gradient(135deg, #FFB840 0%, #ee2a7b 50%, #6228d7 100%)'
   }
+  if (slug === 'facebook') {
+    return 'linear-gradient(135deg, #4267B2 0%, #1877F2 100%)'
+  }
   if (slug === 'website') {
     return 'linear-gradient(135deg, #475569 0%, #1E293B 100%)'
   }
@@ -2207,11 +2359,85 @@ function switchPlatform(p) {
   resetStage()
 }
 
+/** Facebook yoki Instagram ulash: Meta OAuth sahifasiga yo'naltiradi. */
+async function startMetaOAuth() {
+  if (!company.value) return
+  try {
+    const { url } = await channelsApi.getMetaOAuthUrl(company.value.id)
+    window.location.href = url
+  } catch (e) {
+    addError.value = e?.response?.data?.message || 'Meta OAuth URL olib bo\'lmadi'
+  }
+}
+
+/** Meta callback qaytganidan keyin sessiyani yuklash va modal ochish. */
+async function handleMetaSession(sessionToken, companyId) {
+  if (!company.value || company.value.id !== companyId) {
+    // company hali yuklanmagan bo'lishi mumkin — kutamiz
+    await new Promise(r => setTimeout(r, 800))
+    if (!company.value) return
+  }
+  try {
+    const data = await channelsApi.getMetaSession(company.value.id, sessionToken)
+    if (data.pages?.length) {
+      metaPages.value = data.pages
+      metaSessionToken.value = sessionToken
+      metaSelected.value = []
+      metaConnectError.value = ''
+      metaModalOpen.value = true
+    } else {
+      metaNotify.value = data.error || 'Facebook sahifalar topilmadi'
+    }
+  } catch {
+    metaNotify.value = 'Meta sessiyani yuklashda xato'
+  }
+}
+
+function toggleMetaItem(type, item) {
+  const key = type === 'facebook' ? item.page_id : item.ig_user_id
+  const idx = metaSelected.value.findIndex(s => (s.page_id || s.ig_user_id) === key)
+  if (idx >= 0) {
+    metaSelected.value.splice(idx, 1)
+  } else {
+    metaSelected.value.push({
+      type,
+      name: type === 'facebook' ? item.page_name : ('@' + (item.ig_username || item.ig_user_id)),
+      page_id: type === 'facebook' ? item.page_id : undefined,
+      ig_user_id: type === 'instagram' ? item.ig_user_id : undefined,
+      page_token: item.page_token,
+    })
+  }
+}
+
+function isMetaItemSelected(type, item) {
+  const key = type === 'facebook' ? item.page_id : item.ig_user_id
+  return metaSelected.value.some(s => (s.page_id || s.ig_user_id) === key)
+}
+
+async function connectMetaPages() {
+  if (!metaSelected.value.length || !company.value) return
+  metaConnecting.value = true
+  metaConnectError.value = ''
+  try {
+    await channelsApi.connectMeta(company.value.id, metaSessionToken.value, metaSelected.value)
+    metaModalOpen.value = false
+    await loadAll()
+  } catch (e) {
+    metaConnectError.value = e?.response?.data?.message || 'Ulashda xato yuz berdi'
+  } finally {
+    metaConnecting.value = false
+  }
+}
+
 async function submitAdd() {
   addError.value = ''
   const url = addUrl.value.trim()
-  if (!url) { addError.value = tt('cc.modal.err.noUrl'); return }
   if (!company.value) { addError.value = tt('cc.modal.err.noCompany'); return }
+  if (addPlatformSlug.value === 'facebook' || addPlatformSlug.value === 'instagram') {
+    await startMetaOAuth()
+    return
+  }
+  if (!url) { addError.value = tt('cc.modal.err.noUrl'); return }
   if (addPlatformSlug.value !== 'telegram') {
     addError.value = tt('cc.modal.err.unsupported')
     return
@@ -2302,9 +2528,22 @@ function handleKey(e) {
   else if (reactivateModalOpen.value) closeReactivateModal()
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadAll()
   document.addEventListener('keydown', handleKey)
+
+  // Meta OAuth callback natijasini URL parametrlardan tekshirish
+  const metaSession = route.query.meta_session
+  const metaCompany = route.query.meta_company
+  const metaError = route.query.meta_error
+
+  if (metaError) {
+    metaNotify.value = decodeURIComponent(String(metaError))
+    router.replace({ query: {} })
+  } else if (metaSession && metaCompany) {
+    router.replace({ query: {} })
+    await handleMetaSession(String(metaSession), String(metaCompany))
+  }
 })
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKey)

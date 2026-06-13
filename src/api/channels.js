@@ -52,4 +52,17 @@ export const channelsApi = {
   /** Manba uchun darhol scan ishga tushirish */
   scanSource: (companyId, channelId, sourceId) =>
     http.post(`/companies/${companyId}/channels/${channelId}/sources/${sourceId}/scan`).then(r => r.data),
+
+  // ── Meta (Facebook / Instagram) ──────────────────────────────────────────
+  /** Meta OAuth URL ni olish (Facebook/Instagram ulash uchun) */
+  getMetaOAuthUrl: (companyId) =>
+    http.get(`/companies/${companyId}/channels/meta/oauth-url`).then(r => r.data),
+
+  /** Meta OAuth sessiyasini tekshirish (callback qaytgandan keyin) */
+  getMetaSession: (companyId, token) =>
+    http.get(`/companies/${companyId}/channels/meta/session/${token}`).then(r => r.data),
+
+  /** Tanlangan Meta sahifalarni ulash */
+  connectMeta: (companyId, session_token, items) =>
+    http.post(`/companies/${companyId}/channels/meta/connect`, { session_token, items }).then(r => r.data),
 }

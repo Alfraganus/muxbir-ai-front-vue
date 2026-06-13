@@ -276,6 +276,50 @@
             </span>
           </section>
 
+          <!-- ─── Meta (Facebook / Instagram) kanal tanlash ─── -->
+          <section v-if="connectedMetaChannels.length"
+                   :style="{
+                     padding: '14px',
+                     borderRadius: '10px',
+                     border: '1px solid var(--border-2)',
+                     background: 'var(--panel)',
+                     display: 'flex', flexDirection: 'column', gap: '8px',
+                   }">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11.5px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.05em;">
+                Facebook / Instagram
+              </span>
+              <span v-if="selectedMetaChannelIds.length"
+                    style="font-size:10px;color:#1877F2;font-weight:600;margin-left:auto;
+                           padding:2px 7px;background:rgba(24,119,242,.12);border-radius:999px;">
+                {{ selectedMetaChannelIds.length }} tanlandi
+              </span>
+            </div>
+            <label v-for="ch in connectedMetaChannels" :key="ch.id"
+                   :style="{
+                     display: 'flex', alignItems: 'center', gap: '9px',
+                     padding: '8px 10px', borderRadius: '7px', cursor: 'pointer',
+                     border: '1px solid ' + (selectedMetaChannelIds.includes(ch.id) ? 'rgba(24,119,242,.5)' : 'var(--border-2)'),
+                     background: selectedMetaChannelIds.includes(ch.id) ? 'rgba(24,119,242,.06)' : 'var(--bg)',
+                   }">
+              <input type="checkbox"
+                     :value="ch.id"
+                     v-model="selectedMetaChannelIds"
+                     style="width:15px;height:15px;accent-color:#1877F2;cursor:pointer;flex:none;"/>
+              <span style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                {{ ch.display_name || ch.username }}
+              </span>
+              <span style="font-size:10px;color:var(--muted);margin-left:auto;flex:none;">
+                {{ (ch.platform_type || ch.platform?.slug) === 'instagram' ? 'Instagram' : 'Facebook' }}
+              </span>
+            </label>
+            <!-- IG + rasmsiz ogohlantirish -->
+            <div v-if="igChannelsSelected && !hasImage"
+                 style="font-size:11.5px;color:#854d0e;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:7px;padding:8px 10px;line-height:1.5;">
+              ⚠ Instagram rasmsiz postni qo'llamaydi. Rasm qo'shmasangiz, IG kanallarga yuborilmaydi.
+            </div>
+          </section>
+
           <!-- iPhone 16 Telegram preview — switch bilan yoqiladi -->
           <section class="pe-preview-wrap" :class="{ on: previewShown }">
             <div class="pe-preview-head">
@@ -1126,8 +1170,25 @@ const activeLang = ref(
 const activeTr = computed(() => translations[activeLang.value])
 
 const connectedTgChannels = computed(() =>
-  allChannels.value.filter(c => (c.platform?.slug === 'telegram' || c.telegram_chat_id) && c.status === 'connected'),
+  allChannels.value.filter(c => {
+    const pt = c.platform_type || c.platform?.slug
+    return (pt === 'telegram' || c.telegram_chat_id) && c.status === 'connected'
+  }),
 )
+const connectedMetaChannels = computed(() =>
+  allChannels.value.filter(c => {
+    const pt = c.platform_type || c.platform?.slug
+    return (pt === 'facebook' || pt === 'instagram') && c.status === 'connected'
+  }),
+)
+const selectedMetaChannelIds = ref([])
+const igChannelsSelected = computed(() =>
+  selectedMetaChannelIds.value.some(id => {
+    const ch = connectedMetaChannels.value.find(c => c.id === id)
+    return (ch?.platform_type || ch?.platform?.slug) === 'instagram'
+  }),
+)
+const hasImage = computed(() => !!form.cover_image_url || (Array.isArray(form.gallery) && form.gallery.length > 0))
 
 // Preview ko'p kanaldan BIRINCHISIni ko'rsatadi (taxminiy ko'rinish).
 const primaryChannelId = computed(() => form.telegram_channel_ids[0] || null)
@@ -1355,7 +1416,7 @@ async function saveAll() {
       gallery: galleryArr.value,
       publish_at: form.publish_at ? new Date(form.publish_at).toISOString() : null,
       telegram_channel_id: form.telegram_channel_ids[0] || null,
-      telegram_channel_ids: [...form.telegram_channel_ids],
+      telegram_channel_ids: [...new Set([...form.telegram_channel_ids, ...selectedMetaChannelIds.value])],
       telegram_raw_long_text: form.telegram_raw_long_text || null,
       status: derivedStatus,
     }
@@ -1444,9 +1505,9 @@ const publishableLangs = computed(() => LANGS.filter(l => hasAnyContent(l)))
 
 function onPublishClick() {
   if (!isEdit.value || !post.value) return
-  if (!form.telegram_channel_ids.length) {
-    formError.value = 'Telegram kanal tanlanmagan — o\'ng tomondagi panel orqali kanal(lar)ni tanlang'
-    alert('⚠ Telegram kanal tanlanmagan!\n\nO\'ng tomondagi panel orqali kamida bitta kanalni tanlang va qaytadan urinib ko\'ring.')
+  if (!form.telegram_channel_ids.length && !selectedMetaChannelIds.value.length) {
+    formError.value = 'Kanal tanlanmagan — o\'ng tomondagi panel orqali kanal(lar)ni tanlang'
+    alert('⚠ Kanal tanlanmagan!\n\nO\'ng tomondagi panel orqali kamida bitta kanalni tanlang va qaytadan urinib ko\'ring.')
     return
   }
   // Default til: kompaniya sozlamasi → joriy tab → birinchi to'ldirilgan til
@@ -1470,7 +1531,7 @@ async function confirmPublishLang() {
 
 async function publishNow(lang) {
   if (!isEdit.value || !post.value) return
-  if (!form.telegram_channel_ids.length) {
+  if (!form.telegram_channel_ids.length && !selectedMetaChannelIds.value.length) {
     formError.value = tt('pe.tg.noConnected')
     return
   }
