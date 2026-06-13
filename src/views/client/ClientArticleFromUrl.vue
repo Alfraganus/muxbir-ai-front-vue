@@ -185,8 +185,9 @@ const groups = ref([])
 const company = ref(null)
 
 const providers = [
-  { id: 'openai', label: 'OpenAI', note: 'GPT-4o, GPT-4o-mini' },
-  { id: 'gemini', label: 'Google Gemini', note: '2.5 Pro / Flash / Flash-Lite' },
+  { id: 'openai',    label: 'OpenAI',           note: 'GPT-4o, GPT-4o-mini' },
+  { id: 'gemini',    label: 'Google Gemini',    note: '2.5 Pro / Flash / Flash-Lite' },
+  { id: 'anthropic', label: 'Anthropic Claude', note: 'Sonnet, Haiku, Opus' },
 ]
 const modelsByProvider = {
   openai: [
@@ -200,6 +201,11 @@ const modelsByProvider = {
     { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'eng kuchli Gemini modeli' },
     { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon, juda tezkor' },
     { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'doim eng yangi Flash' },
+  ],
+  anthropic: [
+    { id: 'claude-sonnet-4-6',         label: 'claude-sonnet-4-6',         note: 'tezkor (default)' },
+    { id: 'claude-opus-4-8',           label: 'claude-opus-4-8',           note: 'eng kuchli' },
+    { id: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5-20251001', note: 'eng arzon, tez' },
   ],
 }
 
