@@ -1649,36 +1649,22 @@ const SORT_MODE_OPTIONS = [
 ]
 
 // ── AI sozlamalari (prompt + provider + model + recommended) ──
+// Auto-post qayta yozish uchun faqat Gemini Pro modellari qoldirildi.
+// Qolgan provayder/modellar (OpenAI, Anthropic, Flash/Lite) auto-postdan yashirilgan.
 const AI_PROVIDERS = [
-  { id: 'openai',     label: 'OpenAI',            note: 'GPT-4o, mini' },
-  { id: 'gemini',     label: 'Google Gemini',     note: '2.5 Pro / Flash' },
-  { id: 'anthropic',  label: 'Anthropic Claude',  note: 'Sonnet, Haiku, Opus' },
+  { id: 'gemini',     label: 'Google Gemini',     note: '2.5 Pro / 3.1 Pro' },
 ]
 const AI_MODELS_BY_PROVIDER = {
-  openai: [
-    { id: 'gpt-4o-mini',   label: 'gpt-4o-mini',   note: 'tezkor (default)' },
-    { id: 'gpt-4o',        label: 'gpt-4o',        note: 'eng kuchli' },
-    { id: 'gpt-4-turbo',   label: 'gpt-4-turbo',   note: 'oldingi avlod' },
-    { id: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo', note: 'eng arzon' },
-  ],
   gemini: [
-    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
-    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'kuchli' },
+    { id: 'gemini-2.5-pro',         label: 'gemini-2.5-pro',         note: 'kuchli (default)' },
     { id: 'gemini-3.1-pro-preview', label: 'gemini-3.1-pro-preview', note: 'eng kuchli Gemini' },
-    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon' },
-    { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'eng yangi Flash' },
-  ],
-  anthropic: [
-    { id: 'claude-sonnet-4-6',          label: 'claude-sonnet-4-6',          note: 'tezkor (default)' },
-    { id: 'claude-opus-4-8',            label: 'claude-opus-4-8',            note: 'eng kuchli' },
-    { id: 'claude-haiku-4-5-20251001',  label: 'claude-haiku-4-5-20251001',  note: 'eng arzon, tez' },
   ],
 }
 
 const aiPromptGroups = ref([])
 const autoPromptGroupId = ref('')
-const autoProvider = ref('openai')
-const autoModel = ref('gpt-4o-mini')
+const autoProvider = ref('gemini')
+const autoModel = ref('gemini-2.5-pro')
 const autoUseRecommended = ref(false)
 const autoRecommended = ref({ exists: false, name: null, loaded: false })
 
@@ -1737,8 +1723,8 @@ function resetAutoSettings() {
     keywords: '',
   }
   autoPromptGroupId.value = ''
-  autoProvider.value = 'openai'
-  autoModel.value = 'gpt-4o-mini'
+  autoProvider.value = 'gemini'
+  autoModel.value = 'gemini-2.5-pro'
   autoUseRecommended.value = false
   autoOutputLanguage.value = 'uz_lat'
 }
@@ -2148,8 +2134,15 @@ async function openAutoSettings(channel, opts = {}) {
 
   // AI sozlamalari — kanaldan o'qib qabul qilamiz (NULL bo'lsa default)
   autoPromptGroupId.value = channel.auto_prompt_group_id || ''
-  autoProvider.value = channel.auto_provider || 'openai'
-  autoModel.value = channel.auto_model || (AI_MODELS_BY_PROVIDER[autoProvider.value]?.[0]?.id || 'gpt-4o-mini')
+  // Faqat ruxsat etilgan provayder/model qabul qilinadi. Kanalda eski (endi
+  // yashirilgan) qiymat saqlangan bo'lsa — Gemini Pro defaultiga tushiramiz.
+  autoProvider.value = AI_PROVIDERS.some(p => p.id === channel.auto_provider)
+    ? channel.auto_provider
+    : 'gemini'
+  const allowedModels = AI_MODELS_BY_PROVIDER[autoProvider.value] || []
+  autoModel.value = allowedModels.some(m => m.id === channel.auto_model)
+    ? channel.auto_model
+    : (allowedModels[0]?.id || 'gemini-2.5-pro')
   autoUseRecommended.value = !!channel.auto_use_admin_recommended
   autoOutputLanguage.value = ['uz_lat', 'uz_cyr', 'ru', 'en'].includes(channel.auto_output_language)
     ? channel.auto_output_language

@@ -1527,6 +1527,8 @@ function onPublishClick() {
 }
 
 async function confirmPublishLang() {
+  // Ikki marta bosilsa ham takror publish ketmasin (dublikat oldini olish)
+  if (publishing.value || activating.value) return
   showPublishLang.value = false
   if (post.value?.status === 'draft') {
     if (!confirm(tt('pe.confirmActivatePublish'))) return
