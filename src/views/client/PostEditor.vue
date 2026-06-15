@@ -1530,10 +1530,13 @@ async function confirmPublishLang() {
   // Ikki marta bosilsa ham takror publish ketmasin (dublikat oldini olish)
   if (publishing.value || activating.value) return
   showPublishLang.value = false
+  // Draft post (masalan "Habar qidirish"dan yaratilgan) — faqat tasdiq so'raymiz.
+  // MUHIM: bu yerda activatePost() CHAQIRMAYMIZ. U postni 'scheduled' qilib
+  // navbatga (delay=0 BullMQ job) qo'shar va publishNow bilan poyga hosil qilib,
+  // Telegramga IKKI marta yuborilishiga sabab bo'lardi. publishNow o'zi saqlaydi
+  // va to'g'ridan-to'g'ri 'published' qiladi — navbatga umuman tushmaydi.
   if (post.value?.status === 'draft') {
     if (!confirm(tt('pe.confirmActivatePublish'))) return
-    await activatePost()
-    if (formError.value) return
   }
   await publishNow(publishLang.value)
 }
