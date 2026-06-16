@@ -396,7 +396,9 @@ function publishLabel(p) {
   if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}/.test(s)) s = s.replace(' ', 'T')
   const dt = new Date(s)
   if (isNaN(dt.getTime())) return '—'
-  return `${dt.getDate().toString().padStart(2,'0')} ${UZ_MONTHS[dt.getMonth()]} ${dt.getFullYear()}`
+  const hh = dt.getHours().toString().padStart(2, '0')
+  const mm = dt.getMinutes().toString().padStart(2, '0')
+  return `${dt.getDate().toString().padStart(2,'0')} ${UZ_MONTHS[dt.getMonth()]} ${dt.getFullYear()}, ${hh}:${mm}`
 }
 
 function statusTone(s) {
