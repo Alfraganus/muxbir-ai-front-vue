@@ -1652,10 +1652,11 @@ const SORT_MODE_OPTIONS = [
 // Auto-post qayta yozish uchun faqat Gemini Pro modellari qoldirildi.
 // Qolgan provayder/modellar (OpenAI, Anthropic, Flash/Lite) auto-postdan yashirilgan.
 const AI_PROVIDERS = [
-  { id: 'gemini',     label: 'Google Gemini',     note: '2.5 Pro / 3.1 Pro' },
+  { id: 'gemini',     label: 'Google Gemini',     note: '2.5 Flash / Pro / 3.1 Pro' },
 ]
 const AI_MODELS_BY_PROVIDER = {
   gemini: [
+    { id: 'gemini-2.5-flash',       label: 'gemini-2.5-flash',       note: 'tezkor, arzon' },
     { id: 'gemini-2.5-pro',         label: 'gemini-2.5-pro',         note: 'kuchli (default)' },
     { id: 'gemini-3.1-pro-preview', label: 'gemini-3.1-pro-preview', note: 'eng kuchli Gemini' },
   ],
