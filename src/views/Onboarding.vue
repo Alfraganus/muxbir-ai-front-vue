@@ -604,7 +604,7 @@
             </div>
 
             <!-- Plan cards -->
-            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px">
               <div v-for="p in plans" :key="p.id" @click="chosen=p.id"
                 :style="{
                   background:'var(--panel)',
@@ -800,6 +800,10 @@ import { referencesApi } from '@/api/references.js'
 import { companiesApi } from '@/api/companies.js'
 import { onboardingApi } from '@/api/onboarding.js'
 import { channelsApi } from '@/api/channels.js'
+import { tariffsApi } from '@/api/tariffs.js'
+import { subscriptionsApi } from '@/api/subscriptions.js'
+import { paymentsApi } from '@/api/payments.js'
+import { useClickPayment } from '@/composables/useClickPayment.js'
 
 // ── Inline UI helpers ─────────────────────────────────────────
 const VField = defineComponent({
@@ -1326,16 +1330,43 @@ async function submitStep4() {
 }
 
 // ── Step 5 ────────────────────────────────────────────────────
-const chosen = ref('free')
+const chosen = ref('') // tanlangan tarif id (UUID)
 const billingCycle = ref('monthly')
-const plans = [
-  { id: 'free', name: 'Free', price: 0, tag: null, desc: "Sinab ko'rish uchun bepul", includes: ['1 kanal', '30 post/oy', '10k AI token', '1 joy', '1 GB'], free: true },
-  { id: 'starter', name: 'Starter', price: 400_000, tag: null, desc: 'Kichik kanallar uchun', includes: ['2 kanal', '200 post/oy', '50k AI token', '3 joy', '5 GB'] },
-  { id: 'core', name: 'Core', price: 1_000_000, tag: null, desc: "O'rta kanallar uchun", includes: ['5 kanal', '500 post/oy', '150k AI token', '5 joy', '20 GB'] },
-  { id: 'scale', name: 'Scale', price: 2_400_000, tag: 'Eng mashhur', desc: 'Bir necha kanalli media', includes: ['15 kanal', '2000 post/oy', '600k AI token', '10 joy', '50 GB', 'Priority support'] },
-  { id: 'enterprise', name: 'Enterprise', price: 6_500_000, tag: 'Custom', desc: 'Yirik media uchun', includes: ['Cheksiz kanal', '6000 post/oy', '1.5M AI token', '999 joy', '500 GB'] },
-]
-const currentPlan = computed(() => plans.find(p => p.id === chosen.value) || plans[0])
+// Backend tariflari (arxivlanmagan, faol) — ro'yxat
+const loadedTariffs = ref([])
+// Step 5 da yaratilgan obuna id'si — Step 6 (to'lov) uchun kerak
+const subscriptionId = ref(null)
+const { payWithClick } = useClickPayment()
+
+function i18nName(obj) {
+  const lang = localStorage.getItem('lang') || 'uz'
+  return obj?.[lang] || obj?.uz || ''
+}
+function tariffIncludes(t) {
+  return [
+    `Kuniga ${t.posts_daily_limit > 0 ? t.posts_daily_limit + ' ta xabar' : 'cheksiz'}`,
+    `Oyiga ${Number(t.posts_monthly_limit) || 0} ta xabar`,
+    `${Number(t.free_credits_monthly) || 0} bepul kredit/oy`,
+    Number(t.credit_price_per_message) > 0
+      ? `Qo'shimcha: ${fmtSom(t.credit_price_per_message)} so'm/xabar`
+      : null,
+  ].filter(Boolean)
+}
+// Plan kartalari to'g'ridan-to'g'ri backend tariflaridan quriladi (id = tarif UUID).
+const plans = computed(() => loadedTariffs.value.map((t) => {
+  const price = Number(t.price_monthly) || 0
+  return {
+    id: t.id,
+    slug: t.slug,
+    name: i18nName(t.name_i18n) || t.slug,
+    tag: i18nName(t.category?.name_i18n) || null,
+    desc: '',
+    price,
+    free: price === 0,
+    includes: tariffIncludes(t),
+  }
+}))
+const currentPlan = computed(() => plans.value.find(p => p.id === chosen.value) || plans.value[0] || { free: true, price: 0, includes: [] })
 const finalPrice = computed(() => {
   const p = currentPlan.value
   if (p.free) return 0
@@ -1343,14 +1374,44 @@ const finalPrice = computed(() => {
 })
 async function submitStep5() {
   submitting.value = true
-  const isFree = currentPlan.value.free
-  await onboardingApi.updateStep(5, isFree ? { completed: true } : {}).catch(() => {})
-  submitting.value = false
-  if (isFree) {
-    router.push('/client/overview')
-  } else {
-    await goToStep(6)
+  apiError.value = ''
+  try {
+    const tariffId = chosen.value
+    if (!tariffId) throw new Error('Tarif yuklanmadi. Sahifani yangilab qayta urinib ko\'ring.')
+    if (!companyId.value) throw new Error('Kompaniya topilmadi. 2-qadamni qayta bajaring.')
+
+    // Tanlangan tarif obunaga yoziladi — limit va featurelar shu obuna orqali userga o'tadi
+    const sub = await subscriptionsApi.create({
+      company_id: companyId.value,
+      tariff_id: tariffId,
+      billing_cycle: billingCycle.value,
+    })
+    subscriptionId.value = sub.id
+
+    const isFree = currentPlan.value.free
+    await onboardingApi
+      .updateStep(5, { tariff_id: tariffId, billing_cycle: billingCycle.value, completed: isFree })
+      .catch(() => {})
+
+    if (isFree) {
+      // Bepul tarif — sinov rejimini faollashtirib, ish maydoniga o'tamiz
+      await paymentsApi.freeTrial(sub.id).catch(() => {})
+      router.push('/client/overview')
+    } else {
+      await goToStep(6)
+    }
+  } catch (err) {
+    apiError.value = err?.response?.data?.message || err.message || 'Xatolik yuz berdi'
+  } finally {
+    submitting.value = false
   }
+}
+
+async function ensureSubscriptionId() {
+  if (subscriptionId.value) return subscriptionId.value
+  const sub = await subscriptionsApi.getMine().catch(() => null)
+  if (sub?.id) subscriptionId.value = sub.id
+  return subscriptionId.value
 }
 
 // ── Step 6 ────────────────────────────────────────────────────
@@ -1373,9 +1434,31 @@ const orderRows = computed(() => {
 })
 async function submitStep6() {
   submitting.value = true
+  apiError.value = ''
   try {
-    await onboardingApi.updateStep(6, { completed: true }).catch(() => {})
-    router.push('/client/overview')
+    const subId = await ensureSubscriptionId()
+    if (!subId) throw new Error('Obuna topilmadi. Tarifni qayta tanlang.')
+
+    // Bepul sinov — to'lovsiz faollashtirib, ish maydoniga o'tamiz
+    if (payMethod.value === 'trial') {
+      await paymentsApi.freeTrial(subId)
+      await onboardingApi.updateStep(6, { method: 'trial', completed: true }).catch(() => {})
+      router.push('/client/overview')
+      return
+    }
+
+    // Click — my.click.uz to'lov sahifasiga yo'naltiramiz.
+    // To'lov tugagach, click/complete obunani faollashtiradi.
+    if (payMethod.value === 'click') {
+      await onboardingApi.updateStep(6, { method: 'click' }).catch(() => {})
+      await payWithClick(subId) // redirect qiladi
+      return
+    }
+
+    // payme / uzcard / bank — hali ulanmagan
+    apiError.value = "Bu to'lov usuli tez orada ulanadi. Hozircha Click yoki bepul sinovni tanlang."
+  } catch (err) {
+    apiError.value = err?.response?.data?.message || err.message || "To'lovni boshlashda xatolik"
   } finally {
     submitting.value = false
   }
@@ -1396,10 +1479,14 @@ const visibleSteps = computed(() => currentPlan.value?.free ? steps.filter(s => 
 // ── Load references ───────────────────────────────────────────
 async function loadReferences() {
   try {
-    const [bt, pl] = await Promise.all([
+    const [bt, pl, tariffs] = await Promise.all([
       referencesApi.getBusinessTypes().catch(() => []),
       referencesApi.getPlatforms().catch(() => []),
+      tariffsApi.list().catch(() => []),
     ])
+    // Backend tariflari (arxivlanmagan, faol) — kartalar shulardan quriladi.
+    loadedTariffs.value = Array.isArray(tariffs) ? tariffs : []
+    if (!chosen.value && loadedTariffs.value.length) chosen.value = loadedTariffs.value[0].id
     businessTypes.value = bt
     platformsForStep.value = pl.length ? pl : [
       { slug: 'telegram', name_i18n: { uz: 'Telegram' }, is_available: true },

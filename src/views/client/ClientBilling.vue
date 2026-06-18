@@ -27,6 +27,7 @@
             <AppButton variant="secondary" size="md">Yillik to'lovga o'tish (−15%)</AppButton>
             <AppButton variant="ghost" size="md">To'lovni bekor qilish</AppButton>
           </div>
+          <span v-if="clickError" style="font-size:12px;color:var(--danger);">{{ clickError }}</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">Tarkibga kiradi</span>
@@ -127,17 +128,13 @@ import AppProgress from '@/components/ui/AppProgress.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { fmtSom } from '@/i18n/index.js'
 import { useClickPayment } from '@/composables/useClickPayment.js'
-import { useToast } from '@/composables/useToast.js'
 
-const { loading: clickLoading, payWithClick } = useClickPayment()
-const toast = useToast()
+const { loading: clickLoading, error: clickError, payWithClick } = useClickPayment()
 
 async function onPayWithClick() {
   try {
     await payWithClick()
-  } catch (e) {
-    toast.error(e?.message || "To'lovni boshlashda xatolik")
-  }
+  } catch { /* xatolik clickError'da ko'rsatiladi */ }
 }
 
 const usage = [
