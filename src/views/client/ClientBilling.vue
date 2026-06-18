@@ -21,6 +21,9 @@
           </div>
           <span style="font-size:12px;color:var(--muted);">Keyingi to'lov: <span style="color:var(--text);font-weight:500;">2026-06-01</span> · 16 kun qoldi</span>
           <div style="display:flex;gap:6px;margin-top:4px;">
+            <AppButton variant="primary" size="md" :loading="clickLoading" @click="onPayWithClick">
+              <template #icon><AppIcon name="Bolt" :size="13"/></template>Click orqali to'lov
+            </AppButton>
             <AppButton variant="secondary" size="md">Yillik to'lovga o'tish (−15%)</AppButton>
             <AppButton variant="ghost" size="md">To'lovni bekor qilish</AppButton>
           </div>
@@ -123,6 +126,19 @@ import AppStatus from '@/components/ui/AppStatus.vue'
 import AppProgress from '@/components/ui/AppProgress.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { fmtSom } from '@/i18n/index.js'
+import { useClickPayment } from '@/composables/useClickPayment.js'
+import { useToast } from '@/composables/useToast.js'
+
+const { loading: clickLoading, payWithClick } = useClickPayment()
+const toast = useToast()
+
+async function onPayWithClick() {
+  try {
+    await payWithClick()
+  } catch (e) {
+    toast.error(e?.message || "To'lovni boshlashda xatolik")
+  }
+}
 
 const usage = [
   { label: 'Telegram kanallar',  used: 6,    limit: 4,    unit: 'kanal' },

@@ -76,7 +76,7 @@
               </span>
               <div style="display:flex;flex-direction:column;gap:2px;">
                 <span style="font-size:14px;font-weight:600;line-height:1.1;">{{ tariffName(t) }}</span>
-                <span class="mono" style="font-size:10.5px;color:var(--muted);">{{ t.slug }}</span>
+                <span class="mono" style="font-size:10.5px;color:var(--muted);">{{ categoryName(t) || t.slug }}</span>
               </div>
             </div>
             <AppBadge :tone="t.is_active ? 'success' : 'muted'" :dot="true">
@@ -102,11 +102,10 @@
 
         <!-- Limits -->
         <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px;">
-          <LimitLine icon="Hash" :label="'Telegram kanallar'" :value="fmtNum(t.channels_limit)" />
-          <LimitLine icon="Pen" :label="'Postlar / oy'" :value="fmtNum(t.posts_monthly_limit)" />
-          <LimitLine icon="Sparkle" :label="'AI token / oy'" :value="fmtCompact(t.ai_tokens_monthly)" />
-          <LimitLine icon="UserPlus" :label="'Jamoa joylari'" :value="fmtNum(t.seats_limit)" />
-          <LimitLine icon="Cloud" :label="'Saqlash'" :value="t.storage_gb + ' GB'" />
+          <LimitLine icon="Bolt" :label="'Kuniga xabar'" :value="t.posts_daily_limit > 0 ? fmtNum(t.posts_daily_limit) : 'cheksiz'" />
+          <LimitLine icon="Pen" :label="'Oyiga xabar'" :value="fmtNum(t.posts_monthly_limit)" />
+          <LimitLine icon="Sparkle" :label="'Bepul kredit / oy'" :value="fmtNum(t.free_credits_monthly)" />
+          <LimitLine icon="Hash" :label="'Qo\'shimcha kredit'" :value="t.credit_price_per_message > 0 ? fmtSom(t.credit_price_per_message) + ' so\'m' : '—'" />
         </div>
 
         <!-- Features -->
@@ -138,6 +137,10 @@
             O'chirish
           </AppButton>
           <div style="flex:1;"/>
+          <AppButton variant="secondary" size="sm" @click="goEdit(t)">
+            <template #icon><AppIcon name="Pen" :size="12"/></template>
+            Tahrir
+          </AppButton>
           <AppButton variant="secondary" size="sm" @click="toggleActive(t)">
             {{ t.is_active ? 'Yashirish' : 'Faollashtirish' }}
           </AppButton>
@@ -169,10 +172,11 @@
                 </div>
               </div>
             </td>
-            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtNum(t.channels_limit) }}</td>
+            <td style="padding:12px;vertical-align:middle;">{{ categoryName(t) || '—' }}</td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ t.posts_daily_limit > 0 ? fmtNum(t.posts_daily_limit) : '∞' }}</td>
             <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtNum(t.posts_monthly_limit) }}</td>
-            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtCompact(t.ai_tokens_monthly) }}</td>
-            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtNum(t.seats_limit) }}</td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtNum(t.free_credits_monthly) }}</td>
+            <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ t.credit_price_per_message > 0 ? fmtSom(t.credit_price_per_message) : '—' }}</td>
             <td style="padding:12px;vertical-align:middle;text-align:right;font-weight:500;" class="tabular">
               {{ priceFor(t) === 0 ? 'Bepul' : fmtSom(priceFor(t)) + " so'm" }}
             </td>
@@ -181,6 +185,9 @@
             </td>
             <td style="padding:12px;vertical-align:middle;text-align:right;">
               <div style="display:inline-flex;gap:6px;">
+                <AppButton variant="secondary" size="sm" @click="goEdit(t)">
+                  <template #icon><AppIcon name="Pen" :size="12"/></template>
+                </AppButton>
                 <AppButton variant="secondary" size="sm" @click="toggleActive(t)">
                   {{ t.is_active ? 'Yashirish' : 'Yoqish' }}
                 </AppButton>
@@ -206,7 +213,7 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { tariffsApi } from '@/api/tariffs.js'
-import { fmtSom, fmtCompact } from '@/i18n/index.js'
+import { fmtSom } from '@/i18n/index.js'
 
 const router = useRouter()
 
@@ -249,11 +256,12 @@ const filtered = computed(() => {
 
 const colHeaders = [
   { label: 'Tarif' },
-  { label: 'Kanal',     right: true },
-  { label: 'Postlar/oy',right: true },
-  { label: 'AI tokens', right: true },
-  { label: "Joy",       right: true },
-  { label: 'Narx',      right: true },
+  { label: 'Kategoriya' },
+  { label: 'Kuniga',     right: true },
+  { label: 'Oyiga',      right: true },
+  { label: 'Bepul kredit',right: true },
+  { label: 'Kredit narxi',right: true },
+  { label: 'Narx',       right: true },
   { label: 'Holat' },
   { label: '' },
 ]
@@ -261,6 +269,12 @@ const colHeaders = [
 function tariffName(t) {
   const lang = localStorage.getItem('lang') || 'uz'
   return t.name_i18n?.[lang] || t.name_i18n?.uz || t.slug || '—'
+}
+function categoryName(t) {
+  const c = t.category
+  if (!c) return ''
+  const lang = localStorage.getItem('lang') || 'uz'
+  return c.name_i18n?.[lang] || c.name_i18n?.uz || c.slug || ''
 }
 function featureLabel(f) {
   const lang = localStorage.getItem('lang') || 'uz'
@@ -310,7 +324,7 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const data = await tariffsApi.list()
+    const data = await tariffsApi.listAll()
     tariffs.value = Array.isArray(data) ? data : []
   } catch (e) {
     error.value = e.response?.data?.message || 'Tariflarni yuklab boʻlmadi'
@@ -321,6 +335,10 @@ async function load() {
 
 function goCreate() {
   router.push('/admin/tariffs/new')
+}
+
+function goEdit(t) {
+  router.push({ path: '/admin/tariffs/new', query: { id: t.id } })
 }
 
 async function toggleActive(t) {

@@ -8,7 +8,7 @@ Vue 3 (`<script setup>`) + Vite. Bundan keyin **barcha kod SOLID prinsiplariga a
 
 ### S — Single Responsibility (bitta mas'uliyat)
 - Har bir komponent **bitta** ishni qilsin. Katta "hamma narsa" komponent (God component) yaratmasin.
-- **Komponent ~400 qatordan oshmasin** (`<template>` + `<script>`). Oshsa — kichik child komponentlarga yoki composable'larga ajrat.
+- **Komponent ~300 qatordan oshmasin** (`<template>` + `<script>`). Oshsa — kichik child komponentlarga yoki composable'larga ajrat.
 - Qayta ishlatiladigan mantiqni (`ref`/`computed`/`watch` bilan) **composable** ga chiqar: `src/composables/useXxx.js`.
 - Toza yordamchi funksiyalarni (formatlash, transliteratsiya, validatsiya) **`src/utils/*.js`** ga chiqar — komponent ichida emas.
 - API chaqiruvlari faqat `src/api/*.js` da; komponent to'g'ridan-to'g'ri `axios` chaqirmasin.
