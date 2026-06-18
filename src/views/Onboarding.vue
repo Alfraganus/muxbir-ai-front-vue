@@ -603,8 +603,15 @@
               </div>
             </div>
 
+            <div style="max-width:520px;margin:0 auto 16px"><ApiError :msg="apiError"/></div>
+
+            <!-- Empty state -->
+            <div v-if="!plans.length" style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+              Tariflar yuklanmadi. Sahifani yangilang yoki birozdan keyin urinib ko'ring.
+            </div>
+
             <!-- Plan cards -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px">
+            <div v-else style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px">
               <div v-for="p in plans" :key="p.id" @click="chosen=p.id"
                 :style="{
                   background:'var(--panel)',
