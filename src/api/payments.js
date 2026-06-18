@@ -17,4 +17,6 @@ export const paymentsApi = {
     http.post('/payments/free-trial', { subscription_id }).then((r) => r.data),
   myPayments: () => http.get('/payments/my').then((r) => r.data),
   getOne: (id) => http.get(`/payments/${id}`).then((r) => r.data),
+  // Click sinovi — har chaqirilganda 1000 so'mlik yangi to'lov yaratadi
+  clickTest: () => http.post('/payments/click/test').then((r) => r.data),
 }

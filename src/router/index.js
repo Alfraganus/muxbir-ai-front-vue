@@ -14,6 +14,7 @@ import ClientChannels from '@/views/client/ClientChannels.vue'
 import ClientPosts from '@/views/client/ClientPosts.vue'
 import PostEditor from '@/views/client/PostEditor.vue'
 import ClientBilling from '@/views/client/ClientBilling.vue'
+import ClientClickTest from '@/views/client/ClientClickTest.vue'
 import ClientTeam from '@/views/client/ClientTeam.vue'
 import ClientCategories from '@/views/client/ClientCategories.vue'
 import ClientDiscover from '@/views/client/ClientDiscover.vue'
@@ -53,6 +54,7 @@ const routes = [
   { path: '/client/posts/new',         component: PostEditor },
   { path: '/client/posts/:id/edit',    component: PostEditor },
   { path: '/client/billing',   component: ClientBilling },
+  { path: '/client/click-test', component: ClientClickTest },
   { path: '/client/team',      component: ClientTeam },
   { path: '/client/categories', component: ClientCategories },
   { path: '/client/ai-prompt',  component: ClientAiPrompt },

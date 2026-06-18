@@ -73,7 +73,7 @@
               </div>
               <div>
                 <h1 class="oz-h1">Hisob yarating</h1>
-                <p class="oz-sub">3 kunlik bepul sinash — karta talab qilinmaydi</p>
+                <p class="oz-sub">Bir necha daqiqada ro'yxatdan o'ting</p>
               </div>
             </div>
 
@@ -588,7 +588,7 @@
             <div style="text-align:center;margin-bottom:28px">
               <h1 class="oz-h1" style="margin:0 0 6px">Sizga mos tarifni tanlang</h1>
               <p style="margin:0;color:var(--muted);font-size:13.5px">
-                Barcha tariflarda <strong style="color:var(--text)">3 kun bepul sinab ko'rish</strong> · istalgan vaqtda o'zgartirish mumkin
+                Sizga mos tarifni tanlang · istalgan vaqtda o'zgartirish mumkin
               </p>
               <!-- Billing toggle -->
               <div style="display:inline-flex;margin-top:18px;padding:3px;background:var(--panel);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow-sm)">
@@ -640,10 +640,6 @@
                     <span style="font-size:10.5px;color:var(--muted)">so'm/{{ billingCycle==='monthly' ? 'oy' : 'yil' }}</span>
                   </template>
                 </div>
-                <div v-if="!p.free" style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:color-mix(in oklab,var(--success) 10%,transparent);border:1px solid color-mix(in oklab,var(--success) 22%,transparent);border-radius:999px;width:fit-content">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span style="font-size:10px;font-weight:600;color:var(--success)">3 kun bepul sinash</span>
-                </div>
                 <div style="height:1px;background:var(--border-2)"/>
                 <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px">
                   <li v-for="item in p.includes" :key="item" style="display:flex;align-items:flex-start;gap:6px;font-size:11px;color:var(--text-2)">
@@ -668,7 +664,7 @@
                 </div>
               </div>
               <div style="flex:1;font-size:11.5px;color:var(--muted)">
-                <template v-if="!currentPlan.free">3 kun bepul sinash · sinash tugagandan keyin to'lov olinadi</template>
+                <template v-if="!currentPlan.free">To'lovga o'tasiz · obuna darhol faollashadi</template>
               </div>
               <AppButton variant="secondary" size="lg" @click="goToStep(2)">
                 <template #icon><AppIcon name="ChevronL" :size="14"/></template>Orqaga
@@ -690,44 +686,13 @@
                   <AppIcon name="Coin" :size="22" :stroke-width="1.7" style="color:var(--accent)"/>
                 </div>
                 <div>
-                  <h1 class="oz-h1" style="font-size:20px">Qanday boshlaysiz?</h1>
-                  <p class="oz-sub">Bepul sinab ko'ring yoki to'lov usulini biriktiring</p>
+                  <h1 class="oz-h1" style="font-size:20px">To'lov usulini tanlang</h1>
+                  <p class="oz-sub">Obuna to'lovdan so'ng darhol faollashadi</p>
                 </div>
               </div>
 
               <AppPanel :padding="20">
                 <div style="display:flex;flex-direction:column;gap:6px">
-                  <!-- Trial -->
-                  <div @click="payMethod='trial'"
-                    :style="{
-                      display:'flex',alignItems:'center',gap:'12px',padding:'12px 14px',borderRadius:'10px',cursor:'pointer',
-                      background: payMethod==='trial' ? 'color-mix(in oklab,var(--success) 8%,transparent)' : 'var(--panel-2)',
-                      border: `1.5px solid ${payMethod==='trial' ? 'color-mix(in oklab,var(--success) 35%,transparent)' : 'var(--border)'}`,
-                      transition:'all .15s',
-                    }">
-                    <div style="width:36px;height:36px;border-radius:10px;background:color-mix(in oklab,var(--success) 12%,transparent);border:1px solid color-mix(in oklab,var(--success) 22%,transparent);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
-                      <AppIcon name="Bolt" :size="16" :stroke-width="1.8" style="color:var(--success)"/>
-                    </div>
-                    <div style="flex:1">
-                      <div style="font-size:13px;font-weight:600">3 kun bepul sinash</div>
-                      <div style="font-size:11px;color:var(--muted);margin-top:1px">Hech qanday to'lov talab qilinmaydi</div>
-                    </div>
-                    <span :style="{
-                      width:'20px',height:'20px',borderRadius:'999px',flexShrink:0,
-                      background: payMethod==='trial' ? 'var(--success)' : 'transparent',
-                      border: `1.5px solid ${payMethod==='trial' ? 'var(--success)' : 'var(--border)'}`,
-                      display:'inline-flex',alignItems:'center',justifyContent:'center',transition:'all .15s',
-                    }">
-                      <svg v-if="payMethod==='trial'" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
-                    </span>
-                  </div>
-
-                  <div style="display:flex;align-items:center;gap:10px;margin:4px 0">
-                    <div style="flex:1;height:1px;background:var(--border)"/>
-                    <span style="font-size:11px;color:var(--muted)">yoki to'lov usulini biriktiring</span>
-                    <div style="flex:1;height:1px;background:var(--border)"/>
-                  </div>
-
                   <label v-for="m in payMethods" :key="m.id"
                     :style="{
                       display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'8px',cursor:'pointer',
@@ -742,13 +707,12 @@
                     </div>
                   </label>
 
-                  <div v-if="payMethod!=='trial'"
-                    style="margin-top:6px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:flex-start;gap:8px">
+                  <div style="margin-top:6px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:flex-start;gap:8px">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
                     <span style="font-size:11.5px;color:var(--muted);line-height:1.5">
-                      Bugun hech qanday to'lov olinmaydi. 3 kun sinashdan keyin
+                      Tanlangan tarif uchun
                       <strong style="color:var(--text)">{{ fmtSom(finalPrice) }} so'm</strong>
-                      to'lov olinadi.
+                      to'lov olinadi va obuna darhol faollashadi.
                     </span>
                   </div>
                 </div>
@@ -758,8 +722,8 @@
                     <template #icon><AppIcon name="ChevronL" :size="14"/></template>Orqaga
                   </AppButton>
                   <AppButton variant="primary" size="lg" :loading="submitting" @click="submitStep6">
-                    <template #icon><AppIcon :name="payMethod==='trial' ? 'Bolt' : 'Check'" :size="14"/></template>
-                    {{ payMethod==='trial' ? "Bepul sinashni boshlash" : "To'lovga o'tish" }}
+                    <template #icon><AppIcon name="Check" :size="14"/></template>
+                    To'lovga o'tish
                   </AppButton>
                 </div>
               </AppPanel>
@@ -775,12 +739,12 @@
                 </div>
                 <div style="height:1px;background:var(--border-2);margin:4px 0"/>
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">
-                  <span style="font-size:12.5px;color:var(--text-2)">Bugun</span>
-                  <span style="font-size:18px;font-weight:700;color:var(--success)">0 so'm</span>
+                  <span style="font-size:12.5px;color:var(--text-2)">Jami to'lov</span>
+                  <span style="font-size:18px;font-weight:700;color:var(--text)">{{ currentPlan.free ? "0 so'm" : fmtSom(finalPrice) + " so'm" }}</span>
                 </div>
                 <p style="font-size:11px;color:var(--muted);margin:4px 0 0;line-height:1.5">
                   <template v-if="currentPlan.free">Hech qanday to'lov olinmaydi.</template>
-                  <template v-else>3 kun sinashdan keyin {{ fmtSom(finalPrice) }} so'm yechib olinadi.</template>
+                  <template v-else>To'lovdan so'ng obuna darhol faollashadi.</template>
                 </p>
               </div>
             </AppPanel>
@@ -1422,7 +1386,7 @@ async function ensureSubscriptionId() {
 }
 
 // ── Step 6 ────────────────────────────────────────────────────
-const payMethod = ref('trial')
+const payMethod = ref('click')
 const payMethods = [
   { id: 'click', name: 'Click', hint: 'Onlayn karta orqali' },
   { id: 'payme', name: 'Payme', hint: 'QR yoki ilova orqali' },
@@ -1436,7 +1400,6 @@ const orderRows = computed(() => {
     { label: 'Tarif', value: p.name },
     { label: 'Davr', value: billingCycle.value === 'monthly' ? 'Oylik' : 'Yillik' },
     { label: 'Asosiy narx', value: fmtSom(p.price) + " so'm/oy" },
-    { label: 'Bepul sinash', value: '3 kun', tone: 'success' },
   ]
 })
 async function submitStep6() {
