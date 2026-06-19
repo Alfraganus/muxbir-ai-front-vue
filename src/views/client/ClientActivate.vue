@@ -6,35 +6,38 @@
       <div class="ca-icon"><AppIcon name="Tag" :size="26"/></div>
       <h1 class="ca-title">Tarifni faollashtiring</h1>
       <p class="ca-sub">
-        Ilovadan foydalanish uchun obunangizni to'lov orqali faollashtiring.
+        Tarifni tanlang va to'lov orqali faollashtiring.
         To'lov muvaffaqiyatli bo'lgach, hisobingiz avtomatik ochiladi.
       </p>
 
-      <!-- Tanlangan tarif -->
+      <!-- Tarif tanlash -->
       <div v-if="loadingPlan" class="ca-plan ca-plan-loading">
         <span class="ca-spinner"/> Yuklanmoqda...
       </div>
-      <div v-else-if="plan" class="ca-plan">
-        <div class="ca-plan-head">
-          <span class="ca-plan-name">{{ planName }}</span>
-          <span class="ca-plan-status">{{ statusLabel }}</span>
-        </div>
-        <div class="ca-plan-price">
-          {{ formatSom(planPrice) }} <span>so'm / oy</span>
-        </div>
-        <div class="ca-plan-limits">
-          <div><AppIcon name="Send" :size="13"/> Oylik: <b>{{ limitLabel(plan.tariff?.posts_monthly_limit) }}</b> post</div>
-          <div><AppIcon name="Bolt" :size="13"/> Kunlik: <b>{{ limitLabel(plan.tariff?.posts_daily_limit) }}</b> post</div>
-        </div>
+      <div v-else-if="!tariffs.length" class="ca-plan ca-plan-empty">
+        Tarif topilmadi. Iltimos, qo'llab-quvvatlash bilan bog'laning.
       </div>
-      <div v-else class="ca-plan ca-plan-empty">
-        Tarif tanlanmagan. Iltimos, qo'llab-quvvatlash bilan bog'laning.
+      <div v-else class="ca-tariffs">
+        <button
+          v-for="tr in tariffs" :key="tr.id" type="button"
+          class="ca-tariff" :class="{ active: selectedTariffId === tr.id }"
+          @click="selectedTariffId = tr.id"
+        >
+          <span class="ca-tariff-radio"><span v-if="selectedTariffId === tr.id" class="ca-tariff-dot"/></span>
+          <span class="ca-tariff-info">
+            <span class="ca-tariff-name">{{ tName(tr) }}</span>
+            <span class="ca-tariff-meta">
+              {{ limitLabel(tr.posts_daily_limit) }} post/kun · {{ tr.duration_days }} kunlik · {{ tr.free_credits_monthly }} kredit
+            </span>
+          </span>
+          <span class="ca-tariff-price">{{ formatSom(tr.price_monthly) }} <small>so'm</small></span>
+        </button>
       </div>
 
       <div v-if="error" class="ca-error">{{ error }}</div>
 
       <!-- To'lov -->
-      <button class="ca-pay" :disabled="paying || !plan" @click="pay">
+      <button class="ca-pay" :disabled="paying || !selectedTariffId" @click="pay">
         <span v-if="paying" class="ca-spinner ca-spinner-light"/>
         <template v-else>
           <span class="ca-click-logo">Click</span> bilan to'lash
@@ -47,51 +50,56 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { subscriptionsApi } from '@/api/subscriptions.js'
-import { useClickPayment } from '@/composables/useClickPayment.js'
+import { tariffsApi } from '@/api/tariffs.js'
+import { paymentsApi } from '@/api/payments.js'
 import { useAuthStore } from '@/stores/auth.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { payWithClick } = useClickPayment()
 
-const plan = ref(null)
+const tariffs = ref([])
+const selectedTariffId = ref(null)
 const loadingPlan = ref(true)
 const paying = ref(false)
 const error = ref('')
 
-const planName = computed(() => {
-  const n = plan.value?.tariff?.name_i18n
-  return (typeof n === 'string' ? n : (n?.uz || n?.ru || n?.en)) || plan.value?.tariff?.slug || 'Tarif'
-})
-const planPrice = computed(() => Number(plan.value?.tariff?.price_monthly || 0))
-const statusLabel = computed(() => {
-  const s = plan.value?.status
-  return s === 'past_due' ? "To'lov kutilmoqda" : s === 'expired' ? 'Muddati tugagan' : 'Faollashtirilmagan'
-})
-
+function tName(tr) {
+  const n = tr?.name_i18n
+  return (typeof n === 'string' ? n : (n?.uz || n?.ru || n?.en)) || tr?.slug || 'Tarif'
+}
 function limitLabel(v) { return Number(v) > 0 ? Number(v).toLocaleString('uz-UZ').replace(/,/g, ' ') : '∞' }
 function formatSom(n) { return (Number(n) || 0).toLocaleString('uz-UZ').replace(/,/g, ' ') }
 
 async function load() {
   loadingPlan.value = true
   try {
-    plan.value = await subscriptionsApi.getMine()
+    const [sub, list] = await Promise.all([
+      subscriptionsApi.getMine().catch(() => null),
+      tariffsApi.list().catch(() => []),
+    ])
+    tariffs.value = Array.isArray(list) ? list : []
+    // Joriy tarif bo'lsa oldindan tanlanadi, bo'lmasa birinchisi
+    selectedTariffId.value = sub?.tariff_id || tariffs.value[0]?.id || null
   } catch (e) {
-    error.value = e?.response?.data?.message ?? 'Obuna ma\'lumotini olishda xatolik'
+    error.value = e?.response?.data?.message ?? 'Tariflarni yuklab bo\'lmadi'
   } finally {
     loadingPlan.value = false
   }
 }
 
 async function pay() {
+  if (!selectedTariffId.value) return
   error.value = ''
   paying.value = true
   try {
-    await payWithClick(plan.value?.id || null) // Click sahifasiga yo'naltiradi
+    // Tarif FAQAT to'lov muvaffaqiyatli bo'lganda faollashadi (deferred)
+    const { payment_url } = await paymentsApi.initiateTariff(selectedTariffId.value)
+    if (!payment_url) throw new Error('To\'lov havolasi olinmadi')
+    window.location.href = payment_url
   } catch (e) {
     error.value = e?.response?.data?.message ?? e?.message ?? 'To\'lovni boshlashda xatolik'
     paying.value = false
@@ -135,20 +143,36 @@ onMounted(load)
 
 .ca-plan {
   position: relative; width: 100%; box-sizing: border-box;
-  border: 1.5px solid var(--accent); border-radius: 14px; padding: 16px;
-  background: color-mix(in oklab, var(--accent) 6%, transparent); margin-bottom: 16px;
+  border: 1.5px solid var(--border); border-radius: 14px; padding: 16px;
+  background: var(--panel); color: var(--muted); font-size: 13px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.ca-plan-loading, .ca-plan-empty {
-  border-color: var(--border); background: var(--panel);
-  color: var(--muted); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;
+
+/* Tarif ro'yxati */
+.ca-tariffs {
+  position: relative; width: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
+  max-height: 280px; overflow-y: auto;
 }
-.ca-plan-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.ca-plan-name { font-size: 15px; font-weight: 700; color: var(--text); }
-.ca-plan-status { font-size: 10.5px; font-weight: 600; color: #b45309; background: rgba(234,179,8,.14); padding: 2px 8px; border-radius: 999px; }
-.ca-plan-price { font-size: 22px; font-weight: 800; color: var(--text); }
-.ca-plan-price span { font-size: 12px; font-weight: 500; color: var(--muted); }
-.ca-plan-limits { display: flex; gap: 16px; justify-content: center; margin-top: 12px; font-size: 12px; color: var(--text-2); }
-.ca-plan-limits > div { display: inline-flex; align-items: center; gap: 5px; }
+.ca-tariff {
+  display: flex; align-items: center; gap: 11px; text-align: left;
+  padding: 12px 14px; border-radius: 12px; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--panel);
+  transition: border-color .15s, background .15s;
+}
+.ca-tariff:hover { border-color: var(--accent); }
+.ca-tariff.active { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 7%, transparent); box-shadow: var(--ring); }
+.ca-tariff-radio {
+  width: 18px; height: 18px; border-radius: 999px; flex-shrink: 0;
+  border: 2px solid var(--border); display: inline-flex; align-items: center; justify-content: center;
+}
+.ca-tariff.active .ca-tariff-radio { border-color: var(--accent); }
+.ca-tariff-dot { width: 9px; height: 9px; border-radius: 999px; background: var(--accent); }
+.ca-tariff-info { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 2px; }
+.ca-tariff-name { font-size: 13.5px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ca-tariff-meta { font-size: 10.5px; color: var(--muted); }
+.ca-tariff-price { font-size: 14px; font-weight: 800; color: var(--text); white-space: nowrap; flex-shrink: 0; }
+.ca-tariff-price small { font-size: 10px; font-weight: 500; color: var(--muted); }
 
 .ca-error { position: relative; width: 100%; box-sizing: border-box; margin-bottom: 12px; padding: 9px 12px; border-radius: 8px; background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); color: #ef4444; font-size: 12.5px; }
 
