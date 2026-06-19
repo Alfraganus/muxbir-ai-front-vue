@@ -973,6 +973,22 @@
                         Buferni oshirsa — keyin tasdiqlash uchun ko'proq vaqtingiz bo'ladi.
                       </div>
                     </div>
+
+                    <div v-if="autoDeliveryMode === 'two_stage'" class="cc-field">
+                      <label class="cc-field-label">Post taklifi qancha daqiqa oldin kelsin</label>
+                      <div style="display:flex;align-items:center;gap:12px;">
+                        <div class="cc-num-input" style="width:auto;">
+                          <button type="button" @click="autoIntervalCollectBefore = Math.max(0, autoIntervalCollectBefore - 5)">−</button>
+                          <input type="number" min="0" max="1440" v-model.number="autoIntervalCollectBefore" style="width:52px;"/>
+                          <button type="button" @click="autoIntervalCollectBefore = Math.min(1440, autoIntervalCollectBefore + 5)">+</button>
+                        </div>
+                        <span style="font-size:12.5px;color:var(--text-2);">daqiqa oldin</span>
+                      </div>
+                      <div class="cc-field-hint" style="margin-top:6px;">
+                        Masalan: interval 60 daqiqa, bu qiymat 10 bo'lsa — taklif 50-daqiqada Telegram botga keladi.
+                        0 = har doim yig'adi.
+                      </div>
+                    </div>
                   </template>
 
                   <!-- SCHEDULED sozlamalari -->
@@ -1621,6 +1637,7 @@ const autoScheduleTimes = ref([])       // ['08:00', '18:30']
 const autoBatchCount = ref(10)          // scheduled: har vaqt uchun post soni
 const autoCollectLeadMinutes = ref(60)  // scheduled: necha daqiqa oldin yig'ish
 const autoIntervalBatchCount = ref(1)   // interval: tayyor turadigan buffer
+const autoIntervalCollectBefore = ref(10) // interval: necha daqiqa oldin taklif yuborilsin
 const newScheduleTime = ref('08:00')    // UI: vaqt qo'shish inputi
 
 function addScheduleTime() {
@@ -1726,6 +1743,7 @@ function resetAutoSettings() {
   autoBatchCount.value = 10
   autoCollectLeadMinutes.value = 60
   autoIntervalBatchCount.value = 1
+  autoIntervalCollectBefore.value = 10
   autoWindowEnabled.value = false
   autoActiveFromHour.value = 8
   autoActiveToHour.value = 22
@@ -2133,6 +2151,7 @@ async function openAutoSettings(channel, opts = {}) {
   autoBatchCount.value = channel.auto_batch_count || 10
   autoCollectLeadMinutes.value = channel.auto_collect_lead_minutes ?? 60
   autoIntervalBatchCount.value = channel.auto_interval_batch_count || 1
+  autoIntervalCollectBefore.value = channel.auto_interval_collect_before_minutes ?? 10
   autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
   autoTestShowOriginal.value = !!channel.test_show_original
   compareEnabled.value = !!channel.compare_mode_enabled
@@ -2221,6 +2240,7 @@ async function saveAutoSettings() {
       auto_batch_count: autoBatchCount.value,
       auto_collect_lead_minutes: autoCollectLeadMinutes.value,
       auto_interval_batch_count: autoIntervalBatchCount.value,
+      auto_interval_collect_before_minutes: autoIntervalCollectBefore.value,
       auto_category_ids: [...autoCategoryIds.value],
       auto_filters: {
         time_range: autoFilters.value.time_range,
@@ -2540,6 +2560,7 @@ async function submitAdd() {
           auto_batch_count: autoBatchCount.value,
           auto_collect_lead_minutes: autoCollectLeadMinutes.value,
           auto_interval_batch_count: autoIntervalBatchCount.value,
+      auto_interval_collect_before_minutes: autoIntervalCollectBefore.value,
           auto_category_ids: [...autoCategoryIds.value],
           auto_filters: {
             time_range: autoFilters.value.time_range,
