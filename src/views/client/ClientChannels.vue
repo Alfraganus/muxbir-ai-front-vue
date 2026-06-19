@@ -1208,7 +1208,7 @@
                     <AppIcon name="Sparkle" :size="12"/>
                   </span>
                   <span>AI sozlamalari</span>
-                  <span class="cc-advanced-badge">{{ autoProvider }} · {{ autoModel || 'default' }}</span>
+                  <span class="cc-advanced-badge">Gemini · Pro 3.1</span>
                 </button>
 
                 <div v-if="advancedAiOpen" class="cc-advanced-body">
