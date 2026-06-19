@@ -42,6 +42,10 @@ export const companiesApi = {
   removeTelegramChat: (id, chatRowId) =>
     http.delete(`/companies/${id}/telegram-chats/${chatRowId}`).then(r => r.data),
 
+  // Ilova ishlashi uchun zarur sozlamalar holati (dashboard checklist)
+  getSetupStatus: (id) =>
+    http.get(`/companies/${id}/setup-status`).then(r => r.data),
+
   // Telegram MTProto session (telefon + kod + 2FA)
   getTelegramSessionStatus: (id) =>
     http.get(`/companies/${id}/telegram-session/status`).then(r => r.data),

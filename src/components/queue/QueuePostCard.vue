@@ -63,7 +63,7 @@
       <!-- 2-bosqich: yakuniy -->
       <template v-else-if="post.flow_stage === 'publish'">
         <button class="qpc-lbtn qpc-lbtn-danger" :disabled="post._acting" @click="$emit('decline-publish', post)">
-          🚫 Chiqarmaslik (0.5 kredit)
+          🚫 Chiqarmaslik (50 kredit)
         </button>
         <button class="qpc-lbtn qpc-lbtn-success" :disabled="post._acting" @click="$emit('confirm-publish', post)">
           <span v-if="post._acting" class="cp-spinner-xs"/>

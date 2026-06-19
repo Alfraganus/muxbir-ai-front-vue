@@ -47,46 +47,6 @@
       </button>
     </div>
 
-    <!-- Usage card for client -->
-    <div v-if="workspace === 'client'" style="padding:0 12px 12px;">
-      <div style="padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--panel);display:flex;flex-direction:column;gap:10px;">
-        <!-- 1) Oylik post limiti -->
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:11px;color:var(--muted);">Oylik post limiti</span>
-          <span v-if="postsUsage.hasTariff === false" style="font-size:9.5px;color:var(--muted-2);padding:1px 6px;border:1px solid var(--border-2);border-radius:999px;letter-spacing:0.04em;">FREE</span>
-        </div>
-        <div class="tabular" style="font-size:14px;font-weight:600;">
-          {{ formatNumber(postsUsage.used) }}
-          <span style="color:var(--muted);font-weight:400;">/ {{ formatNumber(postsUsage.limit) }}</span>
-        </div>
-        <AppProgress :value="postsUsage.used" :max="postsUsage.limit || 1" :tone="postsTone" />
-
-        <!-- 2) AI tokens -->
-        <div style="height:1px;background:var(--border-2);margin:2px 0;"/>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:11px;color:var(--muted);">Foydalanilgan tokenlar</span>
-          <span v-if="ai.hasTariff === false" style="font-size:9.5px;color:var(--muted-2);padding:1px 6px;border:1px solid var(--border-2);border-radius:999px;letter-spacing:0.04em;">FREE</span>
-          <span v-else-if="ai.calls > 0" style="font-size:9.5px;color:var(--muted);padding:1px 6px;background:var(--panel-2);border-radius:999px;">{{ ai.calls }}× call</span>
-        </div>
-        <div class="tabular" style="font-size:14px;font-weight:600;">
-          {{ formatNumber(ai.used) }}
-          <span style="color:var(--muted);font-weight:400;">/ {{ formatNumber(ai.limit) }}</span>
-        </div>
-        <AppProgress :value="ai.used" :max="ai.limit || 1" :tone="aiTone" />
-
-        <!-- 3) Xotira (eng pastda) -->
-        <div style="height:1px;background:var(--border-2);margin:2px 0;"/>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:11px;color:var(--muted);">Foydalanilayotgan xotira</span>
-          <span v-if="storage.hasTariff === false" style="font-size:9.5px;color:var(--muted-2);padding:1px 6px;border:1px solid var(--border-2);border-radius:999px;letter-spacing:0.04em;">FREE</span>
-        </div>
-        <div class="tabular" style="font-size:14px;font-weight:600;">
-          {{ formatBytes(storage.used) }}
-          <span style="color:var(--muted);font-weight:400;">/ {{ formatBytes(storage.limit) }}</span>
-        </div>
-        <AppProgress :value="storage.used" :max="storage.limit || 1" :tone="storageTone" />
-      </div>
-    </div>
   </aside>
 </template>
 
@@ -109,6 +69,7 @@ import { queueApi } from '@/api/queue.js'
 import { useStorageStore } from '@/stores/storage.js'
 import { useAiUsageStore } from '@/stores/aiUsage.js'
 import { usePostsUsageStore } from '@/stores/postsUsage.js'
+import { useQuotaStore } from '@/stores/quota.js'
 import { COMPANIES } from '@/data/index.js'
 
 const props = defineProps({ workspace: String })
@@ -140,6 +101,7 @@ function navigate(path) {
 const storage = useStorageStore()
 const ai = useAiUsageStore()
 const postsUsage = usePostsUsageStore()
+const quota = useQuotaStore()
 let usageTimer = null
 
 function formatBytes(n) {
@@ -172,6 +134,7 @@ function refreshAll() {
   storage.refresh()
   ai.refresh()
   postsUsage.refresh()
+  quota.refresh()
   loadChannelsCount()
   loadQueueCounts()
 }

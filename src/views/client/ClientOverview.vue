@@ -11,6 +11,18 @@
       </template>
     </PageHeader>
 
+    <!-- Setup checklist — biror sozlama yetishmasa ogohlantiradi -->
+    <SetupChecklistCard
+      v-if="setupReady && !setupOk"
+      :items="setupItems"
+      :ok="setupOk"
+      :loading="setupLoading"
+      :done-count="setupDone"
+      :total-count="setupTotal"
+      :missing-count="setupMissing"
+      @refresh="refreshSetup"
+    />
+
     <div v-if="loading" class="ov-state"><span class="ov-spin"/> Yuklanmoqda…</div>
     <div v-else-if="error" class="ov-state" style="color:var(--danger);">{{ error }}</div>
 
@@ -138,13 +150,28 @@ import DonutChart from '@/components/charts/DonutChart.vue'
 import HeatmapChart from '@/components/charts/HeatmapChart.vue'
 import BarList from '@/components/charts/BarList.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import SetupChecklistCard from '@/components/setup/SetupChecklistCard.vue'
 import { companiesApi } from '@/api/companies.js'
 import { analyticsApi } from '@/api/analytics.js'
+import { useSetupStatus } from '@/composables/useSetupStatus.js'
 
 const loading = ref(true)
 const error = ref('')
 const company = ref(null)
 const d = ref(null)
+
+// Setup holati (Telegram API, session, bot, kanal, manba, chat) — 60s polling
+const {
+  items: setupItems,
+  ok: setupOk,
+  ready: setupReady,
+  loading: setupLoading,
+  doneCount: setupDone,
+  totalCount: setupTotal,
+  missingCount: setupMissing,
+  refresh: refreshSetup,
+  startPolling: startSetupPolling,
+} = useSetupStatus(() => company.value?.id, { pollMs: 60000 })
 
 const WEEKDAY_LABELS = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
 const LANG_LABELS = { uz: "O'zbek (lotin)", uz_cyr: "O'zbek (kirill)", ru: 'Rus', en: 'Ingliz' }
@@ -200,6 +227,9 @@ async function load() {
       company.value = list[0] || null
     }
     if (!company.value) { error.value = 'Kompaniya topilmadi'; return }
+    // Setup tekshiruvi analitikadan mustaqil — parallel ishga tushiramiz
+    refreshSetup()
+    startSetupPolling()
     d.value = await analyticsApi.dashboard(company.value.id)
   } catch (e) {
     error.value = e?.response?.data?.message || 'Ma\'lumotni yuklab bo\'lmadi'

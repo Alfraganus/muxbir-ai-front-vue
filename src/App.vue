@@ -10,8 +10,8 @@
       </div>
     </Transition>
 
-    <!-- Onboarding: full-screen, no shelll -->
-    <template v-if="isOnboarding">
+    <!-- Onboarding / paywall: full-screen, no shell -->
+    <template v-if="isFullScreen">
       <RouterView/>
     </template>
 
@@ -21,18 +21,26 @@
         <AppSidebar :workspace="store.workspace"/>
         <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;">
           <AppTopbar/>
+          <TariffExpiryBanner v-if="store.workspace === 'client'"/>
           <AiQuotaBanner v-if="store.workspace === 'client'"/>
           <StorageQuotaBanner v-if="store.workspace === 'client'"/>
-          <main style="flex:1;overflow-y:auto;">
-            <RouterView v-slot="{ Component, route: r }">
-              <!-- Settings sahifasi uchun animatsiya yo'q (mode=out-in
-                   nested unmount muammosi sababli). Boshqa sahifalarda fade. -->
-              <Transition v-if="!isSettings(r.path)" name="page" mode="out-in">
-                <component :is="Component" :key="r.path"/>
-              </Transition>
-              <component v-else :is="Component" :key="r.path"/>
-            </RouterView>
-          </main>
+          <div style="flex:1;display:flex;min-height:0;overflow:hidden;">
+            <main style="flex:1;overflow-y:auto;min-width:0;">
+              <RouterView v-slot="{ Component, route: r }">
+                <!-- Settings sahifasi uchun animatsiya yo'q (mode=out-in
+                     nested unmount muammosi sababli). Boshqa sahifalarda fade. -->
+                <Transition v-if="!isSettings(r.path)" name="page" mode="out-in">
+                  <component :is="Component" :key="r.path"/>
+                </Transition>
+                <component v-else :is="Component" :key="r.path"/>
+              </RouterView>
+            </main>
+            <!-- O'ng panel: tarif / kvota / kredit kartasi (faqat client) -->
+            <aside v-if="store.workspace === 'client'"
+                   style="width:264px;flex-shrink:0;border-left:1px solid var(--border);background:var(--bg-2);overflow-y:auto;padding:16px 12px;">
+              <QuotaUsageCard/>
+            </aside>
+          </div>
         </div>
       </div>
     </template>
@@ -44,19 +52,44 @@
 
 <script setup>
 import { computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app.js'
 import { useAuthStore } from '@/stores/auth.js'
+import { useQuotaStore } from '@/stores/quota.js'
 import { companiesApi } from '@/api/companies.js'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
+import QuotaUsageCard from '@/components/layout/QuotaUsageCard.vue'
 import AiQuotaBanner from '@/components/layout/AiQuotaBanner.vue'
 import StorageQuotaBanner from '@/components/layout/StorageQuotaBanner.vue'
+import TariffExpiryBanner from '@/components/billing/TariffExpiryBanner.vue'
 import AppToast from '@/components/ui/AppToast.vue'
 
 const store = useAppStore()
 const authStore = useAuthStore()
+const quota = useQuotaStore()
 const route = useRoute()
+const router = useRouter()
+
+/**
+ * Obuna faol bo'lmasa (to'lov muvaffaqiyatsiz) — client foydalanuvchini
+ * /client/activate paywall'ga yo'naltiramiz. Faqat aniq `false` bo'lganda
+ * bloklaymiz (null = hali yuklanmagan).
+ */
+function enforceSubscription() {
+  if (store.workspace !== 'client') return
+  if (quota.subscriptionActive !== false) return
+  const p = route.path
+  if (p.startsWith('/client/') && p !== '/client/activate') {
+    router.replace('/client/activate')
+  }
+}
+
+async function refreshSubscriptionGate() {
+  if (store.workspace !== 'client' || !store.companyId) return
+  await quota.refresh()
+  enforceSubscription()
+}
 
 // workspace endi store.workspace ichidagi computed orqali JWT role'dan
 // avtomatik kelib chiqadi — manual sync kerak emas. Lekin login/logout'da
@@ -76,20 +109,28 @@ onMounted(async () => {
   if (authStore.accessToken && !authStore.user) authStore.fetchMe()
   store.refreshAuthDerivedState()
   await loadCompanyForClient()
+  await refreshSubscriptionGate()
 })
 
 // Login/logout — derived workspace'ni refresh qilamiz va eski company'ni tozalaymiz
 watch(() => authStore.accessToken, async (tok) => {
   store.setCompany(null)
+  quota.subscriptionActive = null
   store.refreshAuthDerivedState()
   if (!tok) return
   if (!authStore.user) await authStore.fetchMe()
   await loadCompanyForClient()
+  await refreshSubscriptionGate()
 })
+
+// Sahifa o'zgarganda obuna holatini qayta tekshiramiz (paywall'da ushlab turish).
+watch(() => route.path, enforceSubscription)
 
 const isOnboarding = computed(() =>
   route.path === '/signup' || route.path === '/signin' || route.path === '/auth/magic'
 )
+// Paywall ham to'liq ekran (sidebar/topbar'siz) ko'rsatiladi
+const isFullScreen = computed(() => isOnboarding.value || route.path === '/client/activate')
 
 /**
  * Sozlamalar sahifasida transition'siz navigatsiya qilamiz —

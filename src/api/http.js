@@ -35,6 +35,12 @@ http.interceptors.response.use(
         window.location.hash = '#/signin'
       }
     }
+    // Obuna faol emas (backend guard) — paywall'ga yo'naltiramiz (loop'siz).
+    if (err.response?.status === 402 && err.response?.data?.code === 'SUBSCRIPTION_INACTIVE') {
+      if (!window.location.hash.startsWith('#/client/activate')) {
+        window.location.hash = '#/client/activate'
+      }
+    }
     return Promise.reject(err)
   },
 )

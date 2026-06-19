@@ -130,18 +130,21 @@
                   <AppIcon name="Sparkle" :size="11"/>
                 </span>
                 <span class="pe-chip-text">{{ aiShortening && aiMode === 'rewrite' ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
+                <span class="pe-chip-cost">{{ AI_CREDIT_COST.rewrite }} kr</span>
               </button>
               <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite('shorten')" title="AI bilan qisqartirish — prompt va model tanlash">
                 <span class="pe-chip-ic pe-chip-ic-ai">
                   <AppIcon name="Edit" :size="11"/>
                 </span>
                 <span class="pe-chip-text">{{ aiShortening && aiMode === 'shorten' ? 'Qisqartirilmoqda…' : 'AI bilan qisqartirish' }}</span>
+                <span class="pe-chip-cost">{{ AI_CREDIT_COST.shorten }} kr</span>
               </button>
               <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
                 <span class="pe-chip-ic pe-chip-ic-ai">
                   <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
                 </span>
                 <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
+                <span class="pe-chip-cost">{{ AI_CREDIT_COST.tags }} kr</span>
               </button>
               <!-- Joriy til avtomatik holati — faqat o'qish uchun (qo'lda toggle yo'q) -->
               <span class="pe-chip pe-chip-auto" :class="{ 'pe-chip-on': isActiveComplete }"
@@ -770,6 +773,8 @@ import { useAppStore } from '@/stores/app.js'
 import { useStorageStore } from '@/stores/storage.js'
 import { useAiUsageStore } from '@/stores/aiUsage.js'
 import { usePostsUsageStore } from '@/stores/postsUsage.js'
+import { useQuotaStore } from '@/stores/quota.js'
+import { AI_CREDIT_COST } from '@/config/aiCredits.js'
 import { companiesApi } from '@/api/companies.js'
 import { channelsApi } from '@/api/channels.js'
 import { postsApi } from '@/api/posts.js'
@@ -782,6 +787,22 @@ const store = useAppStore()
 const storageStore = useStorageStore()
 const aiUsageStore = useAiUsageStore()
 const postsUsageStore = usePostsUsageStore()
+const quotaStore = useQuotaStore()
+
+/**
+ * AI xato xabarini chiqaradi. Kredit yetmasa (402 INSUFFICIENT_CREDITS) —
+ * tushunarli alert + billing bo'limiga yo'naltirish maslahati.
+ */
+function aiErrorMessage(e) {
+  const data = e?.response?.data || {}
+  if (e?.response?.status === 402 || data.code === 'INSUFFICIENT_CREDITS') {
+    const need = data.required != null ? `${data.required} kredit` : 'kredit'
+    const have = data.balance != null ? `${data.balance} kredit` : '0'
+    return `Kredit yetarli emas (kerak: ${need}, mavjud: ${have}). Billing bo'limidan kredit to'ldiring.`
+  }
+  const msg = data.message || 'AI amalida xato'
+  return Array.isArray(msg) ? msg.join('. ') : msg
+}
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
 
@@ -1770,11 +1791,12 @@ async function runAiRewrite() {
       showAiBanner('success', `Sarlavha, matn va teglar "${lbl}" tilida ${verb}`, prevTargetJson)
     }
     aiUsageStore.refresh()
+    quotaStore.refresh() // kredit balansi yangilandi
     showAiRewrite.value = false
   } catch (e) {
-    const msg = e?.response?.data?.message || 'Qayta yozishda xato'
-    aiError.value = Array.isArray(msg) ? msg.join('. ') : msg
-    showAiBanner('error', Array.isArray(msg) ? msg.join('. ') : msg)
+    const msg = aiErrorMessage(e)
+    aiError.value = msg
+    showAiBanner('error', msg)
   } finally {
     aiShortening.value = false
   }
@@ -1818,9 +1840,13 @@ async function aiGenerateTags() {
       tagsArr.value = res.tags
     }
     aiUsageStore.refresh()
+    quotaStore.refresh() // kredit balansi yangilandi
+    showAiBanner('success', `Teglar generatsiya qilindi (${AI_CREDIT_COST.tags} kredit)`)
   } catch (e) {
-    const msg = e?.response?.data?.message || 'Tag generatsiyasida xato'
-    aiError.value = Array.isArray(msg) ? msg.join('. ') : msg
+    const msg = aiErrorMessage(e)
+    aiError.value = msg
+    // Teglar modalsiz ishlaydi — xatoni sahifa tepasidagi bannerda ko'rsatamiz
+    showAiBanner('error', msg)
   } finally {
     aiTagging.value = false
   }
@@ -2603,6 +2629,16 @@ async function aiGenerateTags() {
 .pe-chip-ai:hover:not(:disabled) {
   border-color: #6E56CF;
   background: color-mix(in oklab, #6E56CF 6%, var(--panel));
+}
+.pe-chip-cost {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, #6E56CF 12%, transparent);
+  color: #6E56CF;
+  flex-shrink: 0;
 }
 .pe-chip-platform { padding-right: 8px; }
 .pe-chip-platform.pe-chip-warn {

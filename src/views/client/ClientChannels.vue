@@ -357,16 +357,16 @@
                     </label>
                     <div class="cc-delivery-grid">
                       <button type="button" class="cc-delivery-card"
-                        :class="{ active: autoDeliveryMode === 'approval' }"
-                        @click="autoDeliveryMode = 'approval'">
+                        :class="{ active: autoDeliveryMode === 'two_stage' }"
+                        @click="autoDeliveryMode = 'two_stage'">
                         <span class="cc-delivery-icon">
-                          <AppIcon name="Check" :size="15"/>
+                          <AppIcon name="Telegram" :size="15"/>
                         </span>
                         <div style="flex:1;min-width:0;">
-                          <div class="cc-delivery-title">Tasdiqdan keyin</div>
-                          <div class="cc-delivery-sub">Mobil ilovada ko'rib, siz tasdiqlagan post yuboriladi</div>
+                          <div class="cc-delivery-title">Bot orqali 2 bosqich</div>
+                          <div class="cc-delivery-sub">Muxbir AI bot taklif yuboradi → tasdiqlasangiz pro yozadi → kanalga chiqadi</div>
                         </div>
-                        <span v-if="autoDeliveryMode === 'approval'" class="cc-mode-card-check">
+                        <span v-if="autoDeliveryMode === 'two_stage'" class="cc-mode-card-check">
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
                         </span>
                       </button>
@@ -388,6 +388,10 @@
                     <div v-if="autoDeliveryMode === 'direct'"
                       style="margin-top:8px;padding:9px 11px;border-radius:7px;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);color:#854d0e;font-size:11.5px;line-height:1.5;">
                       ⚡ <b>Diqqat:</b> AI xatosi bo'lsa — to'g'ridan-to'g'ri kanalga chiqadi, tasdiq yo'q.
+                    </div>
+                    <div v-else-if="autoDeliveryMode === 'two_stage'"
+                      style="margin-top:8px;padding:9px 11px;border-radius:7px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);color:var(--text);font-size:11.5px;line-height:1.5;">
+                      🤖 Avval <b>Telegram chatlar</b> bo'limida chat ID qo'shing — taklif o'sha chatlarga keladi.
                     </div>
                   </div>
 
@@ -844,16 +848,6 @@
                   </div>
 
                   <div class="cc-delivery-grid">
-                    <button type="button" class="cc-delivery-card" :class="{ active: autoDeliveryMode === 'approval' }" @click="autoDeliveryMode = 'approval'">
-                      <span class="cc-delivery-icon"><AppIcon name="Check" :size="15"/></span>
-                      <div style="flex:1;min-width:0;">
-                        <div class="cc-delivery-title">Tasdiqdan keyin</div>
-                        <div class="cc-delivery-sub">Postlar avval mobil ilovada ko'rinadi — siz OK bergandan keyingina yuboriladi</div>
-                      </div>
-                      <span v-if="autoDeliveryMode === 'approval'" class="cc-mode-card-check">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
-                      </span>
-                    </button>
                     <button type="button" class="cc-delivery-card" :class="{ active: autoDeliveryMode === 'direct' }" @click="autoDeliveryMode = 'direct'">
                       <span class="cc-delivery-icon direct"><AppIcon name="Bolt" :size="15"/></span>
                       <div style="flex:1;min-width:0;">
@@ -885,7 +879,7 @@
                       🤖 <b>2 bosqichli oqim.</b> AI arzon model bilan post topadi va <b>Muxbir AI bot</b> orqali
                       kompaniyangizning Telegram chatlariga taklif yuboradi (rasm + sarlavha + qisqacha).
                       «Muxbirda yozish» tugmasini bossangiz — kuchli <b>gemini-3.1-pro</b> to'liq yozadi va yana
-                      tasdiq so'raydi. Kanalga chiqarsangiz oylik limitdan 1 kamayadi; chiqarmasangiz 0.5 kredit yechiladi.
+                      tasdiq so'raydi. Kanalga chiqarsangiz oylik limitdan 1 kamayadi; chiqarmasangiz 50 kredit yechiladi.
                       Xuddi shu amallar <b>Navbat</b> tabida ham bor.
                       <br><b>Eslatma:</b> avval <b>Telegram chatlar</b> bo'limida chat ID qo'shing.
                     </template>
@@ -1249,8 +1243,11 @@
                     <div class="cc-field-hint">Kanal uchun maxsus uslub/mazmun ko'rsatmasi. Bo'sh — faqat admin prompt ishlatiladi.</div>
                   </div>
 
-                  <!-- Provider + Model -->
-                  <div class="cc-auto-row" style="align-items:flex-start;">
+                  <!-- Provider + Model — YASHIRILGAN.
+                       Auto-post har doim Gemini bilan ishlaydi (model ENV'dan):
+                       to'g'ridan yozish — Gemini Pro 3.1, 2-bosqich taklifi — Flash.
+                       Foydalanuvchi tanlamaydi. -->
+                  <div v-if="false" class="cc-auto-row" style="align-items:flex-start;">
                     <div class="cc-field" style="flex:1;">
                       <label class="cc-field-label">AI provayder</label>
                       <div style="display:flex;gap:8px;">
@@ -1626,8 +1623,9 @@ const autoFilters = ref({
   keywords: '',
 })
 
-// ── Yetkazish usuli: 'approval' — mobil tasdiq kerak; 'direct' — darhol Telegram ──
-const autoDeliveryMode = ref('approval')
+// ── Yetkazish usuli: 'two_stage' — bot orqali 2 bosqich (default); 'direct' — darhol Telegram ──
+// ('approval' eski rejim — UI'dan yashirilgan, lekin eski kanallarda saqlanib qoladi)
+const autoDeliveryMode = ref('two_stage')
 
 // ── Yig'ish rejimi (approve oqimi) ──────────────────────────────────────────
 // 'interval'  — har auto_interval_minutes'da yetkaziladi; buffer oldindan yig'iladi.
@@ -1737,7 +1735,7 @@ function toggleAutoLanguage(code) {
 }
 function resetAutoSettings() {
   autoInterval.value = 180
-  autoDeliveryMode.value = 'approval'
+  autoDeliveryMode.value = 'two_stage'
   autoMode.value = 'interval'
   autoScheduleTimes.value = []
   autoBatchCount.value = 10

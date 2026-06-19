@@ -309,11 +309,11 @@ async function doConfirmPublish(post) {
 }
 
 async function doDeclinePublish(post) {
-  if (!confirm('Yakuniy versiyani kanalga chiqarmaysizmi? Hisobingizdan 0.5 kredit yechiladi.')) return
+  if (!confirm('Yakuniy versiyani kanalga chiqarmaysizmi? Hisobingizdan 50 kredit yechiladi.')) return
   post._acting = true
   try {
     const res = await queueApi.declinePublish(companyId.value, post.id)
-    toast.info(`Chiqarilmadi. ${res?.charged ?? 0.5} kredit yechildi (balans: ${res?.balance ?? '—'})`)
+    toast.info(`Chiqarilmadi. ${res?.charged ?? 50} kredit yechildi (balans: ${res?.balance ?? '—'})`)
     await load()
   } catch (e) {
     toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')

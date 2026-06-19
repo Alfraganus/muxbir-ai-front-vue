@@ -1389,9 +1389,6 @@ async function ensureSubscriptionId() {
 const payMethod = ref('click')
 const payMethods = [
   { id: 'click', name: 'Click', hint: 'Onlayn karta orqali' },
-  { id: 'payme', name: 'Payme', hint: 'QR yoki ilova orqali' },
-  { id: 'uzcard', name: 'Humo / Uzcard', hint: 'Bank kartasi' },
-  { id: 'bank', name: "Bank o'tkazma", hint: 'Yuridik shaxs hisobi' },
 ]
 const orderRows = computed(() => {
   const p = currentPlan.value

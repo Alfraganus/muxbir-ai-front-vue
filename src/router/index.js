@@ -23,6 +23,7 @@ import ClientAiPrompt from '@/views/client/ClientAiPrompt.vue'
 import ClientTelegramApi from '@/views/client/ClientTelegramApi.vue'
 import ClientTelegramChats from '@/views/client/ClientTelegramChats.vue'
 import ClientSettings from '@/views/client/ClientSettings.vue'
+import ClientActivate from '@/views/client/ClientActivate.vue'
 import PostsQueue from '@/views/client/PostsQueue.vue'
 import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
@@ -31,6 +32,7 @@ import MetaDataDeletion from '@/views/public/MetaDataDeletion.vue'
 import axios from 'axios'
 import { API_BASE } from '@/api/base.js'
 import { isTokenValid, getUserRole, homePathForRole, isAdminRole, isCompanyRole } from '@/utils/authRole.js'
+import { useQuotaStore } from '@/stores/quota.js'
 
 const routes = [
   { path: '/', redirect: () => homePathForRole(getUserRole()) },
@@ -62,6 +64,7 @@ const routes = [
   { path: '/client/telegram-api', component: ClientTelegramApi },
   { path: '/client/telegram-chats', component: ClientTelegramChats },
   { path: '/client/settings', component: ClientSettings },
+  { path: '/client/activate', component: ClientActivate },
   { path: '/client/queue',   component: PostsQueue },
   { path: '/signup',           component: Onboarding },
 ]
@@ -118,8 +121,20 @@ router.beforeEach(async (to) => {
   if (isAdminRole(role) && !to.path.startsWith('/admin/')) {
     return '/admin/overview'
   }
-  if (isCompanyRole(role) && !to.path.startsWith('/client/')) {
-    return '/client/overview'
+  if (isCompanyRole(role)) {
+    if (!to.path.startsWith('/client/')) {
+      return '/client/overview'
+    }
+    // Obuna faol emas (to'lov muvaffaqiyatli kelmagan) — paywall'ga yo'naltiramiz.
+    // subscriptionActive === false bo'lsagina bloklaymiz (null = hali noma'lum,
+    // App.vue quota'ni yuklab, kerak bo'lsa redirect qiladi). Faollashsa, paywall'dan chiqaramiz.
+    const quota = useQuotaStore()
+    if (to.path !== '/client/activate' && quota.subscriptionActive === false) {
+      return '/client/activate'
+    }
+    if (to.path === '/client/activate' && quota.subscriptionActive === true) {
+      return '/client/overview'
+    }
   }
 })
 

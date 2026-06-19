@@ -42,7 +42,7 @@ export const queueApi = {
   // 2-bosqich tasdiq: kanalga chiqarish (oylik limit −1)
   confirmPublish: (companyId, postId) =>
     http.post(`/companies/${companyId}/auto-queue/${postId}/confirm-publish`).then(r => r.data),
-  // 2-bosqich rad: chiqarmaslik (0.5 kredit yechiladi)
+  // 2-bosqich rad: chiqarmaslik (50 kredit yechiladi)
   declinePublish: (companyId, postId) =>
     http.post(`/companies/${companyId}/auto-queue/${postId}/decline-publish`).then(r => r.data),
 }

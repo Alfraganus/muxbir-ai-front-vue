@@ -2,6 +2,8 @@
 
 Vue 3 (`<script setup>`) + Vite. Bundan keyin **barcha kod SOLID prinsiplariga asoslanib** yozilsin.
 
+> **Backend path:** lokal — `D:\personal projects\backend-ai-muxbir`, server — `/var/www/backend-ai-muxbir/`. Backend kerak bo'lganda shu yo'llardan foydalan, har safar foydalanuvchidan so'rama.
+
 ---
 
 ## Kod yozish prinsiplari — SOLID (Vue uchun)

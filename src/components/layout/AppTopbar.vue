@@ -1,7 +1,7 @@
 <template>
-  <header style="height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;background:var(--bg);position:sticky;top:0;z-index:30;backdrop-filter:blur(8px);">
+  <header style="height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;background:color-mix(in oklab, var(--bg) 80%, transparent);position:sticky;top:0;z-index:30;backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);">
     <!-- Breadcrumb -->
-    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;">
       <template v-for="(b, i) in breadcrumb" :key="i">
         <span :style="{ fontSize:'13px', color: i === breadcrumb.length-1 ? 'var(--text)' : 'var(--muted)', fontWeight: i === breadcrumb.length-1 ? '600' : '500' }">{{ b }}</span>
         <AppIcon v-if="i < breadcrumb.length-1" name="ChevronR" :size="12" :style="{ color:'var(--muted-2)' }" />
@@ -11,19 +11,19 @@
     <div style="flex:1;" />
 
     <!-- Search -->
-    <div style="display:flex;align-items:center;gap:8px;width:280px;height:30px;padding:0 10px;background:var(--panel);border:1px solid var(--border);border-radius:6px;">
+    <div class="tb-search">
       <AppIcon name="Search" :size="14" :style="{ color:'var(--muted)' }" />
-      <input :placeholder="store.t('common.search')" style="flex:1;border:none;outline:none;background:transparent;font-size:12.5px;color:var(--text);" />
-      <span class="mono" style="font-size:10px;padding:1px 4px;border-radius:3px;background:var(--panel-2);color:var(--muted);border:1px solid var(--border);">⌘K</span>
+      <input :placeholder="store.t('common.search')" />
+      <span class="mono tb-kbd">⌘K</span>
     </div>
 
     <!-- Lang switcher -->
     <LangSwitcher />
 
     <!-- Notifications -->
-    <button style="width:30px;height:30px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text-2);position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
-      <AppIcon name="Bell" :size="14" />
-      <span style="position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:999px;background:var(--danger);border:1.5px solid var(--bg);" />
+    <button class="tb-icon-btn">
+      <AppIcon name="Bell" :size="15" />
+      <span class="tb-dot" />
     </button>
 
     <!-- Action slot -->
@@ -113,6 +113,42 @@ const vClickOutside = {
 </script>
 
 <style scoped>
+/* Qidiruv maydoni */
+.tb-search {
+  display: flex; align-items: center; gap: 8px;
+  width: 280px; height: 34px; padding: 0 12px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tb-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+.tb-search input {
+  flex: 1; min-width: 0; border: none; outline: none;
+  background: transparent; font-size: 12.5px; color: var(--text);
+}
+.tb-search input::placeholder { color: var(--muted); }
+.tb-kbd {
+  font-size: 10px; padding: 2px 5px; border-radius: var(--r-xs);
+  background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+}
+
+/* Topbar ikon tugmasi (bildirishnoma) */
+.tb-icon-btn {
+  width: 34px; height: 34px; border-radius: var(--r-sm);
+  background: var(--panel); border: 1px solid var(--border); color: var(--text-2);
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tb-icon-btn:hover { background: var(--panel-2); border-color: var(--muted-2); color: var(--text); }
+.tb-dot {
+  position: absolute; top: 7px; right: 7px;
+  width: 7px; height: 7px; border-radius: 999px;
+  background: var(--danger); border: 1.5px solid var(--panel);
+}
+
 .topbar-user { position: relative; }
 .topbar-user-btn {
   display: inline-flex; align-items: center; gap: 6px;

@@ -19,4 +19,10 @@ export const paymentsApi = {
   getOne: (id) => http.get(`/payments/${id}`).then((r) => r.data),
   // Click sinovi — har chaqirilganda 1000 so'mlik yangi to'lov yaratadi
   clickTest: () => http.post('/payments/click/test').then((r) => r.data),
+  // Kredit sotib olish — { payment_id, credits, amount, pay_url } qaytaradi (1 kredit = 10 so'm)
+  initiateCredits: (credits) =>
+    http.post('/payments/credits/initiate', { credits }).then((r) => r.data),
 }
+
+/** 1 kredit narxi (so'm) — backenddagi CREDIT_PRICE_SOM bilan bir xil. */
+export const CREDIT_PRICE_SOM = 10
