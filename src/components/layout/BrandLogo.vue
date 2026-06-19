@@ -1,6 +1,6 @@
 <template>
   <div style="display:inline-flex;align-items:center;gap:9px;">
-    <img :src="logo" alt="Muxbir AI" style="height:26px;width:auto;display:block;"/>
+    <img :src="logo" alt="Muxbir AI" style="height:34px;width:auto;display:block;"/>
   </div>
 </template>
 

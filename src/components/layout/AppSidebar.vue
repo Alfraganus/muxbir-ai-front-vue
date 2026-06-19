@@ -1,6 +1,6 @@
 <template>
   <aside style="width:240px;flex-shrink:0;background:var(--bg-2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;">
-    <div style="height:56px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid var(--border-2);">
+    <div style="height:60px;display:flex;align-items:center;justify-content:center;padding:0 16px;border-bottom:1px solid var(--border-2);">
       <BrandLogo />
     </div>
 
