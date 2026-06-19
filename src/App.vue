@@ -22,7 +22,6 @@
         <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;">
           <AppTopbar/>
           <TariffExpiryBanner v-if="store.workspace === 'client'"/>
-          <AiQuotaBanner v-if="store.workspace === 'client'"/>
           <StorageQuotaBanner v-if="store.workspace === 'client'"/>
           <div style="flex:1;display:flex;min-height:0;overflow:hidden;">
             <main style="flex:1;overflow-y:auto;min-width:0;">
@@ -60,7 +59,6 @@ import { companiesApi } from '@/api/companies.js'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import QuotaUsageCard from '@/components/layout/QuotaUsageCard.vue'
-import AiQuotaBanner from '@/components/layout/AiQuotaBanner.vue'
 import StorageQuotaBanner from '@/components/layout/StorageQuotaBanner.vue'
 import TariffExpiryBanner from '@/components/billing/TariffExpiryBanner.vue'
 import AppToast from '@/components/ui/AppToast.vue'
