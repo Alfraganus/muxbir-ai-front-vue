@@ -59,18 +59,13 @@
 import { ref, watch } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { tariffsApi } from '@/api/tariffs.js'
-import { subscriptionsApi } from '@/api/subscriptions.js'
-import { useClickPayment } from '@/composables/useClickPayment.js'
-import { useAppStore } from '@/stores/app.js'
+import { paymentsApi } from '@/api/payments.js'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   currentTariffId: { type: String, default: null },
 })
 const emit = defineEmits(['update:modelValue'])
-
-const store = useAppStore()
-const { payWithClick } = useClickPayment()
 
 const tariffs = ref([])
 const loading = ref(false)
@@ -104,14 +99,12 @@ async function proceed() {
   error.value = ''
   paying.value = true
   try {
-    if (!store.companyId) throw new Error('Kompaniya topilmadi')
-    // Obunani yaratish/yangilash (idempotent) — qaytgan obuna id'sini to'g'ridan
-    // ishlatamiz. getMine (JWT company_id'ga tayanadi) ba'zan null qaytaradi,
-    // shuning uchun unga tayanmaymiz.
-    const sub = await subscriptionsApi.create({ company_id: store.companyId, tariff_id: selectedId.value })
-    if (!sub?.id) throw new Error('Obuna yaratib bo\'lmadi')
-    // Click to'loviga yo'naltiramiz (muvaffaqiyatdan keyin backend obunani faollashtiradi/uzaytiradi)
-    await payWithClick(sub.id)
+    // Tarif almashtirish to'lovi — backend tarifni FAQAT to'lov muvaffaqiyatli
+    // bo'lganda o'zgartiradi (initiate paytida emas). To'lov bekor qilinsa,
+    // tarif eski holicha qoladi.
+    const { payment_url } = await paymentsApi.initiateTariff(selectedId.value)
+    if (!payment_url) throw new Error('To\'lov havolasi olinmadi')
+    window.location.href = payment_url
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || 'To\'lovni boshlashda xatolik'
     paying.value = false

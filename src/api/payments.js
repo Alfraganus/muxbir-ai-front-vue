@@ -22,6 +22,10 @@ export const paymentsApi = {
   // Kredit sotib olish — { payment_id, credits, amount, pay_url } qaytaradi (1 kredit = 10 so'm)
   initiateCredits: (credits) =>
     http.post('/payments/credits/initiate', { credits }).then((r) => r.data),
+  // Tarif almashtirish/uzaytirish — tarif FAQAT to'lovdan keyin o'zgaradi
+  // { payment_id, payment_url } qaytaradi
+  initiateTariff: (tariff_id, method = 'click') =>
+    http.post('/payments/tariff/initiate', { tariff_id, method }).then((r) => r.data),
 }
 
 /** 1 kredit narxi (so'm) — backenddagi CREDIT_PRICE_SOM bilan bir xil. */
