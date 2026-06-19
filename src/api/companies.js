@@ -32,6 +32,16 @@ export const companiesApi = {
   clearTelegramApi: (id) =>
     http.delete(`/companies/${id}/telegram-api`).then(r => r.data),
 
+  // Telegram chat ID'lari (Muxbir AI bot 2-bosqichli oqimi)
+  listTelegramChats: (id) =>
+    http.get(`/companies/${id}/telegram-chats`).then(r => r.data),
+  addTelegramChat: (id, payload) =>
+    http.post(`/companies/${id}/telegram-chats`, payload).then(r => r.data),
+  updateTelegramChat: (id, chatRowId, patch) =>
+    http.patch(`/companies/${id}/telegram-chats/${chatRowId}`, patch).then(r => r.data),
+  removeTelegramChat: (id, chatRowId) =>
+    http.delete(`/companies/${id}/telegram-chats/${chatRowId}`).then(r => r.data),
+
   // Telegram MTProto session (telefon + kod + 2FA)
   getTelegramSessionStatus: (id) =>
     http.get(`/companies/${id}/telegram-session/status`).then(r => r.data),

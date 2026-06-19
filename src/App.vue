@@ -36,6 +36,9 @@
         </div>
       </div>
     </template>
+
+    <!-- Global toast bildirishnomalari (har sahifadan useToast() chaqiruvlari) -->
+    <AppToast/>
   </div>
 </template>
 
@@ -49,6 +52,7 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import AiQuotaBanner from '@/components/layout/AiQuotaBanner.vue'
 import StorageQuotaBanner from '@/components/layout/StorageQuotaBanner.vue'
+import AppToast from '@/components/ui/AppToast.vue'
 
 const store = useAppStore()
 const authStore = useAuthStore()

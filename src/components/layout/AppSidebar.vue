@@ -238,6 +238,7 @@ const clientMain = computed(() => [
   { id: 'channels',   icon: 'Telegram', label: t.value('nav.client.channels'),  path: '/client/channels', count: channelsCount.value ?? undefined },
   { id: 'posts',      icon: 'Send',     label: t.value('nav.client.posts'),     path: '/client/posts', count: postsUsage.used || undefined },
   { id: 'queue',      icon: 'Check',    label: 'Navbat',                        path: '/client/queue', count: counts.value?.pending || undefined },
+  { id: 'tg-chats',   icon: 'Telegram', label: 'Telegram chatlar',              path: '/client/telegram-chats' },
   { id: 'discover',   icon: 'Sparkle',  label: 'Xabar qidirish',                path: '/client/discover' },
   { id: 'categories', icon: 'Tag',      label: 'Kategoriyalar',                 path: '/client/categories' },
   { id: 'settings',   icon: 'Settings', label: 'Sozlamalar',                    path: '/client/settings' },

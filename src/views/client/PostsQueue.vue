@@ -54,6 +54,10 @@
         :active-tab="activeTab"
         @approve="doApprove(p)"
         @reject="doReject(p)"
+        @approve-preview="doApprovePreview(p)"
+        @reject-preview="doRejectPreview(p)"
+        @confirm-publish="doConfirmPublish(p)"
+        @decline-publish="doDeclinePublish(p)"
         @open="openDetail(p)"
       />
     </div>
@@ -165,6 +169,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useAppStore } from '@/stores/app.js'
 import { queueApi } from '@/api/queue.js'
+import { useToast } from '@/composables/useToast.js'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
@@ -173,6 +178,7 @@ import AppTabs from '@/components/ui/AppTabs.vue'
 import QueuePostCard from '@/components/queue/QueuePostCard.vue'
 
 const store = useAppStore()
+const toast = useToast()
 const companyId = computed(() => store.companyId)
 
 const activeTab = ref('pending')
@@ -258,6 +264,59 @@ async function doReject(post) {
     await load()
   } catch (e) {
     console.error(e)
+  } finally {
+    post._acting = false
+  }
+}
+
+// ── 2-bosqichli (two_stage) amallar — bot bilan bir xil ──
+async function doApprovePreview(post) {
+  post._acting = true
+  try {
+    await queueApi.approvePreview(companyId.value, post.id) // pro yozadi (uzoq)
+    toast.success('Muxbirda yozildi — endi kanalga chiqarishni tasdiqlang')
+    await load()
+  } catch (e) {
+    toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')
+  } finally {
+    post._acting = false
+  }
+}
+
+async function doRejectPreview(post) {
+  post._acting = true
+  try {
+    await queueApi.rejectPreview(companyId.value, post.id)
+    await load()
+  } catch (e) {
+    toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')
+  } finally {
+    post._acting = false
+  }
+}
+
+async function doConfirmPublish(post) {
+  post._acting = true
+  try {
+    await queueApi.confirmPublish(companyId.value, post.id)
+    toast.success('Navbatga qo\'shildi — tez orada kanalga chiqariladi')
+    await load()
+  } catch (e) {
+    toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')
+  } finally {
+    post._acting = false
+  }
+}
+
+async function doDeclinePublish(post) {
+  if (!confirm('Yakuniy versiyani kanalga chiqarmaysizmi? Hisobingizdan 0.5 kredit yechiladi.')) return
+  post._acting = true
+  try {
+    const res = await queueApi.declinePublish(companyId.value, post.id)
+    toast.info(`Chiqarilmadi. ${res?.charged ?? 0.5} kredit yechildi (balans: ${res?.balance ?? '—'})`)
+    await load()
+  } catch (e) {
+    toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')
   } finally {
     post._acting = false
   }

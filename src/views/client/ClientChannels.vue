@@ -864,12 +864,30 @@
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
                       </span>
                     </button>
+                    <button type="button" class="cc-delivery-card" :class="{ active: autoDeliveryMode === 'two_stage' }" @click="autoDeliveryMode = 'two_stage'">
+                      <span class="cc-delivery-icon"><AppIcon name="Telegram" :size="15"/></span>
+                      <div style="flex:1;min-width:0;">
+                        <div class="cc-delivery-title">Bot orqali 2 bosqich</div>
+                        <div class="cc-delivery-sub">Muxbir AI bot taklif yuboradi → tasdiqlasangiz pro yozadi → yana tasdiq → kanalga chiqadi</div>
+                      </div>
+                      <span v-if="autoDeliveryMode === 'two_stage'" class="cc-mode-card-check">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                      </span>
+                    </button>
                   </div>
                   <div class="cc-info-box" :class="autoDeliveryMode === 'direct' ? 'warn' : 'info'">
                     <template v-if="autoDeliveryMode === 'approval'">
                       💡 <b>Tavsiya etiladi.</b> AI topgan post mobil ilovada <b>Navbat</b> tabida ko'rinadi.
                       Siz matnni tahrirlash, qisqartirish yoki rad etish imkoniga egasiz.
                       Tasdiqlagan post belgilangan vaqtda kanalga yuboriladi.
+                    </template>
+                    <template v-else-if="autoDeliveryMode === 'two_stage'">
+                      🤖 <b>2 bosqichli oqim.</b> AI arzon model bilan post topadi va <b>Muxbir AI bot</b> orqali
+                      kompaniyangizning Telegram chatlariga taklif yuboradi (rasm + sarlavha + qisqacha).
+                      «Muxbirda yozish» tugmasini bossangiz — kuchli <b>gemini-3.1-pro</b> to'liq yozadi va yana
+                      tasdiq so'raydi. Kanalga chiqarsangiz oylik limitdan 1 kamayadi; chiqarmasangiz 0.5 kredit yechiladi.
+                      Xuddi shu amallar <b>Navbat</b> tabida ham bor.
+                      <br><b>Eslatma:</b> avval <b>Telegram chatlar</b> bo'limida chat ID qo'shing.
                     </template>
                     <template v-else>
                       ⚡ <b>Diqqat:</b> postlar mobil ilovada ko'rinmaydi va tasdiqsiz kanalga chiqadi.
@@ -2106,7 +2124,9 @@ async function openAutoSettings(channel, opts = {}) {
   autoActiveFromHour.value = hasWindow ? channel.auto_active_from_hour : 8
   autoActiveToHour.value = hasWindow ? channel.auto_active_to_hour : 22
   // Yetkazish usuli
-  autoDeliveryMode.value = channel.auto_delivery_mode === 'direct' ? 'direct' : 'approval'
+  autoDeliveryMode.value = ['direct', 'two_stage'].includes(channel.auto_delivery_mode)
+    ? channel.auto_delivery_mode
+    : 'approval'
   // Yig'ish rejimi sozlamalari
   autoMode.value = channel.auto_mode === 'scheduled' ? 'scheduled' : 'interval'
   autoScheduleTimes.value = Array.isArray(channel.auto_schedule_times) ? [...channel.auto_schedule_times] : []

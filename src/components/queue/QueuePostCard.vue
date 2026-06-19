@@ -19,12 +19,18 @@
           <AppIcon name="Telegram" :size="10"/>
           {{ post.channel_name }}
         </span>
+        <span v-if="post.flow_stage === 'preview'" class="qpc-chip qpc-chip-stage">
+          1-bosqich · taklif
+        </span>
+        <span v-else-if="post.flow_stage === 'publish'" class="qpc-chip qpc-chip-stage2">
+          2-bosqich · yakuniy
+        </span>
         <span v-if="post.prepared_at" class="qpc-chip qpc-chip-muted">
           {{ timeAgo(post.prepared_at) }}
         </span>
       </div>
 
-      <div class="qpc-text">{{ shortText(post.ai_text) }}</div>
+      <div class="qpc-text">{{ shortText(displayText) }}</div>
 
       <div v-if="post.target_boundary_at" class="qpc-dest">
         <AppIcon name="Calendar" :size="11"/>
@@ -43,26 +49,64 @@
     </div>
 
     <!-- Actions (pending only) -->
-    <div v-if="activeTab === 'pending'" class="qpc-actions" @click.stop>
-      <button class="qpc-btn qpc-btn-danger" :disabled="post._acting" @click="$emit('reject', post)">
-        <AppIcon name="Close" :size="13"/>
-      </button>
-      <button class="qpc-btn qpc-btn-success" :disabled="post._acting" @click="$emit('approve', post)">
-        <span v-if="post._acting" class="cp-spinner-xs"/>
-        <AppIcon v-else name="Check" :size="13"/>
-      </button>
+    <div v-if="activeTab === 'pending'" class="qpc-actions" :class="{ 'qpc-actions-wide': isTwoStage }" @click.stop>
+      <!-- 1-bosqich: taklif -->
+      <template v-if="post.flow_stage === 'preview'">
+        <button class="qpc-lbtn qpc-lbtn-danger" :disabled="post._acting" @click="$emit('reject-preview', post)">
+          ❌ Bekor
+        </button>
+        <button class="qpc-lbtn qpc-lbtn-success" :disabled="post._acting" @click="$emit('approve-preview', post)">
+          <span v-if="post._acting" class="cp-spinner-xs"/>
+          <template v-else>✍️ Muxbirda yozish</template>
+        </button>
+      </template>
+      <!-- 2-bosqich: yakuniy -->
+      <template v-else-if="post.flow_stage === 'publish'">
+        <button class="qpc-lbtn qpc-lbtn-danger" :disabled="post._acting" @click="$emit('decline-publish', post)">
+          🚫 Chiqarmaslik (0.5 kredit)
+        </button>
+        <button class="qpc-lbtn qpc-lbtn-success" :disabled="post._acting" @click="$emit('confirm-publish', post)">
+          <span v-if="post._acting" class="cp-spinner-xs"/>
+          <template v-else>📢 Kanalga chiqarish</template>
+        </button>
+      </template>
+      <!-- Oddiy (approval) rejim -->
+      <template v-else>
+        <button class="qpc-btn qpc-btn-danger" :disabled="post._acting" @click="$emit('reject', post)">
+          <AppIcon name="Close" :size="13"/>
+        </button>
+        <button class="qpc-btn qpc-btn-success" :disabled="post._acting" @click="$emit('approve', post)">
+          <span v-if="post._acting" class="cp-spinner-xs"/>
+          <AppIcon v-else name="Check" :size="13"/>
+        </button>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 
 const props = defineProps({
   post: { type: Object, required: true },
   activeTab: { type: String, default: 'pending' },
 })
-defineEmits(['approve', 'reject', 'open'])
+defineEmits([
+  'approve', 'reject', 'open',
+  'approve-preview', 'reject-preview', 'confirm-publish', 'decline-publish',
+])
+
+const isTwoStage = computed(() =>
+  props.post.flow_stage === 'preview' || props.post.flow_stage === 'publish',
+)
+
+// 1-bosqichda flash taklif (preview_summary) ko'rsatiladi; 2-bosqichda pro yozgan ai_text.
+const displayText = computed(() =>
+  props.post.flow_stage === 'preview'
+    ? (props.post.preview_summary || props.post.ai_text)
+    : props.post.ai_text,
+)
 
 function shortText(text) {
   if (!text) return '—'
@@ -133,6 +177,8 @@ function timeAgo(iso) {
 }
 .qpc-chip-blue { background: rgba(47,111,237,0.08); border-color: rgba(47,111,237,0.2); color: var(--accent); }
 .qpc-chip-muted { color: var(--muted); background: transparent; border-color: transparent; }
+.qpc-chip-stage { background: rgba(234,179,8,0.12); border-color: rgba(234,179,8,0.3); color: #b8860b; }
+.qpc-chip-stage2 { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.3); color: #16a34a; }
 
 .qpc-text {
   font-size: 12.5px;
@@ -168,6 +214,31 @@ function timeAgo(iso) {
   gap: 6px;
   flex-shrink: 0;
 }
+.qpc-actions-wide { width: 150px; }
+
+.qpc-lbtn {
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.qpc-lbtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.qpc-lbtn-success { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.35); color: #16a34a; }
+.qpc-lbtn-success:hover:not(:disabled) { background: rgba(34,197,94,0.18); }
+.qpc-lbtn-danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #ef4444; }
 
 .qpc-btn {
   width: 32px;
