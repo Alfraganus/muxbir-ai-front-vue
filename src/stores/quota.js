@@ -11,6 +11,8 @@ export const useQuotaStore = defineStore('quota', () => {
   const daily = ref({ used: 0, limit: 0 })
   const credits = ref({ used: 0, balance: 0, total: 0 })
   const loading = ref(false)
+  // Birinchi muvaffaqiyatli yuklash bo'ldimi — UI "Free" miltillashining oldini oladi
+  const loaded = ref(false)
   // Obuna holati — null = hali noma'lum (yuklanmagan)
   const subscriptionActive = ref(null)
   const subscriptionStatus = ref(null)
@@ -29,10 +31,11 @@ export const useQuotaStore = defineStore('quota', () => {
       credits.value = q?.credits || { used: 0, balance: 0, total: 0 }
       subscriptionActive.value = !!q?.subscription_active
       subscriptionStatus.value = q?.subscription_status || null
+      loaded.value = true
     } catch { /* jim */ } finally {
       loading.value = false
     }
   }
 
-  return { tariffName, hasTariff, monthly, daily, credits, loading, subscriptionActive, subscriptionStatus, refresh }
+  return { tariffName, hasTariff, monthly, daily, credits, loading, loaded, subscriptionActive, subscriptionStatus, refresh }
 })

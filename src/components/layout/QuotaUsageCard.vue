@@ -6,7 +6,8 @@
         <span class="quc-head-ic"><AppIcon name="Shield" :size="14"/></span>
         <div>
           <div class="quc-head-cap">Joriy tarif</div>
-          <div class="quc-head-name">{{ quota.tariffName || 'Free' }}</div>
+          <div v-if="quota.loaded" class="quc-head-name">{{ quota.tariffName || 'Free' }}</div>
+          <div v-else class="quc-skel quc-skel-name" />
         </div>
       </div>
       <button class="quc-change" @click="openSwitch">
@@ -18,9 +19,10 @@
     <div class="quc-metric">
       <div class="quc-metric-top">
         <span class="quc-metric-label"><AppIcon name="Send" :size="12"/> Oylik post</span>
-        <span class="quc-metric-val tabular">
+        <span v-if="quota.loaded" class="quc-metric-val tabular">
           {{ formatNumber(quota.monthly.used) }}<span class="quc-metric-lim">/ {{ limitLabel(quota.monthly.limit) }}</span>
         </span>
+        <span v-else class="quc-skel quc-skel-val" />
       </div>
       <AppProgress :value="quota.monthly.used" :max="quota.monthly.limit || 1" :tone="toneFor(quota.monthly.used, quota.monthly.limit)" />
     </div>
@@ -29,9 +31,10 @@
     <div class="quc-metric">
       <div class="quc-metric-top">
         <span class="quc-metric-label"><AppIcon name="Calendar" :size="12"/> Kunlik post</span>
-        <span class="quc-metric-val tabular">
+        <span v-if="quota.loaded" class="quc-metric-val tabular">
           {{ formatNumber(quota.daily.used) }}<span class="quc-metric-lim">/ {{ limitLabel(quota.daily.limit) }}</span>
         </span>
+        <span v-else class="quc-skel quc-skel-val" />
       </div>
       <AppProgress v-if="quota.daily.limit > 0" :value="quota.daily.used" :max="quota.daily.limit || 1" :tone="toneFor(quota.daily.used, quota.daily.limit)" />
       <div v-else class="quc-unlimited">Cheksiz</div>
@@ -41,9 +44,10 @@
     <div class="quc-metric">
       <div class="quc-metric-top">
         <span class="quc-metric-label"><AppIcon name="Coin" :size="12"/> Kredit</span>
-        <span class="quc-metric-val tabular">
+        <span v-if="quota.loaded" class="quc-metric-val tabular">
           {{ formatCredit(quota.credits.balance) }}<span class="quc-metric-lim">kredit</span>
         </span>
+        <span v-else class="quc-skel quc-skel-val" />
       </div>
       <AppProgress :value="quota.credits.used" :max="quota.credits.total || 1" tone="accent" />
       <button class="quc-credit-btn" @click="buyCreditsOpen = true">
@@ -156,6 +160,17 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 .quc-metric-label { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); }
 .quc-metric-label svg { color: var(--muted-2); }
 .quc-metric-val { font-size: 13.5px; font-weight: 700; color: var(--text); }
+
+/* Yuklanish skeleti — "Free" / 0 miltillashining oldini oladi */
+.quc-skel {
+  display: inline-block; border-radius: 999px;
+  background: linear-gradient(90deg, var(--border-2) 25%, var(--border) 50%, var(--border-2) 75%);
+  background-size: 200% 100%;
+  animation: quc-shimmer 1.2s ease-in-out infinite;
+}
+.quc-skel-name { width: 96px; height: 15px; margin-top: 3px; }
+.quc-skel-val { width: 52px; height: 14px; }
+@keyframes quc-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .quc-metric-lim { font-size: 11px; font-weight: 500; color: var(--muted); margin-left: 4px; }
 .quc-unlimited { font-size: 11px; color: var(--success); font-weight: 600; }
 
