@@ -104,13 +104,14 @@ async function proceed() {
   error.value = ''
   paying.value = true
   try {
-    // Boshqa tarif tanlangan bo'lsa — obunani yangilaymiz (to'lov narxi yangi tarifdan olinadi)
-    if (selectedId.value !== props.currentTariffId) {
-      if (!store.companyId) throw new Error('Kompaniya topilmadi')
-      await subscriptionsApi.create({ company_id: store.companyId, tariff_id: selectedId.value })
-    }
+    if (!store.companyId) throw new Error('Kompaniya topilmadi')
+    // Obunani yaratish/yangilash (idempotent) — qaytgan obuna id'sini to'g'ridan
+    // ishlatamiz. getMine (JWT company_id'ga tayanadi) ba'zan null qaytaradi,
+    // shuning uchun unga tayanmaymiz.
+    const sub = await subscriptionsApi.create({ company_id: store.companyId, tariff_id: selectedId.value })
+    if (!sub?.id) throw new Error('Obuna yaratib bo\'lmadi')
     // Click to'loviga yo'naltiramiz (muvaffaqiyatdan keyin backend obunani faollashtiradi/uzaytiradi)
-    await payWithClick()
+    await payWithClick(sub.id)
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || 'To\'lovni boshlashda xatolik'
     paying.value = false

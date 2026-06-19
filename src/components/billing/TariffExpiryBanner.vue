@@ -67,7 +67,8 @@ const subtitle = computed(() =>
 )
 
 async function extend() {
-  try { await payWithClick() } catch { /* xato useClickPayment ichida */ }
+  // Banner allaqachon obunani olgan — id'ni to'g'ridan uzatamiz (getMine'ga tayanmaymiz)
+  try { await payWithClick(sub.value?.id || null) } catch { /* xato useClickPayment ichida */ }
 }
 
 async function refresh() {
