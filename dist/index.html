@@ -13,9 +13,16 @@
         var h = window.location.hash || '';
         var inTelegram = h.indexOf('tgWebApp') !== -1 ||
           !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
-        if (inTelegram && h.indexOf('#/support') !== 0) {
-          window.history.replaceState(null, '',
-            window.location.pathname + window.location.search + '#/support');
+        if (inTelegram) {
+          // Mini App telefonda — desktop'ning width=1440 viewport'i hammani mayda
+          // qiladi. Mobil viewport + notch/home-indicator uchun viewport-fit=cover.
+          var vp = document.querySelector('meta[name="viewport"]');
+          if (vp) vp.setAttribute('content',
+            'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover');
+          if (h.indexOf('#/support') !== 0) {
+            window.history.replaceState(null, '',
+              window.location.pathname + window.location.search + '#/support');
+          }
         }
       } catch (e) { /* ignore */ }
     })();
@@ -23,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <script type="module" crossorigin src="/assets/index-ClQDDuyQ.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-Bovfotgb.css">
+  <script type="module" crossorigin src="/assets/index-C7_R2wH7.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Dg9doZvC.css">
 </head>
 <body>
   <div id="app"></div>

@@ -13,9 +13,16 @@
         var h = window.location.hash || '';
         var inTelegram = h.indexOf('tgWebApp') !== -1 ||
           !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
-        if (inTelegram && h.indexOf('#/support') !== 0) {
-          window.history.replaceState(null, '',
-            window.location.pathname + window.location.search + '#/support');
+        if (inTelegram) {
+          // Mini App telefonda — desktop'ning width=1440 viewport'i hammani mayda
+          // qiladi. Mobil viewport + notch/home-indicator uchun viewport-fit=cover.
+          var vp = document.querySelector('meta[name="viewport"]');
+          if (vp) vp.setAttribute('content',
+            'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover');
+          if (h.indexOf('#/support') !== 0) {
+            window.history.replaceState(null, '',
+              window.location.pathname + window.location.search + '#/support');
+          }
         }
       } catch (e) { /* ignore */ }
     })();

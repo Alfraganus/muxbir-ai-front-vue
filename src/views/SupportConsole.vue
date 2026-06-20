@@ -218,6 +218,10 @@ onBeforeUnmount(stopPolling)
   background: var(--bg, #f1f5f9);
   display: flex; flex-direction: column;
   font-family: inherit; color: var(--text, #0f172a);
+  /* iOS notch / home-indicator (Telegram Mini App) */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Login */
@@ -261,7 +265,7 @@ onBeforeUnmount(stopPolling)
 .sc-back { width: 32px; height: 32px; border: none; background: var(--bg, #f1f5f9); border-radius: 8px; font-size: 18px; cursor: pointer; color: var(--text,#0f172a); }
 
 /* List */
-.sc-list { flex: 1; overflow-y: auto; }
+.sc-list { flex: 1; overflow-y: auto; padding-bottom: env(safe-area-inset-bottom); }
 .sc-empty { padding: 40px 20px; text-align: center; color: var(--muted, #94a3b8); font-size: 13px; }
 .sc-conv {
   width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 14px;
@@ -294,7 +298,7 @@ onBeforeUnmount(stopPolling)
 .sc-time { font-size: 9.5px; color: var(--muted, #94a3b8); margin: 2px 4px 0; }
 
 /* Composer */
-.sc-foot { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; background: var(--panel, #fff); border-top: 1px solid var(--border, #e2e8f0); }
+.sc-foot { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; background: var(--panel, #fff); border-top: 1px solid var(--border, #e2e8f0); padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
 .sc-foot-input {
   flex: 1; resize: none; max-height: 100px; border: 1px solid var(--border, #e2e8f0); border-radius: 12px;
   padding: 9px 12px; font-size: 13px; font-family: inherit; outline: none; line-height: 1.4;
