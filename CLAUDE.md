@@ -2,6 +2,8 @@
 
 Vue 3 (`<script setup>`) + Vite. Bundan keyin **barcha kod SOLID prinsiplariga asoslanib** yozilsin.
 
+> ⚠️ **MAJBURIY:** Har qanday o'zgarishda yangi yoki o'zgargan **barcha UI matni 3 tilda** bo'lishi shart — `uz` (o'zbek lotin), `ru` (rus), `en` (ingliz). Matn hech qachon qattiq (hardcode) yozilmaydi — `tt('kalit')` orqali olinadi va kalit `src/i18n/index.js` dagi **uchala til** bo'limiga qo'shiladi. To'liq qoida pastda — *Internatsionalizatsiya (i18n)* bo'limiga qara.
+
 > **Backend path:** lokal — `D:\personal projects\backend-ai-muxbir`, server — `/var/www/backend-ai-muxbir/`. Backend kerak bo'lganda shu yo'llardan foydalan, har safar foydalanuvchidan so'rama.
 
 ---
