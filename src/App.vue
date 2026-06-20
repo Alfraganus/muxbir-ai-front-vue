@@ -42,8 +42,8 @@
     <!-- Global toast bildirishnomalari (har sahifadan useToast() chaqiruvlari) -->
     <AppToast/>
 
-    <!-- Sayt jonli-chat (customer support) — login + dashboard, doim fixed -->
-    <LiveChatWidget/>
+    <!-- Sayt jonli-chat (customer support) — operator console'да ko'rsatilmaydi -->
+    <LiveChatWidget v-if="route.path !== '/support'"/>
   </div>
 </template>
 
@@ -125,8 +125,10 @@ watch(() => route.path, enforceSubscription)
 const isOnboarding = computed(() =>
   route.path === '/signup' || route.path === '/signin' || route.path === '/auth/magic'
 )
-// Paywall ham to'liq ekran (sidebar/topbar'siz) ko'rsatiladi
-const isFullScreen = computed(() => isOnboarding.value || route.path === '/client/activate')
+// Paywall va operator console ham to'liq ekran (sidebar/topbar'siz)
+const isFullScreen = computed(() =>
+  isOnboarding.value || route.path === '/client/activate' || route.path === '/support'
+)
 
 /**
  * Sozlamalar sahifasida transition'siz navigatsiya qilamiz —

@@ -29,6 +29,7 @@ import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
 import MagicAuth from '@/views/MagicAuth.vue'
 import MetaDataDeletion from '@/views/public/MetaDataDeletion.vue'
+import SupportConsole from '@/views/SupportConsole.vue'
 import axios from 'axios'
 import { API_BASE } from '@/api/base.js'
 import { isTokenValid, getUserRole, homePathForRole, isAdminRole, isCompanyRole } from '@/utils/authRole.js'
@@ -67,6 +68,7 @@ const routes = [
   { path: '/client/activate', component: ClientActivate },
   { path: '/client/queue',   component: PostsQueue },
   { path: '/signup',           component: Onboarding },
+  { path: '/support',          component: SupportConsole },
 ]
 
 const PUBLIC_PATHS = ['/signin', '/signup', '/auth/magic', '/meta/delete']
@@ -95,6 +97,9 @@ async function tryRefresh() {
 }
 
 router.beforeEach(async (to) => {
+  // Operator console (Mini App) — mustaqil, o'z login'i bor (asosiy auth'dan tashqari).
+  if (to.path === '/support') return undefined
+
   const isPublic = PUBLIC_PATHS.includes(to.path)
 
   // Access token muddati o'tgan bo'lsa, darhol logout qilmaymiz —
