@@ -4,6 +4,8 @@ Vue 3 (`<script setup>`) + Vite. Bundan keyin **barcha kod SOLID prinsiplariga a
 
 > ⚠️ **MAJBURIY:** Har qanday o'zgarishda yangi yoki o'zgargan **barcha UI matni 3 tilda** bo'lishi shart — `uz` (o'zbek lotin), `ru` (rus), `en` (ingliz). Matn hech qachon qattiq (hardcode) yozilmaydi — `tt('kalit')` orqali olinadi va kalit `src/i18n/index.js` dagi **uchala til** bo'limiga qo'shiladi. To'liq qoida pastda — *Internatsionalizatsiya (i18n)* bo'limiga qara.
 
+> 📱 **MAJBURIY:** Har bir yangi yoki o'zgargan ekran/sahifa/komponent **responsive** bo'lib yozilsin — desktop, **planshet (tablet)** va **mobil (telefon)** da to'g'ri ko'rinsin. Bu i18n bilan bir qatorda doimiy talab: sahifa yozilganda mobil ko'rinishi ham birga o'ylanadi, keyinroq emas. To'liq qoida pastda — *Responsivlik (mobile/tablet)* bo'limiga qara.
+
 > **Backend path:** lokal — `D:\personal projects\backend-ai-muxbir`, server — `/var/www/backend-ai-muxbir/`. Backend kerak bo'lganda shu yo'llardan foydalan, har safar foydalanuvchidan so'rama.
 
 ---
@@ -72,3 +74,27 @@ Vue 3 (`<script setup>`) + Vite. Bundan keyin **barcha kod SOLID prinsiplariga a
 ### Kalit nomlash
 - Sahifa prefiksi: `an.*` (analytics), `ov.*` (overview), `billing.*`, `queue.*`, `cats.*`, `tz.*`, `settings.*`, `nav.*`, `teb.*` (TariffExpiryBanner), `tsm.*` (TariffSwitchModal), `qpc.*` (QueuePostCard) va hokazo.
 - Yangi sahifa/komponent uchun yangi qisqa prefiks tanla va uchala tilda yoz.
+
+---
+
+## Responsivlik (mobile/tablet) — MAJBURIY QOIDA
+
+**Har bir ekran/sahifa/komponent desktop, planshet va mobil'da to'g'ri ko'rinishi shart.** Mobil ko'rinish sahifa yozilayotgan paytda birga o'ylanadi — keyinga qoldirilmaydi.
+
+### Breakpointlar
+- **Planshet (tablet):** `<= 1024px` — sidebar off-canvas drawer'ga aylanadi; `repeat(4/5, 1fr)` gridlar 2 ustunga tushadi.
+- **Mobil (phone):** `<= 640px` — barcha aniq ustunli gridlar 1 ustunga tushadi; padding kichrayadi.
+
+### Qanday ishlaydi (mavjud infratuzilma)
+- Global moslashuv qatlami: **`src/assets/responsive.css`** (`main.js` da `main.css` dan keyin import qilingan). Ilova ko'p joyda inline `style` ishlatgani uchun, bu fayl atribut-selektor + `!important` bilan moslashtiradi (DRY — 90 faylga alohida media-query yozilmaydi).
+  - **Inline gridlar avtomatik yig'iladi.** `style="display:grid;grid-template-columns:repeat(4,1fr)"` yoki `1fr 1fr`, `2fr 1fr` kabilar mobil'da 1 ustun, planshetda (4/5) 2 ustun bo'ladi — **qo'shimcha kod shart emas**.
+  - `repeat(auto-fit/auto-fill, minmax(...))` va gorizontal `... auto` qatorlar (masalan `96px 1fr auto`) **tegilmaydi** — ataylab saqlanadi.
+- Sidebar drawer holati: **`useAppStore().sidebarOpen`** (`toggle/open/closeSidebar`). Shell klasslari `App.vue` da (`.app-shell`, `.app-sidebar-wrap`, `.app-backdrop`), hamburger `AppTopbar.vue` da (`.nav-toggle`). Route o'zgarsa drawer avtomatik yopiladi.
+- `index.html` viewport `width=device-width` — qotirilgan kenglik qo'yma.
+
+### Har bir o'zgarishda
+1. **Inline grid ishlatsang** — global qatlam o'zi moslashtiradi, alohida media-query yozma.
+2. **Scoped CSS class bilan grid/keng layout yasasang** (masalan `.signin-root`, `.oz-pm-options`) — global qatlam buni **ko'rmaydi**, shuning uchun komponent ichida o'z `@media (max-width: 640px)` / `(max-width: 1024px)` qoidangni yoz.
+3. **Qotirilgan piksel kengligi** (`width:560px` va h.k.) — `max-width` + `width:100%` ishlat yoki mobil'da kichraytir. Modallar uchun `AppModal.vue` (allaqachon `maxWidth:100%`) dan foydalan.
+4. **To'liq-ekran sahifalar** (shell'siz: SignIn, Onboarding, ClientActivate, SupportConsole) o'z `@media` qoidasiga muhtoj — ustunlar mobil'da stack bo'lsin.
+5. Yangi umumiy moslashuv naqshi kerak bo'lsa — uni `src/assets/responsive.css` ga qo'sh (har komponentda takrorlama).
