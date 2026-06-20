@@ -372,7 +372,7 @@ export const DICT = {
     'qpc.approved': 'Tasdiqlandi · {date}',
     'qpc.sent': 'Yuborildi',
     'qpc.cancel': '❌ Bekor',
-    'qpc.write': '✍️ Muxbirda yozish',
+    'qpc.write': '✍️ Xabarni yozish',
     'qpc.decline': '🚫 Chiqarmaslik',
     'qpc.publish': '📢 Kanalga chiqarish',
 
@@ -2845,7 +2845,7 @@ export const DICT = {
     'qpc.approved': 'Одобрено · {date}',
     'qpc.sent': 'Отправлено',
     'qpc.cancel': '❌ Отклонить',
-    'qpc.write': '✍️ Написать в Muxbir',
+    'qpc.write': '✍️ Написать пост',
     'qpc.decline': '🚫 Не публиковать',
     'qpc.publish': '📢 Опубликовать в канал',
 
@@ -5318,7 +5318,7 @@ export const DICT = {
     'qpc.approved': 'Approved · {date}',
     'qpc.sent': 'Sent',
     'qpc.cancel': '❌ Cancel',
-    'qpc.write': '✍️ Write in Muxbir',
+    'qpc.write': '✍️ Write the post',
     'qpc.decline': '🚫 Do not publish',
     'qpc.publish': '📢 Publish to channel',
 
