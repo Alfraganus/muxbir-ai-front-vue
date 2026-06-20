@@ -1,0 +1,149 @@
+/* ============================================================
+   Responsive baseline — planshet (tablet) va mobil (phone)
+   ------------------------------------------------------------
+   Ilova ko'p joyda inline `style` ishlatadi (grid, padding, width).
+   Inline stillarni media-query'dan boshqarib bo'lmaydi, shuning uchun
+   bu yerda atribut-selektorlar + `!important` bilan global moslashuv
+   beriladi. Bu DRY yondashuv — 90 ta faylga alohida media-query
+   yozish o'rniga, moslashuv mantig'i bitta joyda turadi.
+
+   Breakpointlar:
+     - Planshet:  <= 1024px  (sidebar -> drawer, 4/5-ustun gridlar -> 2)
+     - Mobil:     <= 640px   (barcha gridlar -> 1 ustun, padding kichrayadi)
+   ============================================================ */
+
+/* ──────────────────────────────────────────────────────────
+   1) SHELL — sidebar off-canvas drawer (<= 1024px)
+   App.vue ichida .app-shell, .app-sidebar-wrap, .app-backdrop
+   klasslari bor. Drawer holati store.sidebarOpen orqali.
+   ────────────────────────────────────────────────────────── */
+.app-backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  /* Sidebar konteynerini fixed off-canvas panelga aylantiramiz */
+  .app-sidebar-wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 120;
+    transform: translateX(-100%);
+    transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-lg);
+    will-change: transform;
+  }
+  .app-shell.nav-open .app-sidebar-wrap {
+    transform: translateX(0);
+  }
+  /* Qorong'i fon (backdrop) */
+  .app-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.26s ease;
+  }
+  .app-shell.nav-open .app-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* Hamburger tugmasi faqat shu o'lchamda ko'rinadi */
+  .nav-toggle {
+    display: inline-flex !important;
+  }
+}
+
+/* Desktopda hamburger yashirin */
+.nav-toggle {
+  display: none;
+}
+
+/* ──────────────────────────────────────────────────────────
+   2) GRIDLAR — inline grid-template-columns moslashuvi
+   "auto" so'zini o'z ichiga olganlarni (auto-fit/auto-fill va
+   "96px 1fr auto" kabi gorizontal qatorlar) tegmaymiz.
+   ────────────────────────────────────────────────────────── */
+
+/* Planshet: 4 va 5 ustunli kartalar -> 2 ustun */
+@media (min-width: 641px) and (max-width: 1024px) {
+  [style*="grid-template-columns:repeat(4"]:not([style*="auto"]),
+  [style*="grid-template-columns: repeat(4"]:not([style*="auto"]),
+  [style*="grid-template-columns:repeat(5"]:not([style*="auto"]),
+  [style*="grid-template-columns: repeat(5"]:not([style*="auto"]) {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Mobil: barcha aniq ustunli gridlar -> 1 ustun (auto-* bundan mustasno) */
+@media (max-width: 640px) {
+  [style*="grid-template-columns"]:not([style*="auto"]) {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   3) SAHIFA PADDINGI — keng page root'lar mobil/planshetda kichrayadi
+   ────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  [style*="padding:20px 24px"] {
+    padding: 16px 16px 32px !important;
+  }
+}
+@media (max-width: 640px) {
+  [style*="padding:20px 24px"] {
+    padding: 14px 12px 28px !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   4) MODALLAR — backdrop paddingini kichraytirib, kontentga joy
+   AppModal.vue backdrop'i padding:24px ishlatadi.
+   ────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  [style*="position:fixed"][style*="padding:24px"] {
+    padding: 12px !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   5) KENG ELEMENTLAR — gorizontal toshib ketishning oldini olish
+   ────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Asosiy kontent oqimida hech narsa viewport'dan kengroq bo'lmasin */
+  main img,
+  main svg,
+  main video,
+  main canvas {
+    max-width: 100%;
+    height: auto;
+  }
+  /* Jadvallar — gorizontal scroll uchun o'rab qo'yilmagan bo'lsa ham,
+     hech bo'lmasa toshib ketganda scroll paydo bo'lsin */
+  main table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   6) TOPBAR — mobilda qidiruvni yashirib, joy bo'shatamiz
+   AppTopbar .tb-search klassi.
+   ────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .tb-search {
+    display: none !important;
+  }
+}
+@media (max-width: 640px) {
+  .tb-kbd {
+    display: none !important;
+  }
+}

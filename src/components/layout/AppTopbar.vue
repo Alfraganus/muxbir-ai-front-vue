@@ -1,5 +1,10 @@
 <template>
   <header style="height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;background:color-mix(in oklab, var(--bg) 80%, transparent);position:sticky;top:0;z-index:30;backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);">
+    <!-- Hamburger (faqat mobil/planshet) -->
+    <button class="nav-toggle" @click="store.toggleSidebar()" :aria-label="store.t('appTopbar.openMenu')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+
     <!-- Breadcrumb -->
     <div style="display:flex;align-items:center;gap:8px;min-width:0;">
       <template v-for="(b, i) in breadcrumb" :key="i">
@@ -113,6 +118,22 @@ const vClickOutside = {
 </script>
 
 <style scoped>
+/* Hamburger (mobil/planshet) — ko'rinish; display'ni responsive.css boshqaradi */
+.nav-toggle {
+  width: 36px; height: 36px; flex-shrink: 0;
+  align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  background: var(--panel); border: 1px solid var(--border);
+  color: var(--text-2); cursor: pointer; margin-left: -4px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.nav-toggle:hover { background: var(--panel-2); color: var(--text); }
+
+/* Topbar paddingi mobilda kichrayadi */
+@media (max-width: 640px) {
+  header { padding: 0 12px !important; gap: 10px !important; }
+}
+
 /* Qidiruv maydoni */
 .tb-search {
   display: flex; align-items: center; gap: 8px;

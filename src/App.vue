@@ -17,8 +17,12 @@
 
     <!-- Console shell: sidebar + topbar + content -->
     <template v-else>
-      <div style="display:flex;height:100vh;overflow:hidden;">
-        <AppSidebar :workspace="store.workspace"/>
+      <div class="app-shell" :class="{ 'nav-open': store.sidebarOpen }" style="display:flex;height:100vh;overflow:hidden;">
+        <!-- Mobil/planshet drawer foni -->
+        <div class="app-backdrop" @click="store.closeSidebar()" aria-hidden="true"/>
+        <div class="app-sidebar-wrap" style="flex-shrink:0;">
+          <AppSidebar :workspace="store.workspace"/>
+        </div>
         <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;">
           <AppTopbar/>
           <TariffExpiryBanner v-if="store.workspace === 'client'"/>
@@ -119,8 +123,12 @@ watch(() => authStore.accessToken, async (tok) => {
   await refreshSubscriptionGate()
 })
 
-// Sahifa o'zgarganda obuna holatini qayta tekshiramiz (paywall'da ushlab turish).
-watch(() => route.path, enforceSubscription)
+// Sahifa o'zgarganda obuna holatini qayta tekshiramiz (paywall'da ushlab turish)
+// va mobil navigatsiya draweri'ni yopamiz.
+watch(() => route.path, () => {
+  enforceSubscription()
+  store.closeSidebar()
+})
 
 const isOnboarding = computed(() =>
   route.path === '/signup' || route.path === '/signin' || route.path === '/auth/magic'

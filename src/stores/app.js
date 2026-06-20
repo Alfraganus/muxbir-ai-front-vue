@@ -21,6 +21,8 @@ export const useAppStore = defineStore('app', () => {
   // ishlatiladi. setCompany orqali yangilanadi; default UTC+5 (Toshkent).
   const companyOffsetMin = ref(DEFAULT_UTC_OFFSET_MIN)
   const langSwitching = ref(false)
+  // Mobil/planshet navigatsiya draweri (off-canvas sidebar) ochiqligi
+  const sidebarOpen = ref(false)
   // workspace'ni manual saqlamaymiz — token o'zgargani sayin reactive
   // o'zgarish kerak. Manual override uchun (kelajakda super admin client
   // workspace'iga "impersonate" qilib o'tishi mumkin) opt-in field.
@@ -82,5 +84,10 @@ export const useAppStore = defineStore('app', () => {
   /** Settings'da offset o'zgartirilganda darhol global holatni yangilash uchun. */
   function setCompanyOffset(min) { companyOffsetMin.value = resolveOffsetMin(min) }
 
-  return { lang, langSwitching, darkMode, accentColor, workspace, companyName, companyId, companyOffsetMin, currentPage, t, setLang, setDarkMode, setAccent, setWorkspace, setPage, setCompany, setCompanyOffset, refreshAuthDerivedState }
+  // ── Mobil drawer boshqaruvi ──────────────────────────────
+  function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
+  function openSidebar() { sidebarOpen.value = true }
+  function closeSidebar() { sidebarOpen.value = false }
+
+  return { lang, langSwitching, darkMode, accentColor, workspace, companyName, companyId, companyOffsetMin, currentPage, sidebarOpen, t, setLang, setDarkMode, setAccent, setWorkspace, setPage, setCompany, setCompanyOffset, refreshAuthDerivedState, toggleSidebar, openSidebar, closeSidebar }
 })
