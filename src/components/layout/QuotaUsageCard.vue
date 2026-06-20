@@ -5,7 +5,7 @@
       <div class="quc-head-l">
         <span class="quc-head-ic"><AppIcon name="Shield" :size="14"/></span>
         <div>
-          <div class="quc-head-cap">Joriy tarif</div>
+          <div class="quc-head-cap">{{ tt('quc.currentTariff') }}</div>
           <div v-if="quota.loaded" class="quc-head-name">{{ quota.tariffName || 'Free' }}</div>
           <div v-else class="quc-skel quc-skel-name" />
         </div>
@@ -18,7 +18,7 @@
     <!-- Oylik post limiti -->
     <div class="quc-metric">
       <div class="quc-metric-top">
-        <span class="quc-metric-label"><AppIcon name="Send" :size="12"/> Oylik post</span>
+        <span class="quc-metric-label"><AppIcon name="Send" :size="12"/> {{ tt('quc.monthlyPost') }}</span>
         <span v-if="quota.loaded" class="quc-metric-val tabular">
           {{ formatNumber(quota.monthly.used) }}<span class="quc-metric-lim">/ {{ limitLabel(quota.monthly.limit) }}</span>
         </span>
@@ -30,35 +30,35 @@
     <!-- Kunlik post limiti -->
     <div class="quc-metric">
       <div class="quc-metric-top">
-        <span class="quc-metric-label"><AppIcon name="Calendar" :size="12"/> Kunlik post</span>
+        <span class="quc-metric-label"><AppIcon name="Calendar" :size="12"/> {{ tt('quc.dailyPost') }}</span>
         <span v-if="quota.loaded" class="quc-metric-val tabular">
           {{ formatNumber(quota.daily.used) }}<span class="quc-metric-lim">/ {{ limitLabel(quota.daily.limit) }}</span>
         </span>
         <span v-else class="quc-skel quc-skel-val" />
       </div>
       <AppProgress v-if="quota.daily.limit > 0" :value="quota.daily.used" :max="quota.daily.limit || 1" :tone="toneFor(quota.daily.used, quota.daily.limit)" />
-      <div v-else class="quc-unlimited">Cheksiz</div>
+      <div v-else class="quc-unlimited">{{ tt('quc.unlimited') }}</div>
     </div>
 
     <!-- Kredit -->
     <div class="quc-metric">
       <div class="quc-metric-top">
-        <span class="quc-metric-label"><AppIcon name="Coin" :size="12"/> Kredit</span>
+        <span class="quc-metric-label"><AppIcon name="Coin" :size="12"/> {{ tt('quc.credit') }}</span>
         <span v-if="quota.loaded" class="quc-metric-val tabular">
-          {{ formatCredit(quota.credits.balance) }}<span class="quc-metric-lim">kredit</span>
+          {{ formatCredit(quota.credits.balance) }}<span class="quc-metric-lim">{{ tt('quc.creditUnit') }}</span>
         </span>
         <span v-else class="quc-skel quc-skel-val" />
       </div>
       <AppProgress :value="quota.credits.used" :max="quota.credits.total || 1" tone="accent" />
       <button class="quc-credit-btn" @click="buyCreditsOpen = true">
-        <AppIcon name="Plus" :size="12"/> Kredit qo'shish
+        <AppIcon name="Plus" :size="12"/> {{ tt('quc.addCredit') }}
       </button>
     </div>
 
     <!-- Tarifni o'zgartirish -->
     <button class="quc-tariff-btn" @click="openSwitch">
       <AppIcon name="Tag" :size="13"/>
-      Tarifni o'zgartirish
+      {{ tt('quc.changeTariff') }}
     </button>
 
     <BuyCreditsModal v-model="buyCreditsOpen" :balance="quota.credits.balance" />
@@ -67,13 +67,18 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed } from 'vue'
 import AppProgress from '@/components/ui/AppProgress.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal.vue'
 import TariffSwitchModal from '@/components/billing/TariffSwitchModal.vue'
 import { useQuotaStore } from '@/stores/quota.js'
+import { useAppStore } from '@/stores/app.js'
 import { subscriptionsApi } from '@/api/subscriptions.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const quota = useQuotaStore()
 const buyCreditsOpen = ref(false)
