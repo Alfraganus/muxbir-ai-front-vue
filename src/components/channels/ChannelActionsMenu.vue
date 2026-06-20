@@ -1,6 +1,6 @@
 <template>
   <div style="position:relative;">
-    <button class="cam-btn" :class="{ open }" @click.stop="open = !open" aria-label="Amallar">
+    <button class="cam-btn" :class="{ open }" @click.stop="open = !open" :aria-label="tt('channelActionsMenu.actionsAria')">
       <AppIcon name="More" :size="18"/>
     </button>
     <template v-if="open">
@@ -8,31 +8,31 @@
       <div class="cam-menu" role="menu">
         <button class="cam-item" @click="pick('posts')">
           <span class="cam-ic" style="--c:#0EA5E9"><AppIcon name="Eye" :size="15"/></span>
-          <span class="cam-txt"><b>Postlarni ko'rish</b><small>Yuborilgan postlar oqimi</small></span>
+          <span class="cam-txt"><b>{{ tt('channelActionsMenu.postsTitle') }}</b><small>{{ tt('channelActionsMenu.postsDesc') }}</small></span>
         </button>
         <button class="cam-item" @click="pick('signature')">
           <span class="cam-ic" style="--c:#8B5CF6"><AppIcon name="Edit" :size="15"/></span>
-          <span class="cam-txt"><b>Imzo va shablon</b><small>Post oxiridagi imzo</small></span>
+          <span class="cam-txt"><b>{{ tt('channelActionsMenu.signatureTitle') }}</b><small>{{ tt('channelActionsMenu.signatureDesc') }}</small></span>
         </button>
         <button class="cam-item" @click="pick('sources')">
           <span class="cam-ic" style="--c:#22C55E"><AppIcon name="Layers" :size="15"/></span>
-          <span class="cam-txt"><b>Manbalar</b><small>Telegram / website manbalar</small></span>
+          <span class="cam-txt"><b>{{ tt('channelActionsMenu.sourcesTitle') }}</b><small>{{ tt('channelActionsMenu.sourcesDesc') }}</small></span>
         </button>
         <button v-if="mode === 'auto' && active" class="cam-item" @click="pick('settings')">
           <span class="cam-ic" style="--c:#F59E0B"><AppIcon name="Settings" :size="15"/></span>
-          <span class="cam-txt"><b>Sozlash</b><small>Avto-post sozlamalari</small></span>
+          <span class="cam-txt"><b>{{ tt('channelActionsMenu.settingsTitle') }}</b><small>{{ tt('channelActionsMenu.settingsDesc') }}</small></span>
         </button>
         <button class="cam-item" @click="pick('toggle-mode')">
           <span class="cam-ic" style="--c:#6366F1"><AppIcon :name="mode === 'auto' ? 'Edit' : 'Bolt'" :size="15"/></span>
           <span class="cam-txt">
-            <b>{{ mode === 'auto' ? "Manualga o'tkazish" : "Avtoga o'tkazish" }}</b>
-            <small>{{ mode === 'auto' ? "Qo'lda boshqarish" : "Avtomatik yuborish" }}</small>
+            <b>{{ mode === 'auto' ? tt('channelActionsMenu.toManualTitle') : tt('channelActionsMenu.toAutoTitle') }}</b>
+            <small>{{ mode === 'auto' ? tt('channelActionsMenu.toManualDesc') : tt('channelActionsMenu.toAutoDesc') }}</small>
           </span>
         </button>
         <div class="cam-div"/>
         <button class="cam-item danger" @click="pick('remove')">
           <span class="cam-ic" style="--c:#EF4444"><AppIcon name="Trash" :size="15"/></span>
-          <span class="cam-txt"><b>O'chirish</b><small>Kanalni ro'yxatdan olib tashlash</small></span>
+          <span class="cam-txt"><b>{{ tt('channelActionsMenu.removeTitle') }}</b><small>{{ tt('channelActionsMenu.removeDesc') }}</small></span>
         </button>
       </div>
     </template>
@@ -42,6 +42,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   channel: { type: Object, required: true },

@@ -1,13 +1,13 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
     <PageHeader
-      title="Telegram user API sessionlari"
-      subtitle="Barcha kompaniyalarning faol Telegram MTProto sessionlari. Bu yerdan ularni o'chirib, Telegram tomonida ham logout qilishingiz mumkin."
+      :title="tt('adminTelegramSessions.pageTitle')"
+      :subtitle="tt('adminTelegramSessions.pageSubtitle')"
     >
       <template #right>
         <AppButton variant="secondary" size="md" @click="load" :loading="loading">
           <template #icon><AppIcon name="Sort" :size="13"/></template>
-          Yangilash
+          {{ tt('adminTelegramSessions.refresh') }}
         </AppButton>
         <AppButton
           variant="danger"
@@ -17,7 +17,7 @@
           @click="onRevokeAll"
         >
           <template #icon><AppIcon name="Trash" :size="13"/></template>
-          Barcha sessionlarni o'chirish
+          {{ tt('adminTelegramSessions.revokeAll') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -25,17 +25,17 @@
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <div class="ats-stat">
         <span class="ats-stat-val">{{ sessions.length }}</span>
-        <span class="ats-stat-lbl">faol session</span>
+        <span class="ats-stat-lbl">{{ tt('adminTelegramSessions.activeSessions') }}</span>
       </div>
       <div style="flex:1;"/>
-      <AppInput v-model="query" placeholder="Nom, email, fingerprint, telefon..." :style="{ width:'320px' }">
+      <AppInput v-model="query" :placeholder="tt('adminTelegramSessions.searchPlaceholder')" :style="{ width:'320px' }">
         <template #icon><AppIcon name="Search" :size="13" :style="{color:'var(--muted)'}"/></template>
       </AppInput>
     </div>
 
     <AppPanel :padding="0">
       <div v-if="loading" style="padding:48px;text-align:center;color:var(--muted);font-size:13px;">
-        <span class="ats-spinner"/> Yuklanmoqda…
+        <span class="ats-spinner"/> {{ tt('adminTelegramSessions.loading') }}
       </div>
       <div v-else-if="error"
            style="padding:14px 16px;background:rgba(239,68,68,.08);
@@ -49,10 +49,10 @@
           <AppIcon name="Telegram" :size="24"/>
         </span>
         <div style="font-size:14px;font-weight:600;">
-          {{ sessions.length ? "Filtr bo'yicha topilmadi" : 'Faol Telegram session yo\'q' }}
+          {{ sessions.length ? tt('adminTelegramSessions.noFilterMatch') : tt('adminTelegramSessions.noSessions') }}
         </div>
         <div style="font-size:12px;color:var(--muted);max-width:380px;">
-          Foydalanuvchilar Telegram API'larini ulagandagina shu yerda ko'rinadi.
+          {{ tt('adminTelegramSessions.emptyHint') }}
         </div>
       </div>
       <table v-else style="width:100%;border-collapse:collapse;font-size:12.5px;">
@@ -118,7 +118,7 @@
                 @click="onRevokeOne(s)"
               >
                 <template #icon><AppIcon name="Trash" :size="11"/></template>
-                O'chirish
+                {{ tt('adminTelegramSessions.delete') }}
               </AppButton>
             </td>
           </tr>
@@ -134,8 +134,7 @@
       <div v-if="confirmAll" style="display:flex;flex-direction:column;gap:10px;">
         <div style="padding:12px 14px;border-radius:8px;background:rgba(239,68,68,.08);
                     border:1px solid rgba(239,68,68,.25);color:#ef4444;font-size:12.5px;line-height:1.5;">
-          <strong>Diqqat:</strong> {{ sessions.length }} ta session o'chiriladi. Foydalanuvchilar yana
-          ulanish uchun kod orqali qayta login qilishlari kerak.
+          <strong>{{ tt('adminTelegramSessions.warningLabel') }}</strong> {{ tt('adminTelegramSessions.revokeAllWarning', { n: sessions.length }) }}
         </div>
       </div>
       <div v-else style="display:flex;flex-direction:column;gap:8px;">
@@ -147,17 +146,17 @@
           </span>
           <span v-if="pendingSession?.fingerprint"
                 style="font-size:11px;color:var(--muted);" class="mono">
-            fingerprint: {{ pendingSession.fingerprint }}
+            {{ tt('adminTelegramSessions.fingerprintLabel') }} {{ pendingSession.fingerprint }}
           </span>
         </div>
       </div>
       <template #footer>
         <AppButton variant="secondary" size="md" @click="confirmOpen = false" :disabled="confirmBusy">
-          Bekor qilish
+          {{ tt('adminTelegramSessions.cancel') }}
         </AppButton>
         <AppButton variant="danger" size="md" :loading="confirmBusy" @click="confirmRun">
           <template #icon><AppIcon name="Trash" :size="12"/></template>
-          {{ confirmAll ? "Hammasini o'chirish" : "O'chirish" }}
+          {{ confirmAll ? tt('adminTelegramSessions.deleteAll') : tt('adminTelegramSessions.delete') }}
         </AppButton>
       </template>
     </AppModal>
@@ -184,6 +183,11 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import { adminApi } from '@/api/admin.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const loading = ref(true)
 const error = ref('')
@@ -207,23 +211,23 @@ function showToast(kind, text, ms = 4000) {
 }
 
 const confirmTitle = computed(() =>
-  confirmAll.value ? "Barcha sessionlarni o'chirish?" : "Sessionni o'chirish?",
+  confirmAll.value ? tt('adminTelegramSessions.confirmAllTitle') : tt('adminTelegramSessions.confirmOneTitle'),
 )
 const confirmSubtitle = computed(() =>
   confirmAll.value
-    ? "Ushbu amal qaytarib bo'lmaydi. Barcha foydalanuvchilarning Telegram API ulanishi to'xtatiladi."
-    : "Foydalanuvchining Telegram API ulanishi to'xtatiladi. Qaytarib bo'lmaydi.",
+    ? tt('adminTelegramSessions.confirmAllSubtitle')
+    : tt('adminTelegramSessions.confirmOneSubtitle'),
 )
 
-const headers = [
-  { key: 'company',    label: 'Kompaniya / egasi' },
-  { key: 'phone',      label: 'Telefon' },
+const headers = computed(() => [
+  { key: 'company',    label: tt('adminTelegramSessions.colCompany') },
+  { key: 'phone',      label: tt('adminTelegramSessions.colPhone') },
   { key: 'api_id',     label: 'API ID' },
-  { key: 'fp',         label: 'Fingerprint' },
-  { key: 'created',    label: 'Yaratilgan' },
-  { key: 'last_used',  label: 'Oxirgi marta' },
+  { key: 'fp',         label: tt('adminTelegramSessions.colFingerprint') },
+  { key: 'created',    label: tt('adminTelegramSessions.colCreated') },
+  { key: 'last_used',  label: tt('adminTelegramSessions.colLastUsed') },
   { key: 'actions',    label: '', right: true },
-]
+])
 
 async function load() {
   loading.value = true
@@ -231,7 +235,7 @@ async function load() {
   try {
     sessions.value = await adminApi.listTelegramSessions()
   } catch (e) {
-    error.value = e?.response?.data?.message || e.message || "Yuklashda xato"
+    error.value = e?.response?.data?.message || e.message || tt('adminTelegramSessions.loadError')
     sessions.value = []
   } finally {
     loading.value = false
@@ -268,18 +272,18 @@ async function confirmRun() {
     if (confirmAll.value) {
       revokingAll.value = true
       const r = await adminApi.revokeAllTelegramSessions()
-      showToast('success', `${r.total} session o'chirildi (Telegram'dan logged-out: ${r.logged_out}, xato: ${r.failed})`)
+      showToast('success', tt('adminTelegramSessions.revokeAllSuccess', { total: r.total, loggedOut: r.logged_out, failed: r.failed }))
     } else if (pendingSession.value) {
       revokingId.value = pendingSession.value.company_id
       const r = await adminApi.revokeTelegramSession(pendingSession.value.company_id)
       showToast('success', r.logged_out
-        ? "Session o'chirildi va Telegram tomonida ham logout qilindi"
-        : "Session o'chirildi (Telegram'dan logout muvaffaqiyatsiz, lekin DB tozalandi)")
+        ? tt('adminTelegramSessions.revokeOneSuccess')
+        : tt('adminTelegramSessions.revokeOneSuccessNoLogout'))
     }
     confirmOpen.value = false
     await load()
   } catch (e) {
-    showToast('error', e?.response?.data?.message || e.message || "O'chirishda xato", 6000)
+    showToast('error', e?.response?.data?.message || e.message || tt('adminTelegramSessions.revokeError'), 6000)
   } finally {
     confirmBusy.value = false
     revokingAll.value = false
@@ -300,10 +304,10 @@ function relativeTime(d) {
   const dt = new Date(d)
   if (isNaN(dt.getTime())) return '—'
   const diff = Math.floor((Date.now() - dt.getTime()) / 1000)
-  if (diff < 60) return `${diff}s oldin`
-  if (diff < 3600) return `${Math.floor(diff/60)} daq oldin`
-  if (diff < 86400) return `${Math.floor(diff/3600)} soat oldin`
-  if (diff < 86400 * 30) return `${Math.floor(diff/86400)} kun oldin`
+  if (diff < 60) return tt('adminTelegramSessions.relSeconds', { n: diff })
+  if (diff < 3600) return tt('adminTelegramSessions.relMinutes', { n: Math.floor(diff/60) })
+  if (diff < 86400) return tt('adminTelegramSessions.relHours', { n: Math.floor(diff/3600) })
+  if (diff < 86400 * 30) return tt('adminTelegramSessions.relDays', { n: Math.floor(diff/86400) })
   return formatDate(d)
 }
 </script>

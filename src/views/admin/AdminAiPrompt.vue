@@ -1,15 +1,15 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;max-width:880px;">
     <PageHeader
-      title="AI BASE prompt"
-      subtitle="Platforma uchun yagona — barcha kompaniyalarning AI promptiga ustun (priority N1) qo'shiladi"
+      :title="tt('adminAiPrompt.headerTitle')"
+      :subtitle="tt('adminAiPrompt.headerSubtitle')"
     />
 
     <AppPanel
-      title="Base prompt matni"
-      subtitle="Islomiy targ'ibot, O'zbekistonga tanqid, prezident/oilasiga tanqid taqiqlari va #SKIP qoidalari"
+      :title="tt('adminAiPrompt.panelTitle')"
+      :subtitle="tt('adminAiPrompt.panelSubtitle')"
     >
-      <div v-if="loading" style="color:var(--muted);font-size:13px;">Yuklanmoqda…</div>
+      <div v-if="loading" style="color:var(--muted);font-size:13px;">{{ tt('adminAiPrompt.loading') }}</div>
       <form v-else @submit.prevent="save" style="display:flex;flex-direction:column;gap:12px;">
         <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">
           <span
@@ -22,7 +22,7 @@
             }"
           >
             <span style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>
-            {{ isDefault ? 'Default qiymat (kod ichidan)' : 'Maxsus qiymat (saqlangan)' }}
+            {{ isDefault ? tt('adminAiPrompt.badgeDefault') : tt('adminAiPrompt.badgeCustom') }}
           </span>
         </div>
 
@@ -42,7 +42,7 @@
             style="padding:9px 16px;border-radius:6px;background:var(--accent);color:#fff;border:none;
                    cursor:pointer;font-size:13px;font-weight:500;"
           >
-            {{ saving ? 'Saqlanmoqda…' : 'Saqlash' }}
+            {{ saving ? tt('adminAiPrompt.saving') : tt('adminAiPrompt.save') }}
           </button>
           <button
             type="button"
@@ -50,11 +50,11 @@
             @click="restoreDefault"
             style="padding:9px 16px;border-radius:6px;background:transparent;color:var(--muted);
                    border:1px solid var(--border-2);cursor:pointer;font-size:13px;"
-            title="Default matnga qaytarish (DB da NULL bo'lib saqlanadi — kod ichidagi default qaytadi)"
+            :title="tt('adminAiPrompt.restoreTitle')"
           >
-            Defaultga qaytarish
+            {{ tt('adminAiPrompt.restore') }}
           </button>
-          <span v-if="savedAt" style="font-size:12px;color:var(--success);">Saqlandi ✓</span>
+          <span v-if="savedAt" style="font-size:12px;color:var(--success);">{{ tt('adminAiPrompt.saved') }}</span>
           <span v-if="error" style="font-size:12px;color:var(--danger);">{{ error }}</span>
         </div>
       </form>
@@ -63,10 +63,15 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { adminApi } from '@/api/admin.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const loading = ref(true)
 const saving = ref(false)

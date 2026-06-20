@@ -1,9 +1,9 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
-    <PageHeader title="Tarif va to'lov" subtitle="Joriy tarif, foydalanish va to'lov tarixi">
+    <PageHeader :title="tt('billing.title')" :subtitle="tt('billing.subtitle')">
       <template #right>
-        <AppButton variant="secondary" size="md"><template #icon><AppIcon name="Sort" :size="13"/></template>Hisob hujjati</AppButton>
-        <AppButton variant="primary" size="md"><template #icon><AppIcon name="Arrow" :size="13"/></template>Tarifni o'zgartirish</AppButton>
+        <AppButton variant="secondary" size="md"><template #icon><AppIcon name="Sort" :size="13"/></template>{{ tt('billing.invoice') }}</AppButton>
+        <AppButton variant="primary" size="md"><template #icon><AppIcon name="Arrow" :size="13"/></template>{{ tt('billing.changePlan') }}</AppButton>
       </template>
     </PageHeader>
 
@@ -12,39 +12,39 @@
       <div style="padding:20px 24px;background:linear-gradient(135deg,var(--accent-bg) 0%,var(--panel) 80%);border-radius:var(--r-lg) var(--r-lg) 0 0;display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:24px;align-items:flex-start;">
         <div style="display:flex;flex-direction:column;gap:8px;">
           <div style="display:flex;gap:8px;align-items:center;">
-            <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">Joriy tarif</span>
-            <AppBadge tone="violet">Scale · oylik</AppBadge>
+            <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">{{ tt('billing.currentPlan') }}</span>
+            <AppBadge tone="violet">{{ tt('billing.planName') }}</AppBadge>
           </div>
           <div style="display:flex;align-items:baseline;gap:6px;">
             <span class="tabular" style="font-size:28px;font-weight:600;letter-spacing:-0.02em;">2 700 000</span>
-            <span style="font-size:14px;color:var(--muted);">so'm / oy</span>
+            <span style="font-size:14px;color:var(--muted);">{{ tt('billing.perMonth') }}</span>
           </div>
-          <span style="font-size:12px;color:var(--muted);">Keyingi to'lov: <span style="color:var(--text);font-weight:500;">2026-06-01</span> · 16 kun qoldi</span>
+          <span style="font-size:12px;color:var(--muted);">{{ tt('billing.nextPayment') }} <span style="color:var(--text);font-weight:500;">2026-06-01</span> · {{ tt('billing.daysLeft', { n: 16 }) }}</span>
           <div style="display:flex;gap:6px;margin-top:4px;">
             <AppButton variant="primary" size="md" :loading="clickLoading" @click="onPayWithClick">
-              <template #icon><AppIcon name="Bolt" :size="13"/></template>Click orqali to'lov
+              <template #icon><AppIcon name="Bolt" :size="13"/></template>{{ tt('billing.payClick') }}
             </AppButton>
-            <AppButton variant="secondary" size="md">Yillik to'lovga o'tish (−15%)</AppButton>
-            <AppButton variant="ghost" size="md">To'lovni bekor qilish</AppButton>
+            <AppButton variant="secondary" size="md">{{ tt('billing.switchYearly') }}</AppButton>
+            <AppButton variant="ghost" size="md">{{ tt('billing.cancelPayment') }}</AppButton>
           </div>
           <span v-if="clickError" style="font-size:12px;color:var(--danger);">{{ clickError }}</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">Tarkibga kiradi</span>
+          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">{{ tt('billing.includes') }}</span>
           <PlanLine v-for="l in included" :key="l.text" :icon="l.icon" :text="l.text"/>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">Faol modullar</span>
-          <PlanLine icon="Facebook" text="Facebook scan" tone="accent"/>
-          <PlanLine icon="Bolt" text="Priority support" tone="accent"/>
-          <PlanLine icon="Instagram" text="Instagram posting" :muted="true" note="soon"/>
-          <PlanLine icon="Sparkle" text="Custom branding" :muted="true" note="o'chirilgan"/>
+          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">{{ tt('billing.activeModules') }}</span>
+          <PlanLine icon="Facebook" :text="tt('billing.module.facebookScan')" tone="accent"/>
+          <PlanLine icon="Bolt" :text="tt('billing.module.prioritySupport')" tone="accent"/>
+          <PlanLine icon="Instagram" :text="tt('billing.module.instagramPosting')" :muted="true" :note="tt('billing.module.soon')"/>
+          <PlanLine icon="Sparkle" :text="tt('billing.module.customBranding')" :muted="true" :note="tt('billing.module.disabled')"/>
         </div>
       </div>
     </AppPanel>
 
     <!-- Usage -->
-    <AppPanel title="Bu oyda foydalanish" subtitle="Tarif chegaralarining holati">
+    <AppPanel :title="tt('billing.usage.title')" :subtitle="tt('billing.usage.subtitle')">
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;">
         <div v-for="u in usage" :key="u.label" style="display:flex;flex-direction:column;gap:6px;">
           <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">{{ u.label }}</span>
@@ -55,20 +55,20 @@
             <span style="font-size:11px;color:var(--muted);">/ {{ u.limit.toLocaleString('uz-UZ').replace(/,/g,' ') }} {{ u.unit }}</span>
           </div>
           <AppProgress :value="Math.min(100, (u.used/u.limit)*100)" :tone="u.used>u.limit ? 'danger' : (u.used/u.limit)>0.8 ? 'warn' : 'accent'"/>
-          <span v-if="u.used > u.limit" style="font-size:11px;color:var(--danger);">Limit oshdi · +{{ u.used - u.limit }} {{ u.unit }}</span>
+          <span v-if="u.used > u.limit" style="font-size:11px;color:var(--danger);">{{ tt('billing.usage.exceeded', { n: u.used - u.limit, unit: u.unit }) }}</span>
         </div>
       </div>
     </AppPanel>
 
     <!-- Invoices + Payment method -->
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
-      <AppPanel title="To'lov tarixi" subtitle="Oxirgi 6 oy" :padding="0">
-        <template #action><AppButton variant="ghost" size="sm">Hammasi</AppButton></template>
+      <AppPanel :title="tt('billing.history.title')" :subtitle="tt('billing.history.subtitle')" :padding="0">
+        <template #action><AppButton variant="ghost" size="sm">{{ tt('billing.history.all') }}</AppButton></template>
         <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
           <thead>
             <tr style="border-bottom:1px solid var(--border-2);">
-              <th style="text-align:left;padding:8px 14px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Faktura</th>
-              <th v-for="h in ['Sana','Usul','Summa','Holat','']" :key="h" :style="{ textAlign:h==='Summa'?'right':'left',padding:'8px 10px',fontWeight:500,fontSize:'11px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--muted)' }">{{ h }}</th>
+              <th style="text-align:left;padding:8px 14px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('billing.col.invoice') }}</th>
+              <th v-for="h in [tt('billing.col.date'),tt('billing.col.method'),tt('billing.col.amount'),tt('billing.col.status'),'']" :key="h" :style="{ textAlign:h===tt('billing.col.amount')?'right':'left',padding:'8px 10px',fontWeight:500,fontSize:'11px',textTransform:'uppercase',letterSpacing:'0.05em',color:'var(--muted)' }">{{ h }}</th>
             </tr>
           </thead>
           <tbody>
@@ -78,7 +78,7 @@
               </td>
               <td style="padding:10px;vertical-align:middle;" class="mono" style2="font-size:11.5px;color:var(--muted);">{{ inv.date }}</td>
               <td style="padding:10px;vertical-align:middle;"><AppBadge tone="muted">{{ inv.method }}</AppBadge></td>
-              <td style="padding:10px;vertical-align:middle;text-align:right;" class="tabular" style2="font-weight:500;">{{ fmtSom(inv.amount) }} so'm</td>
+              <td style="padding:10px;vertical-align:middle;text-align:right;" class="tabular" style2="font-weight:500;">{{ fmtSom(inv.amount) }} {{ tt('billing.som') }}</td>
               <td style="padding:10px;vertical-align:middle;"><AppStatus kind="active"/></td>
               <td style="padding:10px 14px;vertical-align:middle;text-align:right;">
                 <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Sort" :size="11"/></template>PDF</AppButton>
@@ -88,7 +88,7 @@
         </table>
       </AppPanel>
 
-      <AppPanel title="To'lov usuli">
+      <AppPanel :title="tt('billing.methods.title')">
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div v-for="(m, i) in methods" :key="i"
             :style="{ display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',border:'1px solid var(--border)',borderRadius:'8px',background: m.primary ? 'var(--accent-bg)' : 'var(--panel)' }">
@@ -97,16 +97,16 @@
             </span>
             <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
               <span style="font-size:12.5px;font-weight:500;">{{ m.name }}</span>
-              <span style="font-size:11px;color:var(--muted);">{{ m.primary ? 'Asosiy · muddati ' + m.expires : 'Zaxira' }}</span>
+              <span style="font-size:11px;color:var(--muted);">{{ m.primary ? tt('billing.method.primary', { exp: m.expires }) : tt('billing.method.backup') }}</span>
             </div>
-            <AppBadge v-if="m.primary" tone="accent">Asosiy</AppBadge>
+            <AppBadge v-if="m.primary" tone="accent">{{ tt('billing.method.badge') }}</AppBadge>
           </div>
-          <AppButton variant="secondary" size="md" style="margin-top:4px;"><template #icon><AppIcon name="Plus" :size="13"/></template>Yangi to'lov usuli</AppButton>
+          <AppButton variant="secondary" size="md" style="margin-top:4px;"><template #icon><AppIcon name="Plus" :size="13"/></template>{{ tt('billing.method.add') }}</AppButton>
         </div>
 
         <div style="height:1px;background:var(--border-2);margin:16px 0;"/>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:500;">Hisob ma'lumotlari</span>
+          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:500;">{{ tt('billing.info.title') }}</span>
           <div v-for="r in billingInfo" :key="r.label" style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;">
             <span style="color:var(--muted);">{{ r.label }}</span>
             <span style="font-weight:500;color:var(--text);">{{ r.value }}</span>
@@ -118,7 +118,8 @@
 </template>
 
 <script setup>
-import { defineComponent, h } from 'vue'
+import { computed } from 'vue'
+import { useAppStore } from '@/stores/app.js'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
@@ -129,6 +130,10 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import { fmtSom } from '@/i18n/index.js'
 import { useClickPayment } from '@/composables/useClickPayment.js'
 
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
+
 const { loading: clickLoading, error: clickError, payWithClick } = useClickPayment()
 
 async function onPayWithClick() {
@@ -137,13 +142,13 @@ async function onPayWithClick() {
   } catch { /* xatolik clickError'da ko'rsatiladi */ }
 }
 
-const usage = [
-  { label: 'Telegram kanallar',  used: 6,    limit: 4,    unit: 'kanal' },
-  { label: 'Postlar (joriy oy)', used: 1280, limit: 2000, unit: 'post' },
-  { label: 'AI tokenlar',        used: 420,  limit: 600,  unit: '1k tok' },
-  { label: 'Komanda joylari',    used: 4,    limit: 5,    unit: 'joy' },
-  { label: 'Saqlash',            used: 32,   limit: 50,   unit: 'GB' },
-]
+const usage = computed(() => [
+  { label: tt('billing.usage.channels'), used: 6,    limit: 4,    unit: tt('billing.unit.channel') },
+  { label: tt('billing.usage.posts'),    used: 1280, limit: 2000, unit: tt('billing.unit.post') },
+  { label: tt('billing.usage.tokens'),   used: 420,  limit: 600,  unit: tt('billing.unit.kTok') },
+  { label: tt('billing.usage.seats'),    used: 4,    limit: 5,    unit: tt('billing.unit.seat') },
+  { label: tt('billing.usage.storage'),  used: 32,   limit: 50,   unit: 'GB' },
+])
 
 const invoices = [
   { id: 'INV-2026-05', date: '2026-05-01', amount: 2_700_000, status: 'paid', method: 'Click' },
@@ -154,26 +159,26 @@ const invoices = [
   { id: 'INV-2025-12', date: '2025-12-01', amount: 2_400_000, status: 'paid', method: 'Bank' },
 ]
 
-const methods = [
-  { name: 'Humo · ····7401', primary: true,  expires: '08/28', logo: 'humo' },
-  { name: 'Click hisob',     primary: false, expires: '—',     logo: 'click' },
-  { name: 'Bank o\'tkazma',  primary: false, expires: '—',     logo: 'bank' },
-]
+const methods = computed(() => [
+  { name: 'Humo · ····7401',           primary: true,  expires: '08/28', logo: 'humo' },
+  { name: tt('billing.method.click'),  primary: false, expires: '—',     logo: 'click' },
+  { name: tt('billing.method.bank'),   primary: false, expires: '—',     logo: 'bank' },
+])
 
-const billingInfo = [
-  { label: 'Kompaniya', value: 'OOO Olcha Express' },
-  { label: 'STIR',      value: '305 482 901' },
-  { label: 'MFO',       value: '00415' },
-  { label: 'Manzil',    value: 'Toshkent sh.' },
-]
+const billingInfo = computed(() => [
+  { label: tt('billing.info.company'), value: 'OOO Olcha Express' },
+  { label: tt('billing.info.tin'),     value: '305 482 901' },
+  { label: tt('billing.info.mfo'),     value: '00415' },
+  { label: tt('billing.info.address'), value: tt('billing.info.addressValue') },
+])
 
-const included = [
-  { icon: 'Telegram', text: '4 Telegram kanal (+ qo\'shimcha)' },
-  { icon: 'Send',     text: '2 000 post / oy' },
-  { icon: 'Sparkle',  text: '600k AI token' },
-  { icon: 'Users',    text: '5 ta joy' },
-  { icon: 'Database', text: '50 GB saqlash' },
-]
+const included = computed(() => [
+  { icon: 'Telegram', text: tt('billing.included.channels') },
+  { icon: 'Send',     text: tt('billing.included.posts') },
+  { icon: 'Sparkle',  text: tt('billing.included.tokens') },
+  { icon: 'Users',    text: tt('billing.included.seats') },
+  { icon: 'Database', text: tt('billing.included.storage') },
+])
 </script>
 
 <script>

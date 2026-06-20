@@ -1,8 +1,8 @@
 <template>
   <div class="ds-root">
     <PageHeader
-      title="Xabar qidirish"
-      subtitle="AI tanlangan kanal manbalaridan eng yaxshi xabarlarni topib beradi. Avval qaysi kanal uchun qidirayotganingizni tanlang."
+      :title="tt('discoverSetup.title')"
+      :subtitle="tt('discoverSetup.subtitle')"
     />
 
     <div class="ds-grid">
@@ -10,19 +10,19 @@
       <div class="ds-col">
         <!-- 0. Kanal tanlash -->
         <AppPanel
-          title="1. Qaysi kanal uchun qidiramiz?"
-          subtitle="Har kanalning o'z manbalari bor — post o'sha kanalga moslab izlanadi">
+          :title="tt('discoverSetup.channelStepTitle')"
+          :subtitle="tt('discoverSetup.channelStepSubtitle')">
           <div v-if="loadingChannels" style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px;">
-            Kanallar yuklanmoqda...
+            {{ tt('discoverSetup.channelsLoading') }}
           </div>
           <div v-else-if="!channels.length"
                style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;
                       display:flex;flex-direction:column;gap:10px;align-items:center;">
-            <span>Hali ulangan kanal yo'q. Avval Kanallar sahifasida kanal qo'shing.</span>
+            <span>{{ tt('discoverSetup.noChannels') }}</span>
             <a href="#/client/channels"
                style="padding:7px 14px;border-radius:6px;background:var(--accent);color:#fff;
                       text-decoration:none;font-size:12.5px;font-weight:500;">
-              Kanallar sahifasi →
+              {{ tt('discoverSetup.channelsPageLink') }}
             </a>
           </div>
           <div v-else class="ds-chan-grid">
@@ -43,15 +43,15 @@
         <!-- Kanal tanlanmaguncha qolgan sozlamalar yashirin -->
         <AppPanel v-if="!selectedChannelId && channels.length && !loadingChannels" :padding="24">
           <div style="text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6;">
-            👆 Yuqorida kanal tanlang — keyin o'sha kanalning manbalari va qidiruv sozlamalari ko'rinadi.
+            {{ tt('discoverSetup.pickChannelHint') }}
           </div>
         </AppPanel>
 
         <template v-if="selectedChannelId">
         <!-- 1. Kanallar (manbalar) -->
         <AppPanel
-          title="2. Qaysi manbalardan qidirilsin?"
-          :subtitle="`${config.sources.length} ta manba tanlandi · manbalarni Kanallar > Manbalar orqali boshqaring`">
+          :title="tt('discoverSetup.sourcesStepTitle')"
+          :subtitle="tt('discoverSetup.sourcesStepSubtitle', { n: config.sources.length })">
 
           <!-- Manba turi filtri -->
           <div class="ds-typebar">
@@ -64,30 +64,30 @@
           </div>
 
           <div v-if="loading" style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;">
-            Manbalar yuklanmoqda...
+            {{ tt('discoverSetup.sourcesLoading') }}
           </div>
           <div v-else-if="!sources.length"
                style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px;
                       display:flex;flex-direction:column;gap:10px;align-items:center;">
-            <span>Bu kanal uchun hali manba yo'q. Kanallar sahifasida kanalning "Manbalar" tugmasidan qo'shing.</span>
+            <span>{{ tt('discoverSetup.noSources') }}</span>
             <a href="#/client/channels"
                style="padding:7px 14px;border-radius:6px;background:var(--accent);color:#fff;
                       text-decoration:none;font-size:12.5px;font-weight:500;">
-              Kanallar sahifasi →
+              {{ tt('discoverSetup.channelsPageLink') }}
             </a>
           </div>
           <div v-else-if="!visibleSources.length"
                style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px;">
-            Bu turdagi manba yo'q. Boshqa turni tanlang yoki Kanallar &gt; Manbalar orqali qo'shing.
+            {{ tt('discoverSetup.noSourcesOfType') }}
           </div>
           <div v-else>
             <!-- Tanlash boshqaruvi: hammasini belgilash / olib tashlash -->
             <div class="ds-srcbar">
               <button type="button" class="ds-srcbar-btn" @click="selectAllSrc">
-                <AppIcon name="Check" :size="11"/> Hammasini belgilash
+                <AppIcon name="Check" :size="11"/> {{ tt('discoverSetup.selectAll') }}
               </button>
               <button type="button" class="ds-srcbar-btn" @click="clearAllSrc">
-                <AppIcon name="Close" :size="11"/> Belgini olib tashlash
+                <AppIcon name="Close" :size="11"/> {{ tt('discoverSetup.clearAll') }}
               </button>
               <span class="ds-srcbar-count mono tabular">{{ selectedVisibleCount }}/{{ visibleSources.length }}</span>
             </div>
@@ -109,10 +109,10 @@
                     <span class="mono" style="font-size:11px;color:var(--muted);">{{ s.handle }}</span>
                   </div>
                   <span style="font-size:11px;color:var(--muted);">
-                    {{ s.type === 'website' ? 'Veb-sayt manba' : (fmtCompact(s.subs) + ' obunachi') }}
+                    {{ s.type === 'website' ? tt('discoverSetup.websiteSource') : tt('discoverSetup.subscribers', { n: fmtCompact(s.subs) }) }}
                   </span>
                 </div>
-                <AppBadge :tone="config.sources.includes(s.id) ? 'accent' : 'muted'" dot>Faol</AppBadge>
+                <AppBadge :tone="config.sources.includes(s.id) ? 'accent' : 'muted'" dot>{{ tt('discoverSetup.activeBadge') }}</AppBadge>
               </button>
             </div>
 
@@ -123,8 +123,8 @@
                 <AppIcon v-if="config.allowUndated" name="Check" :size="11"/>
               </span>
               <span class="ds-undated-txt">
-                <span class="ds-undated-lbl">Sanasi aniqlanmagan postlarni ham qo'shish</span>
-                <span class="ds-undated-hint">Faqat veb-sayt manbalar uchun — sana topilmasa scan vaqti qo'yiladi. "Hoziroq scan qil"da qo'llanadi.</span>
+                <span class="ds-undated-lbl">{{ tt('discoverSetup.undatedLabel') }}</span>
+                <span class="ds-undated-hint">{{ tt('discoverSetup.undatedHint') }}</span>
               </span>
             </label>
           </div>
@@ -132,25 +132,25 @@
           <div class="ds-add-src">
             <AppIcon name="Telegram" :size="14" :style="{ color: '#229ED9', flexShrink: 0 }"/>
             <input v-model="config.customSource"
-              placeholder="@kanal_nomi yoki t.me/kanal — qo'shish uchun"
+              :placeholder="tt('discoverSetup.addSourcePlaceholder')"
               class="ds-add-input"/>
-            <AppButton variant="secondary" size="md" :disabled="!config.customSource">Tekshirish</AppButton>
+            <AppButton variant="secondary" size="md" :disabled="!config.customSource">{{ tt('discoverSetup.checkBtn') }}</AppButton>
           </div>
         </AppPanel>
 
         <!-- 3. Per channel -->
-        <AppPanel title="3. Har manbadan nechta post taklif qilinsin?"
-          subtitle="AI har bir manbadan eng yuqori balli postlarni tanlaydi">
+        <AppPanel :title="tt('discoverSetup.perChannelTitle')"
+          :subtitle="tt('discoverSetup.perChannelSubtitle')">
           <div class="ds-n-grid">
             <button v-for="n in [3,5,10,15,20]" :key="n"
               class="ds-n-btn" :class="{ active: config.perChannel === n }"
               @click="config.perChannel = n">
               <span class="tabular ds-n-val" :class="{ active: config.perChannel === n }">{{ n }}</span>
-              <span class="ds-n-lbl" :class="{ active: config.perChannel === n }">post</span>
+              <span class="ds-n-lbl" :class="{ active: config.perChannel === n }">{{ tt('discoverSetup.postUnit') }}</span>
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:11.5px;color:var(--muted);">Yoki maxsus son:</span>
+            <span style="font-size:11.5px;color:var(--muted);">{{ tt('discoverSetup.customNumber') }}</span>
             <input type="range" min="1" max="30" step="1" v-model.number="config.perChannel"
               style="flex:1;accent-color:var(--accent);"/>
             <span class="mono tabular ds-n-pill">{{ config.perChannel }}</span>
@@ -158,12 +158,12 @@
         </AppPanel>
 
         <!-- 4. Time range -->
-        <AppPanel title="4. Qaysi davrdagi postlar?" subtitle="Kanalda chop etilgan vaqt bo'yicha">
+        <AppPanel :title="tt('discoverSetup.timeRangeTitle')" :subtitle="tt('discoverSetup.timeRangeSubtitle')">
           <div class="ds-time-grid">
             <button v-for="t in timeRanges" :key="t.id"
               class="ds-time" :class="{ active: config.timeRange === t.id }"
               @click="config.timeRange = t.id">
-              <span v-if="t.recommended" class="ds-time-rec">Tavsiya</span>
+              <span v-if="t.recommended" class="ds-time-rec">{{ tt('discoverSetup.recommended') }}</span>
               <span class="ds-time-lbl" :class="{ active: config.timeRange === t.id }">{{ t.label }}</span>
               <span class="ds-time-hint">{{ t.hint }}</span>
             </button>
@@ -171,50 +171,50 @@
           <!-- Ixtiyoriy vaqt — foydalanuvchi o'zi daqiqa kiritadi -->
           <div class="ds-custom-time" :class="{ active: isCustomRange }">
             <AppIcon name="Calendar" :size="14" :style="{ color: isCustomRange ? 'var(--accent)' : 'var(--muted)', flexShrink: 0 }"/>
-            <span class="ds-custom-lbl">Yoki o'zingiz kiriting:</span>
+            <span class="ds-custom-lbl">{{ tt('discoverSetup.customTimeLabel') }}</span>
             <input type="number" min="1" max="1440" v-model.number="customMinutes"
-              class="ds-custom-input" placeholder="masalan 10"/>
-            <span class="ds-custom-unit">daqiqa</span>
+              class="ds-custom-input" :placeholder="tt('discoverSetup.customTimePlaceholder')"/>
+            <span class="ds-custom-unit">{{ tt('discoverSetup.minuteUnit') }}</span>
             <button type="button" class="ds-custom-apply" :disabled="!customMinutes" @click="applyCustomMinutes">
-              Qo'llash
+              {{ tt('discoverSetup.applyBtn') }}
             </button>
           </div>
         </AppPanel>
 
         <!-- 5. Video filter -->
-        <AppPanel title="5. Video bilan postlar"
-          subtitle="Telegram'da video yoki katta fayl bo'lgan postlarni qo'shamizmi?">
+        <AppPanel :title="tt('discoverSetup.videoTitle')"
+          :subtitle="tt('discoverSetup.videoSubtitle')">
           <div class="ds-yn-grid">
             <button class="ds-yn" :class="{ active: config.includeVideos }"
               @click="config.includeVideos = true">
               <AppIcon v-if="config.includeVideos" name="Check" :size="12"/>
-              <span class="ds-yn-lbl">Ha, qo'shilsin</span>
-              <span class="ds-yn-hint">Video va hujjatli postlar ham natijada chiqadi</span>
+              <span class="ds-yn-lbl">{{ tt('discoverSetup.videoYesLabel') }}</span>
+              <span class="ds-yn-hint">{{ tt('discoverSetup.videoYesHint') }}</span>
             </button>
             <button class="ds-yn" :class="{ active: !config.includeVideos }"
               @click="config.includeVideos = false">
               <AppIcon v-if="!config.includeVideos" name="Check" :size="12"/>
-              <span class="ds-yn-lbl">Yo'q, faqat matn/rasm</span>
-              <span class="ds-yn-hint">Video va katta hujjat bo'lgan postlar chiqarib tashlanadi</span>
+              <span class="ds-yn-lbl">{{ tt('discoverSetup.videoNoLabel') }}</span>
+              <span class="ds-yn-hint">{{ tt('discoverSetup.videoNoHint') }}</span>
             </button>
           </div>
         </AppPanel>
 
         <!-- 6. Sort mode -->
-        <AppPanel title="6. Qanday postlarni chiqaramiz?"
-          subtitle="Saralash usulini tanlang">
+        <AppPanel :title="tt('discoverSetup.sortTitle')"
+          :subtitle="tt('discoverSetup.sortSubtitle')">
           <div class="ds-yn-grid">
             <button class="ds-yn" :class="{ active: config.sortMode === 'best' }"
               @click="config.sortMode = 'best'">
               <AppIcon v-if="config.sortMode === 'best'" name="Check" :size="12"/>
-              <span class="ds-yn-lbl">⭐ Eng yaxshi postlar</span>
-              <span class="ds-yn-hint">AI eng ko'p share, reaktsiya va ko'rishlar olganlarini birinchi chiqaradi</span>
+              <span class="ds-yn-lbl">⭐ {{ tt('discoverSetup.sortBestLabel') }}</span>
+              <span class="ds-yn-hint">{{ tt('discoverSetup.sortBestHint') }}</span>
             </button>
             <button class="ds-yn" :class="{ active: config.sortMode === 'latest' }"
               @click="config.sortMode = 'latest'">
               <AppIcon v-if="config.sortMode === 'latest'" name="Check" :size="12"/>
-              <span class="ds-yn-lbl">🕒 Eng oxirgi postlar</span>
-              <span class="ds-yn-hint">Eng yangi chop etilgan postlar sana bo'yicha birinchi chiqadi</span>
+              <span class="ds-yn-lbl">🕒 {{ tt('discoverSetup.sortLatestLabel') }}</span>
+              <span class="ds-yn-hint">{{ tt('discoverSetup.sortLatestHint') }}</span>
             </button>
           </div>
         </AppPanel>
@@ -233,28 +233,28 @@
               <AppIcon name="Sparkle" :size="16"/>
             </span>
             <div>
-              <div style="font-size:12.5px;font-weight:600;">Qidiruv xulosasi</div>
-              <div style="font-size:11px;color:var(--muted);">AI tahminan {{ Math.round(totalPosts * 1.5) }} ta postni tahlil qiladi</div>
+              <div style="font-size:12.5px;font-weight:600;">{{ tt('discoverSetup.summaryTitle') }}</div>
+              <div style="font-size:11px;color:var(--muted);">{{ tt('discoverSetup.summaryAnalyze', { n: Math.round(totalPosts * 1.5) }) }}</div>
             </div>
           </div>
           <div style="padding:18px;display:flex;flex-direction:column;gap:10px;">
-            <SummaryRow label="Kanallar" :value="`${config.sources.length} ta`"
-              :detail="config.sources.length ? selectedSourceNames : 'Tanlanmagan'">
+            <SummaryRow :label="tt('discoverSetup.summaryChannels')" :value="tt('discoverSetup.countUnit', { n: config.sources.length })"
+              :detail="config.sources.length ? selectedSourceNames : tt('discoverSetup.notSelected')">
               <template #icon><AppIcon name="Telegram" :size="12" :style="{ color:'#229ED9' }"/></template>
             </SummaryRow>
-            <SummaryRow label="Postlar"
+            <SummaryRow :label="tt('discoverSetup.summaryPosts')"
               :value="`${config.perChannel} × ${config.sources.length} = ${totalPosts}`"
-              :detail="config.sortMode === 'latest' ? 'Eng oxirgi postlar sana bo\'yicha' : 'Eng yuqori balli postlar ko\'rsatiladi'">
+              :detail="config.sortMode === 'latest' ? tt('discoverSetup.summaryPostsLatest') : tt('discoverSetup.summaryPostsBest')">
               <template #icon><AppIcon name="Layers" :size="12"/></template>
             </SummaryRow>
-            <SummaryRow label="Davr"
+            <SummaryRow :label="tt('discoverSetup.summaryPeriod')"
               :value="currentRange?.label"
               :detail="currentRange?.hint">
               <template #icon><AppIcon name="Calendar" :size="12"/></template>
             </SummaryRow>
-            <SummaryRow label="Saralash"
-              :value="config.sortMode === 'latest' ? 'Eng oxirgi' : 'Eng yaxshi'"
-              :detail="config.sortMode === 'latest' ? 'Sana bo\'yicha (yangi → eski)' : 'AI bal bo\'yicha (yuqori → past)'">
+            <SummaryRow :label="tt('discoverSetup.summarySort')"
+              :value="config.sortMode === 'latest' ? tt('discoverSetup.summarySortLatest') : tt('discoverSetup.summarySortBest')"
+              :detail="config.sortMode === 'latest' ? tt('discoverSetup.summarySortLatestDetail') : tt('discoverSetup.summarySortBestDetail')">
               <template #icon><AppIcon :name="config.sortMode === 'latest' ? 'Calendar' : 'Sparkle'" :size="12"/></template>
             </SummaryRow>
             <div style="height:1px;background:var(--border-2);margin:4px 0;"/>
@@ -264,10 +264,10 @@
               @click="$emit('run')"
               :style="{ width: '100%', justifyContent: 'center', height: '40px' }">
               <template #icon><AppIcon name="Sparkle" :size="14"/></template>
-              AI qidiruvni boshlash
+              {{ tt('discoverSetup.runBtn') }}
             </AppButton>
             <p style="margin:0;font-size:10.5px;color:var(--muted);text-align:center;line-height:1.5;">
-              Qidiruv tahminan 30-60 soniya davom etadi. Token sarflanadi: ~{{ Math.round(totalPosts * 120) }}.
+              {{ tt('discoverSetup.runHint', { n: Math.round(totalPosts * 120) }) }}
             </p>
           </div>
         </AppPanel>
@@ -276,9 +276,9 @@
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <AppIcon name="Bolt" :size="14" :style="{ color:'var(--accent)', marginTop:'1px' }"/>
             <div style="display:flex;flex-direction:column;gap:2px;">
-              <span style="font-size:11.5px;font-weight:600;">Maslahat</span>
+              <span style="font-size:11.5px;font-weight:600;">{{ tt('discoverSetup.tipTitle') }}</span>
               <span style="font-size:11px;color:var(--muted);line-height:1.5;">
-                Birinchi qidiruv uchun "So'nggi 7 kun" va kanaldan 3-5 ta postni tanlang. Keyin filtrni kengaytirishingiz mumkin.
+                {{ tt('discoverSetup.tipText') }}
               </span>
             </div>
           </div>
@@ -296,6 +296,11 @@ import AppPanel from '@/components/ui/AppPanel.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import SummaryRow from '@/components/discover/SummaryRow.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   config: { type: Object, required: true },
@@ -310,7 +315,7 @@ const props = defineProps({
 defineEmits(['run', 'select-channel'])
 
 function channelLabel(c) {
-  return c.display_name || (c.username ? '@' + String(c.username).replace(/^@/, '') : 'Kanal')
+  return c.display_name || (c.username ? '@' + String(c.username).replace(/^@/, '') : tt('discoverSetup.channelFallback'))
 }
 
 // Ixtiyoriy vaqt (daqiqa) — preset ro'yxatda bo'lmagan qiymat tanlanganda faol.
@@ -324,11 +329,11 @@ function applyCustomMinutes() {
   props.config.timeRange = n % 60 === 0 ? `${n / 60}h` : `${n}m`
 }
 
-const TYPE_OPTS = [
-  { id: 'all', label: 'Hammasi', icon: null },
+const TYPE_OPTS = computed(() => [
+  { id: 'all', label: tt('discoverSetup.typeAll'), icon: null },
   { id: 'telegram', label: 'Telegram', icon: 'Telegram' },
-  { id: 'website', label: 'Website', icon: 'Globe' },
-]
+  { id: 'website', label: tt('discoverSetup.typeWebsite'), icon: 'Globe' },
+])
 
 // Tanlangan turga mos manbalar (ro'yxat darhol filtrlanadi)
 const visibleSources = computed(() => {

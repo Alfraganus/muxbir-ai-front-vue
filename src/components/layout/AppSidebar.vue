@@ -13,7 +13,7 @@
         <NavSection>
           <NavItem v-for="n in adminNav.slice(0,4)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
         </NavSection>
-        <NavSection label="Operatsiyalar">
+        <NavSection :label="tt('nav.admin.operations')">
           <NavItem v-for="n in adminNav.slice(4)" :key="n.id" v-bind="n" :active="currentPath===n.path" @click="navigate(n.path)" />
         </NavSection>
       </template>
@@ -27,6 +27,11 @@
                    :active="isActive(n.path)" @click="navigate(n.path)" />
         </NavSection>
       </template>
+    </div>
+
+    <!-- Tarif / kvota / kredit kartasi — client sidebar pastida (fixed) -->
+    <div v-if="workspace === 'client'" style="flex-shrink:0;border-top:1px solid var(--border-2);padding:10px 8px;max-height:46vh;overflow-y:auto;">
+      <QuotaUsageCard />
     </div>
 
     <!-- Logout for admin -->
@@ -43,7 +48,7 @@
               onmouseover="this.style.background='rgba(239,68,68,0.08)'"
               onmouseout="this.style.background='transparent'">
         <AppIcon name="Close" :size="13" />
-        Chiqish
+        {{ tt('nav.logout') }}
       </button>
     </div>
 
@@ -64,6 +69,7 @@ import { useAuthStore } from '@/stores/auth.js'
 import WorkspaceSwitcher from './WorkspaceSwitcher.vue'
 import NavItem from './NavItem.vue'
 import NavSection from './NavSection.vue'
+import QuotaUsageCard from './QuotaUsageCard.vue'
 import { useAppStore } from '@/stores/app.js'
 import { queueApi } from '@/api/queue.js'
 import { useStorageStore } from '@/stores/storage.js'
@@ -80,6 +86,7 @@ const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 const currentPath = computed(() => route.path)
 
 const adminName = computed(() => {
@@ -151,19 +158,19 @@ onBeforeUnmount(() => {
 watch(currentPath, refreshAll)
 
 const adminNav = computed(() => [
-  { id: 'overview',  icon: 'Home',     label: t.value('nav.admin.overview'),   path: '/admin/overview' },
-  { id: 'companies', icon: 'Building', label: t.value('nav.admin.companies'),  path: '/admin/companies', count: COMPANIES.length },
-  { id: 'tariffs',   icon: 'Tag',      label: t.value('nav.admin.tariffs'),    path: '/admin/tariffs' },
-  { id: 'revenue',   icon: 'Coin',     label: t.value('nav.admin.revenue'),    path: null },
-  { id: 'users',     icon: 'Users',    label: t.value('nav.admin.users'),      path: '/admin/users', count: 184 },
-  { id: 'audit',     icon: 'Layers',   label: t.value('nav.admin.audit'),      path: null },
-  { id: 'support',   icon: 'Life',     label: t.value('nav.admin.support'),    path: null, count: 7 },
-  { id: 'references', icon: 'List',    label: 'Spravochniklar',                path: '/admin/references' },
-  { id: 'worker',    icon: 'Server',   label: 'Bot worker',                    path: '/admin/worker-settings' },
-  { id: 'ai-prompt', icon: 'Sparkle',  label: 'AI base prompt',                path: '/admin/ai-prompt' },
-  { id: 'prompts',   icon: 'Edit',     label: 'Promptlar kutubxonasi',         path: '/admin/prompts' },
-  { id: 'tg-sessions', icon: 'Telegram', label: 'Telegram sessionlari',        path: '/admin/telegram-sessions' },
-  { id: 'system',    icon: 'Server',   label: t.value('nav.admin.system'),     path: null },
+  { id: 'overview',  icon: 'Home',     label: tt('nav.admin.overview'),        path: '/admin/overview' },
+  { id: 'companies', icon: 'Building', label: tt('nav.admin.companies'),       path: '/admin/companies', count: COMPANIES.length },
+  { id: 'tariffs',   icon: 'Tag',      label: tt('nav.admin.tariffs'),         path: '/admin/tariffs' },
+  { id: 'revenue',   icon: 'Coin',     label: tt('nav.admin.revenue'),         path: null },
+  { id: 'users',     icon: 'Users',    label: tt('nav.admin.users'),           path: '/admin/users', count: 184 },
+  { id: 'audit',     icon: 'Layers',   label: tt('nav.admin.audit'),           path: null },
+  { id: 'support',   icon: 'Life',     label: tt('nav.admin.support'),         path: null, count: 7 },
+  { id: 'references', icon: 'List',    label: tt('nav.admin.references'),      path: '/admin/references' },
+  { id: 'worker',    icon: 'Server',   label: tt('nav.admin.worker'),          path: '/admin/worker-settings' },
+  { id: 'ai-prompt', icon: 'Sparkle',  label: tt('nav.admin.aiPrompt'),        path: '/admin/ai-prompt' },
+  { id: 'prompts',   icon: 'Edit',     label: tt('nav.admin.prompts'),         path: '/admin/prompts' },
+  { id: 'tg-sessions', icon: 'Telegram', label: tt('nav.admin.tgSessions'),    path: '/admin/telegram-sessions' },
+  { id: 'system',    icon: 'Server',   label: tt('nav.admin.system'),          path: null },
 ])
 
 // Navbat soni (pending)
@@ -197,22 +204,22 @@ async function loadChannelsCount() {
 }
 
 const clientMain = computed(() => [
-  { id: 'overview',   icon: 'Home',     label: t.value('nav.client.overview'),  path: '/client/overview' },
-  { id: 'channels',   icon: 'Telegram', label: t.value('nav.client.channels'),  path: '/client/channels', count: channelsCount.value ?? undefined },
-  { id: 'posts',      icon: 'Send',     label: t.value('nav.client.posts'),     path: '/client/posts', count: postsUsage.used || undefined },
-  { id: 'queue',      icon: 'Check',    label: 'Navbat',                        path: '/client/queue', count: counts.value?.pending || undefined },
-  { id: 'tg-chats',   icon: 'Telegram', label: 'Telegram chatlar',              path: '/client/telegram-chats' },
-  { id: 'discover',   icon: 'Sparkle',  label: 'Xabar qidirish',                path: '/client/discover' },
-  { id: 'categories', icon: 'Tag',      label: 'Kategoriyalar',                 path: '/client/categories' },
-  { id: 'settings',   icon: 'Settings', label: 'Sozlamalar',                    path: '/client/settings' },
+  { id: 'overview',   icon: 'Home',     label: tt('nav.client.overview'),       path: '/client/overview' },
+  { id: 'channels',   icon: 'Telegram', label: tt('nav.client.channels'),       path: '/client/channels', count: channelsCount.value ?? undefined },
+  { id: 'posts',      icon: 'Send',     label: tt('nav.client.posts'),          path: '/client/posts', count: postsUsage.used || undefined },
+  { id: 'queue',      icon: 'Check',    label: tt('nav.client.queue'),          path: '/client/queue', count: counts.value?.pending || undefined },
+  { id: 'tg-chats',   icon: 'Telegram', label: tt('nav.client.tgChats'),        path: '/client/telegram-chats' },
+  { id: 'discover',   icon: 'Sparkle',  label: tt('nav.client.discover'),       path: '/client/discover' },
+  { id: 'categories', icon: 'Tag',      label: tt('nav.client.categories'),     path: '/client/categories' },
+  { id: 'settings',   icon: 'Settings', label: tt('nav.client.settings'),       path: '/client/settings' },
   // Manbalar — sozlamalar ostida (har kanalning manbalari Kanallar > Manbalar orqali boshqariladi)
-  { id: 'sources',    icon: 'Globe2',   label: t.value('nav.client.sources'),   path: null },
+  { id: 'sources',    icon: 'Globe2',   label: tt('nav.client.sources'),        path: null },
 ])
 
 // Jadval (schedule), Komanda (team), Tarif va to'lov (billing) — dummy sahifalar,
 // menyudan olib tashlandi. Manbalar yuqorida, sozlamalar ostiga ko'chirildi.
 const clientInsights = computed(() => [
-  { id: 'analytics',  icon: 'Chart',    label: t.value('nav.client.analytics'), path: '/client/analytics' },
+  { id: 'analytics',  icon: 'Chart',    label: tt('nav.client.analytics'),      path: '/client/analytics' },
 ])
 
 // Sozlamalar nav item — tab parametri bilan keladigan barcha sub-route'lar uchun ham faol

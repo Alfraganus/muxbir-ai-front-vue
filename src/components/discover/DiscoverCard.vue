@@ -26,10 +26,10 @@
         {{ mediaLabel }}
       </span>
 
-      <span class="dc-rank mono">#{{ rank }} top</span>
+      <span class="dc-rank mono">#{{ rank }} {{ tt('discoverCard.top') }}</span>
 
       <!-- Score badge (0-100) — faqat telegram postlarida -->
-      <div v-if="!isWeb" class="dc-score-wrap" :title="`Engagement ball ${post.ai.total}/100 (xom: ${fmtScore(post.rawScore)})`">
+      <div v-if="!isWeb" class="dc-score-wrap" :title="tt('discoverCard.engagementScoreTitle', { score: post.ai.total, raw: fmtScore(post.rawScore) })">
         <svg :width="42" :height="42" viewBox="0 0 42 42" style="position:absolute;inset:0;transform:rotate(-90deg);">
           <circle cx="21" cy="21" r="18" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="3"/>
           <circle cx="21" cy="21" r="18" fill="none" :stroke="toneColor" stroke-width="3"
@@ -51,7 +51,7 @@
         <!-- Haqiqiy e'lon sanasi-vaqti; aniqlanmagan bo'lsa umuman ko'rsatilmaydi -->
         <span v-if="post.dateLabel" class="tabular">{{ post.dateLabel }}</span>
         <span v-if="!isWeb && post.trend === 'up'" class="dc-trend">
-          <AppIcon name="ArrowUp" :size="9"/> Trending
+          <AppIcon name="ArrowUp" :size="9"/> {{ tt('discoverCard.trending') }}
         </span>
       </div>
     </div>
@@ -63,20 +63,20 @@
       <p class="dc-snippet">{{ post.snippet }}</p>
 
       <!-- Engagement stats — website maqolalarida share/like/reaction/score yo'q -->
-      <div v-if="!isWeb" class="dc-stats" :title="`Score formulasi: forward × 5 + reaction × 1 + view × 0.01 = ${fmtScore(post.rawScore)}`">
-        <div class="dc-stat" title="Ko'rishlar">
+      <div v-if="!isWeb" class="dc-stats" :title="tt('discoverCard.scoreFormulaTitle', { raw: fmtScore(post.rawScore) })">
+        <div class="dc-stat" :title="tt('discoverCard.viewsTitle')">
           <AppIcon name="Eye" :size="11"/>
           <span class="tabular">{{ fmtCompact(post.views) }}</span>
         </div>
-        <div class="dc-stat" title="Ulashishlar (forwards)">
+        <div class="dc-stat" :title="tt('discoverCard.sharesTitle')">
           <AppIcon name="Send" :size="11"/>
           <span class="tabular">{{ fmtCompact(post.shares) }}</span>
         </div>
-        <div class="dc-stat" title="Reaksiyalar (likes)">
+        <div class="dc-stat" :title="tt('discoverCard.reactionsTitle')">
           <AppIcon name="Sparkle" :size="11"/>
           <span class="tabular">{{ fmtCompact(post.reactions) }}</span>
         </div>
-        <div class="dc-stat dc-stat-score" :title="`Engagement ball (0-100). Xom: ${fmtScore(post.rawScore)}`">
+        <div class="dc-stat dc-stat-score" :title="tt('discoverCard.engagementShortTitle', { raw: fmtScore(post.rawScore) })">
           <AppIcon name="Bolt" :size="11"/>
           <span class="tabular">{{ post.ai.total }}/100</span>
         </div>
@@ -86,7 +86,7 @@
       <div v-if="!isWeb" class="dc-ai">
         <div class="dc-ai-head">
           <AppIcon name="Sparkle" :size="11" :style="{ color: 'var(--accent)' }"/>
-          <span>AI tahlil · {{ post.ai.total }}/100</span>
+          <span>{{ tt('discoverCard.aiAnalysis') }} · {{ post.ai.total }}/100</span>
         </div>
         <div class="dc-ai-bars">
           <div v-for="m in metrics" :key="m.k" :title="`${m.l}: ${post.ai[m.k]}/100`" class="dc-ai-bar">
@@ -102,16 +102,16 @@
       <div class="dc-foot">
         <a v-if="isWeb && post.articleUrl" class="dc-ghost" :href="post.articleUrl" target="_blank" rel="noopener" @click.stop>
           <AppIcon name="Globe" :size="11"/>
-          Maqola
+          {{ tt('discoverCard.article') }}
         </a>
         <button v-else class="dc-ghost" @click.stop="$emit('preview')">
           <AppIcon name="Eye" :size="11"/>
-          Ko'rish
+          {{ tt('discoverCard.view') }}
         </button>
         <div style="flex:1"/>
         <button class="dc-select" :class="{ on: selected }" @click.stop="$emit('toggle')">
           <AppIcon :name="selected ? 'Check' : 'Plus'" :size="11"/>
-          {{ selected ? 'Tanlandi' : 'Tanlash' }}
+          {{ selected ? tt('discoverCard.selected') : tt('discoverCard.select') }}
         </button>
       </div>
     </div>
@@ -121,6 +121,11 @@
 <script setup>
 import { computed, ref } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   post: { type: Object, required: true },
@@ -135,12 +140,12 @@ const isWeb = computed(() => !!props.post.isWebsite)
 // Website rasmi bor va yuklanmay qolmagan bo'lsa — <img> ko'rsatamiz.
 const hasImg = computed(() => isWeb.value && !!props.post.imageUrl && !imgFailed.value)
 
-const metrics = [
-  { k: 'relevance', l: 'Dolzarb' },
-  { k: 'virality',  l: 'Virallik' },
-  { k: 'freshness', l: 'Yangilik' },
-  { k: 'audience',  l: 'Mos' },
-]
+const metrics = computed(() => [
+  { k: 'relevance', l: tt('discoverCard.metricRelevance') },
+  { k: 'virality',  l: tt('discoverCard.metricVirality') },
+  { k: 'freshness', l: tt('discoverCard.metricFreshness') },
+  { k: 'audience',  l: tt('discoverCard.metricAudience') },
+])
 
 const toneColor = computed(() => {
   const v = props.post.ai.total
@@ -150,7 +155,7 @@ const toneColor = computed(() => {
 })
 
 const mediaIcon = computed(() => isWeb.value ? 'Globe' : props.post.media === 'video' ? 'Eye' : props.post.media === 'chart' ? 'Chart' : 'Layers')
-const mediaLabel = computed(() => isWeb.value ? 'Maqola' : props.post.media === 'video' ? 'Video' : props.post.media === 'chart' ? 'Diagramma' : 'Rasm')
+const mediaLabel = computed(() => isWeb.value ? tt('discoverCard.article') : props.post.media === 'video' ? tt('discoverCard.video') : props.post.media === 'chart' ? tt('discoverCard.chart') : tt('discoverCard.image'))
 
 function fmtCompact(n) {
   if (n === null || n === undefined) return '0'

@@ -2,19 +2,19 @@
   <div style="display:flex;flex-direction:column;gap:14px;">
     <AiFullPageLoader
       :model-value="busy"
-      title="Havoladan maqola yaratilmoqda"
-      subtitle="AI sahifani o'qib, sizning uslubingizda maqola yozmoqda"
+      :title="tt('articleFromUrlForm.loaderTitle')"
+      :subtitle="tt('articleFromUrlForm.loaderSubtitle')"
       :steps="[
-        'Havola yuklanmoqda',
-        'Sahifa matni tahlil qilinmoqda',
-        'AI yangi maqola yozmoqda',
-        'Editor tayyorlanmoqda',
+        tt('articleFromUrlForm.step1'),
+        tt('articleFromUrlForm.step2'),
+        tt('articleFromUrlForm.step3'),
+        tt('articleFromUrlForm.step4'),
       ]"
-      hint="Bu jarayon odatda 15–40 soniya davom etadi. Sahifani yopmang yoki boshqa joyga o'tib ketmang."
+      :hint="tt('articleFromUrlForm.loaderHint')"
     />
     <!-- URL -->
     <label style="display:flex;flex-direction:column;gap:6px;">
-      <span style="font-size:12px;font-weight:600;color:var(--text);">1. Maqola havolasi</span>
+      <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('articleFromUrlForm.urlLabel') }}</span>
       <input
         v-model="form.url"
         type="url"
@@ -25,13 +25,13 @@
                font-family:'JetBrains Mono',Menlo,Consolas,monospace;"
       />
       <span style="font-size:11px;color:var(--muted);">
-        AI sahifaga kirib matnni oladi, tanlangan prompt'ga muvofiq qayta yozadi.
+        {{ tt('articleFromUrlForm.urlHint') }}
       </span>
     </label>
 
     <!-- Provider -->
     <div style="display:flex;flex-direction:column;gap:6px;">
-      <span style="font-size:12px;font-weight:600;color:var(--text);">2. AI provayder</span>
+      <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('articleFromUrlForm.providerLabel') }}</span>
       <div style="display:flex;gap:8px;">
         <label v-for="p in providers" :key="p.id"
                :style="{
@@ -52,7 +52,7 @@
 
     <!-- Model -->
     <label style="display:flex;flex-direction:column;gap:6px;">
-      <span style="font-size:12px;font-weight:600;color:var(--text);">3. Model</span>
+      <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('articleFromUrlForm.modelLabel') }}</span>
       <select v-model="form.model" :disabled="busy"
               style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
                      background:var(--bg);color:var(--text);font-size:13px;
@@ -65,7 +65,7 @@
 
     <!-- Prompt -->
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <span style="font-size:12px;font-weight:600;color:var(--text);">4. Prompt</span>
+      <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('articleFromUrlForm.promptLabel') }}</span>
 
       <!-- Tavsiya etilgan promptdan foydalanish — faqat admin shu turdagi
            prompt yaratgan bo'lsa ko'rinadi -->
@@ -73,27 +73,26 @@
         <input type="checkbox" v-model="form.useRecommended" :disabled="busy"/>
         <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
           <span style="font-size:13px;font-weight:600;color:var(--text);">
-            ✨ Tavsiya etilgan promptdan foydalanish
+            ✨ {{ tt('articleFromUrlForm.useRecommended') }}
             <span v-if="recommended.name" style="color:var(--muted);font-weight:400;">
               — {{ recommended.name }}
             </span>
           </span>
           <span style="font-size:11px;color:var(--muted);">
-            Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi.
-            Ushbu rejimda quyidagi ro'yxat o'chiriladi.
+            {{ tt('articleFromUrlForm.useRecommendedHint') }}
           </span>
         </div>
       </label>
 
-      <div v-if="loadingGroups" style="font-size:12.5px;color:var(--muted);">Yuklanmoqda…</div>
+      <div v-if="loadingGroups" style="font-size:12.5px;color:var(--muted);">{{ tt('articleFromUrlForm.loading') }}</div>
       <div v-else-if="!groups.length && !form.useRecommended"
            style="padding:14px;text-align:center;border:1px dashed var(--border-2);border-radius:8px;
                   display:flex;flex-direction:column;gap:8px;align-items:center;font-size:12.5px;">
-        <span style="color:var(--text);">Hali prompt yo'q. Avval AI prompt sahifasida yarating.</span>
+        <span style="color:var(--text);">{{ tt('articleFromUrlForm.noPrompt') }}</span>
         <button type="button" @click="$emit('goto', '/client/ai-prompt')"
                 style="padding:7px 14px;border-radius:6px;background:var(--accent);color:#fff;
                        border:none;cursor:pointer;font-size:12px;font-weight:500;">
-          AI prompt →
+          {{ tt('articleFromUrlForm.aiPromptBtn') }} →
         </button>
       </div>
       <select v-else v-model="form.groupId" :disabled="busy || form.useRecommended"
@@ -107,9 +106,9 @@
                 opacity: form.useRecommended ? 0.5 : 1,
                 cursor: form.useRecommended ? 'not-allowed' : 'pointer',
               }">
-        <option value="" disabled>Promptni tanlang…</option>
+        <option value="" disabled>{{ tt('articleFromUrlForm.selectPrompt') }}</option>
         <option v-for="g in groups" :key="g.id" :value="g.id">
-          {{ g.name }} · {{ g.prompts.length }} bo'lim{{ anyApplyBase(g) ? ' · BASE' : '' }}
+          {{ g.name }} · {{ tt('articleFromUrlForm.sectionsCount', { n: g.prompts.length }) }}{{ anyApplyBase(g) ? ' · BASE' : '' }}
         </option>
       </select>
     </div>
@@ -135,10 +134,10 @@
           fontSize: '13px', fontWeight: 600,
         }"
       >
-        {{ busy ? 'Yaratilmoqda…' : '✨ AI orqali maqola yaratish' }}
+        {{ busy ? tt('articleFromUrlForm.generating') : '✨ ' + tt('articleFromUrlForm.generateBtn') }}
       </button>
       <span v-if="busy" style="font-size:11.5px;color:var(--muted);">
-        URL → AI → editor…
+        {{ tt('articleFromUrlForm.busyHint') }}
       </span>
     </div>
   </div>
@@ -149,6 +148,11 @@ import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { companiesApi } from '@/api/companies.js'
 import { aiApi } from '@/api/ai.js'
 import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   /** Web qidiruvdan kelganda URL oldindan to'ldiriladi */
@@ -286,7 +290,7 @@ async function generate() {
     if (r?.post_id) {
       emit('created', r.post_id)
     } else {
-      error.value = 'Backend post_id qaytarmadi'
+      error.value = tt('articleFromUrlForm.noPostIdError')
     }
   } catch (e) {
     error.value = e?.response?.data?.message ?? e.message

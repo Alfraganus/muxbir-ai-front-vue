@@ -20,10 +20,10 @@
         </div>
       </div>
       <router-link v-if="state === 'exceeded'" to="/client/billing" class="quota-banner-cta">
-        Tarifni yangilash
+        {{ tt('aiQuotaBanner.upgradeCta') }}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg>
       </router-link>
-      <button v-if="state !== 'exceeded'" class="quota-banner-close" @click="dismiss" title="Yashirish">
+      <button v-if="state !== 'exceeded'" class="quota-banner-close" @click="dismiss" :title="tt('aiQuotaBanner.hideTitle')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
@@ -33,6 +33,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { aiApi } from '@/api/ai.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const usage = ref({ used_tokens: 0, limit_tokens: 0, is_quota_exceeded: false, is_quota_warning: false, used_ratio: 0 })
 const dismissed = ref(false)
@@ -52,13 +57,13 @@ const visible = computed(() => {
 const pct = computed(() => Math.round((usage.value.used_ratio || 0) * 100))
 const title = computed(() =>
   state.value === 'exceeded'
-    ? 'AI tokenlar tugadi — avtomatik post ishlamayapti'
-    : "AI tokenlar limiti tugashga yaqin"
+    ? tt('aiQuotaBanner.exceededTitle')
+    : tt('aiQuotaBanner.warningTitle')
 )
 const subtitle = computed(() =>
   state.value === 'exceeded'
-    ? "Oylik tarif limitidan oshib ketdi. Yangi postlar AI tomonidan qayta yozilmaydi va kanalingizga yuborilmaydi. Tarifni yangilang yoki oy oxirini kuting."
-    : `${pct.value}% ishlatildi. Limit tugasa avtomatik yuborish vaqtincha to'xtaydi.`
+    ? tt('aiQuotaBanner.exceededSub')
+    : tt('aiQuotaBanner.warningSub', { pct: pct.value })
 )
 
 function fmt(n) {

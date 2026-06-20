@@ -20,10 +20,10 @@
         </div>
       </div>
       <router-link v-if="state === 'exceeded'" to="/client/billing" class="storage-banner-cta">
-        Tarifni yangilash
+        {{ tt('storageQuotaBanner.upgradeCta') }}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg>
       </router-link>
-      <button v-if="state !== 'exceeded'" class="storage-banner-close" @click="dismiss" title="Yashirish">
+      <button v-if="state !== 'exceeded'" class="storage-banner-close" @click="dismiss" :title="tt('storageQuotaBanner.hideTitle')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
@@ -33,6 +33,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { uploadsApi } from '@/api/uploads.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const usage = ref({ used_bytes: 0, limit_bytes: 0, is_storage_exceeded: false, is_storage_warning: false, used_ratio: 0 })
 const dismissed = ref(false)
@@ -50,13 +55,13 @@ const visible = computed(() => {
 const pct = computed(() => Math.round((usage.value.used_ratio || 0) * 100))
 const title = computed(() =>
   state.value === 'exceeded'
-    ? 'Xotira to\'ldi — yangi fayllar yuklanmaydi'
-    : "Xotira chegarasi yaqinlashmoqda"
+    ? tt('storageQuotaBanner.titleExceeded')
+    : tt('storageQuotaBanner.titleWarning')
 )
 const subtitle = computed(() =>
   state.value === 'exceeded'
-    ? "Bucket xotira limiti tugadi. Postlarga rasm yoki video qo'sha olmaysiz, yangi yuklashlar rad etiladi. Eski fayllarni media kutubxonangizdan o'chiring yoki tarifni yangilang."
-    : `${pct.value}% to'lgan. Limit tugasa yangi yuklashlar to'xtatiladi.`
+    ? tt('storageQuotaBanner.subExceeded')
+    : tt('storageQuotaBanner.subWarning', { pct: pct.value })
 )
 
 function fmtMB(bytes) {

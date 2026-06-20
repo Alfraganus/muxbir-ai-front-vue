@@ -1,12 +1,12 @@
 <template>
   <div style="padding:20px 24px 48px;display:flex;flex-direction:column;gap:18px;">
-    <PageHeader title="Analitika" subtitle="Postlar va ko'rishlar bo'yicha statistika">
+    <PageHeader :title="tt('an.title')" :subtitle="tt('an.subtitle')">
       <template #right>
-        <AppButton variant="secondary" size="md" @click="load" :loading="loading">Yangilash</AppButton>
+        <AppButton variant="secondary" size="md" @click="load" :loading="loading">{{ tt('an.refresh') }}</AppButton>
       </template>
     </PageHeader>
 
-    <div v-if="loading" class="an-state"><span class="an-spin"/> Yuklanmoqda…</div>
+    <div v-if="loading" class="an-state"><span class="an-spin"/> {{ tt('an.loading') }}</div>
     <div v-else-if="error" class="an-state" style="color:var(--danger);">{{ error }}</div>
 
     <template v-else-if="data">
@@ -24,32 +24,32 @@
       <!-- ── Featured: eng ko'p / eng kam / eng qiziqarli ── -->
       <div class="an-feat">
         <div class="an-feat-card hl">
-          <div class="an-feat-cap"><AppIcon name="Eye" :size="12"/> Eng ko'p ko'rilgan</div>
+          <div class="an-feat-cap"><AppIcon name="Eye" :size="12"/> {{ tt('an.mostViewed') }}</div>
           <div class="an-feat-title">{{ data.most_viewed?.title || '—' }}</div>
           <div class="an-feat-meta">
-            <span class="an-feat-big">{{ fmt(data.most_viewed?.view_count) }}</span> ko'rish
+            <span class="an-feat-big">{{ fmt(data.most_viewed?.view_count) }}</span> {{ tt('an.views') }}
             <span v-if="data.most_viewed?.channel" class="an-feat-ch">· {{ data.most_viewed.channel }}</span>
           </div>
         </div>
         <div class="an-feat-card">
-          <div class="an-feat-cap"><AppIcon name="ArrowDown" :size="12"/> Eng kam ko'rilgan</div>
+          <div class="an-feat-cap"><AppIcon name="ArrowDown" :size="12"/> {{ tt('an.leastViewed') }}</div>
           <div class="an-feat-title">{{ data.least_viewed?.title || '—' }}</div>
-          <div class="an-feat-meta"><span class="an-feat-big">{{ fmt(data.least_viewed?.view_count) }}</span> ko'rish</div>
+          <div class="an-feat-meta"><span class="an-feat-big">{{ fmt(data.least_viewed?.view_count) }}</span> {{ tt('an.views') }}</div>
         </div>
         <div class="an-feat-card">
-          <div class="an-feat-cap"><AppIcon name="Sparkle" :size="12"/> Eng qiziqarli (ball)</div>
+          <div class="an-feat-cap"><AppIcon name="Sparkle" :size="12"/> {{ tt('an.mostInteresting') }}</div>
           <div class="an-feat-title">{{ data.most_interesting?.title || '—' }}</div>
-          <div class="an-feat-meta"><span class="an-feat-big">{{ (data.most_interesting?.score ?? 0).toFixed(2) }}</span> ball</div>
+          <div class="an-feat-meta"><span class="an-feat-big">{{ (data.most_interesting?.score ?? 0).toFixed(2) }}</span> {{ tt('an.score') }}</div>
         </div>
       </div>
 
       <!-- ── Donutlar qatori ── -->
       <div class="an-grid3">
         <AppPanel :padding="18">
-          <div class="an-card-title">Status bo'yicha</div>
+          <div class="an-card-title">{{ tt('an.byStatus') }}</div>
           <div class="an-donut-row">
             <DonutChart :segments="statusSegs" :size="148" :thickness="20">
-              <template #center><div class="an-dn-c">{{ data.summary.total }}</div><div class="an-dn-cap">post</div></template>
+              <template #center><div class="an-dn-c">{{ data.summary.total }}</div><div class="an-dn-cap">{{ tt('an.post') }}</div></template>
             </DonutChart>
             <ul class="an-legend">
               <li v-for="s in statusSegs" :key="s.label"><span class="an-dot" :style="{background:s.color}"/>{{ s.label }}<b>{{ s.value }}</b></li>
@@ -58,10 +58,10 @@
         </AppPanel>
 
         <AppPanel :padding="18">
-          <div class="an-card-title">Avto vs Qo'lda</div>
+          <div class="an-card-title">{{ tt('an.autoVsManual') }}</div>
           <div class="an-donut-row">
             <DonutChart :segments="autoSegs" :size="148" :thickness="20">
-              <template #center><div class="an-dn-c">{{ autoPct }}%</div><div class="an-dn-cap">avto</div></template>
+              <template #center><div class="an-dn-c">{{ autoPct }}%</div><div class="an-dn-cap">{{ tt('an.auto') }}</div></template>
             </DonutChart>
             <ul class="an-legend">
               <li v-for="s in autoSegs" :key="s.label"><span class="an-dot" :style="{background:s.color}"/>{{ s.label }}<b>{{ s.value }}</b></li>
@@ -70,10 +70,10 @@
         </AppPanel>
 
         <AppPanel :padding="18">
-          <div class="an-card-title">Platforma bo'yicha</div>
+          <div class="an-card-title">{{ tt('an.byPlatform') }}</div>
           <div class="an-donut-row">
             <DonutChart :segments="platformSegs" :size="148" :thickness="20">
-              <template #center><div class="an-dn-c">{{ platformSegs.length }}</div><div class="an-dn-cap">tur</div></template>
+              <template #center><div class="an-dn-c">{{ platformSegs.length }}</div><div class="an-dn-cap">{{ tt('an.type') }}</div></template>
             </DonutChart>
             <ul class="an-legend">
               <li v-for="s in platformSegs" :key="s.label"><span class="an-dot" :style="{background:s.color}"/>{{ s.label }}<b>{{ s.value }}</b></li>
@@ -85,58 +85,58 @@
       <!-- ── Vaqt qatori (14 kun) ── -->
       <div class="an-grid2">
         <AppPanel :padding="18">
-          <div class="an-card-title">Kunlik postlar · 14 kun</div>
+          <div class="an-card-title">{{ tt('an.dailyPosts') }}</div>
           <BarChart v-if="hasDays" :data="dayPosts" :labels="dayLabels" :width="540" :height="180" color="var(--accent)"/>
-          <div v-else class="an-empty">Ma'lumot yo'q</div>
+          <div v-else class="an-empty">{{ tt('an.noData') }}</div>
         </AppPanel>
         <AppPanel :padding="18">
-          <div class="an-card-title">Kunlik ko'rishlar · 14 kun</div>
+          <div class="an-card-title">{{ tt('an.dailyViews') }}</div>
           <AreaChart v-if="hasDays && dayViewsMax > 0" :series="[{ data: dayViews }]" :labels="dayLabels" :width="540" :height="180" color="var(--success)" :format="fmt"/>
-          <div v-else class="an-empty">Ko'rishlar hali yig'ilmagan (kuniga 2 marta yangilanadi)</div>
+          <div v-else class="an-empty">{{ tt('an.noViewsYet') }}</div>
         </AppPanel>
       </div>
 
       <!-- ── Gorizontal barlar ── -->
       <div class="an-grid3">
         <AppPanel :padding="18">
-          <div class="an-card-title">Manba bo'yicha</div>
-          <BarList :items="sourceBars" empty="Manba yo'q"/>
+          <div class="an-card-title">{{ tt('an.bySource') }}</div>
+          <BarList :items="sourceBars" :empty="tt('an.noSource')"/>
         </AppPanel>
         <AppPanel :padding="18">
-          <div class="an-card-title">Kanal ko'rishlari</div>
-          <BarList :items="channelBars" :format="fmt" color="var(--success)" empty="Ko'rish yo'q"/>
+          <div class="an-card-title">{{ tt('an.channelViews') }}</div>
+          <BarList :items="channelBars" :format="fmt" color="var(--success)" :empty="tt('an.noViews')"/>
         </AppPanel>
         <AppPanel :padding="18">
-          <div class="an-card-title">AI token (model)</div>
-          <BarList :items="modelBars" :format="fmt" color="var(--violet)" empty="Token sarflanmagan"/>
+          <div class="an-card-title">{{ tt('an.aiTokens') }}</div>
+          <BarList :items="modelBars" :format="fmt" color="var(--violet)" :empty="tt('an.noTokens')"/>
         </AppPanel>
       </div>
 
       <!-- ── Top postlar + teglar ── -->
       <div class="an-grid2b">
         <AppPanel :padding="0">
-          <div class="an-card-title" style="padding:16px 18px 6px;">Eng ko'p ko'rilgan postlar</div>
+          <div class="an-card-title" style="padding:16px 18px 6px;">{{ tt('an.topPosts') }}</div>
           <table class="an-table">
-            <thead><tr><th>Post</th><th>Kanal</th><th style="text-align:right;">Ko'rish</th></tr></thead>
+            <thead><tr><th>{{ tt('an.col.post') }}</th><th>{{ tt('an.col.channel') }}</th><th style="text-align:right;">{{ tt('an.col.views') }}</th></tr></thead>
             <tbody>
               <tr v-for="p in data.top_posts" :key="p.id">
-                <td class="an-td-title">{{ p.title || '(matnsiz)' }}</td>
+                <td class="an-td-title">{{ p.title || tt('an.noText') }}</td>
                 <td class="an-td-ch">{{ p.channel }}</td>
                 <td style="text-align:right;"><span class="an-views">{{ fmt(p.view_count) }}</span></td>
               </tr>
-              <tr v-if="!data.top_posts.length"><td colspan="3" class="an-empty" style="padding:24px;">Hali ko'rilgan post yo'q</td></tr>
+              <tr v-if="!data.top_posts.length"><td colspan="3" class="an-empty" style="padding:24px;">{{ tt('an.noTopPosts') }}</td></tr>
             </tbody>
           </table>
         </AppPanel>
 
         <AppPanel :padding="18">
-          <div class="an-card-title">Mashhur teglar</div>
+          <div class="an-card-title">{{ tt('an.topTags') }}</div>
           <div v-if="data.top_tags.length" class="an-tags">
-            <span v-for="t in data.top_tags" :key="t.tag" class="an-tag" :style="{ fontSize: tagSize(t.count) }">
-              {{ t.tag }}<b>{{ t.count }}</b>
+            <span v-for="tag in data.top_tags" :key="tag.tag" class="an-tag" :style="{ fontSize: tagSize(tag.count) }">
+              {{ tag.tag }}<b>{{ tag.count }}</b>
             </span>
           </div>
-          <div v-else class="an-empty">Teg yo'q</div>
+          <div v-else class="an-empty">{{ tt('an.noTags') }}</div>
         </AppPanel>
       </div>
     </template>
@@ -145,6 +145,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAppStore } from '@/stores/app.js'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -156,6 +157,10 @@ import BarList from '@/components/charts/BarList.vue'
 import { companiesApi } from '@/api/companies.js'
 import { analyticsApi } from '@/api/analytics.js'
 
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
+
 const loading = ref(true)
 const error = ref('')
 const company = ref(null)
@@ -163,7 +168,13 @@ const data = ref(null)
 
 const PALETTE = ['#6366F1', '#22C55E', '#F59E0B', '#EF4444', '#06B6D4', '#A855F7', '#EC4899', '#14B8A6']
 const STATUS_COLORS = { published: '#22C55E', scheduled: '#6366F1', draft: '#94A3B8', failed: '#EF4444' }
-const STATUS_LABELS = { published: 'Chop etilgan', scheduled: 'Rejada', draft: 'Qoralama', failed: 'Xato' }
+
+const statusLabels = computed(() => ({
+  published: tt('an.status.published'),
+  scheduled: tt('an.status.scheduled'),
+  draft: tt('an.status.draft'),
+  failed: tt('an.status.failed'),
+}))
 
 function fmt(n) {
   const v = Number(n) || 0
@@ -175,31 +186,31 @@ function fmt(n) {
 const kpis = computed(() => {
   const s = data.value?.summary || {}
   return [
-    { label: 'Jami post', value: fmt(s.total), icon: 'Layers', color: '#6366F1' },
-    { label: 'Chop etilgan', value: fmt(s.published), icon: 'Send', color: '#22C55E' },
-    { label: 'Jami ko\'rish', value: fmt(s.total_views), icon: 'Eye', color: '#06B6D4' },
-    { label: 'O\'rtacha ko\'rish', value: fmt(s.avg_views), icon: 'Chart', color: '#F59E0B' },
-    { label: 'AI postlar', value: fmt(s.ai_posts), icon: 'Sparkle', color: '#A855F7' },
-    { label: 'AI token', value: fmt(s.total_tokens), icon: 'Bolt', color: '#EC4899' },
+    { label: tt('an.kpi.total'), value: fmt(s.total), icon: 'Layers', color: '#6366F1' },
+    { label: tt('an.kpi.published'), value: fmt(s.published), icon: 'Send', color: '#22C55E' },
+    { label: tt('an.kpi.totalViews'), value: fmt(s.total_views), icon: 'Eye', color: '#06B6D4' },
+    { label: tt('an.kpi.avgViews'), value: fmt(s.avg_views), icon: 'Chart', color: '#F59E0B' },
+    { label: tt('an.kpi.aiPosts'), value: fmt(s.ai_posts), icon: 'Sparkle', color: '#A855F7' },
+    { label: tt('an.kpi.aiTokens'), value: fmt(s.total_tokens), icon: 'Bolt', color: '#EC4899' },
   ]
 })
 
 const statusSegs = computed(() =>
   (data.value?.by_status || []).map(r => ({
-    label: STATUS_LABELS[r.status] || r.status, value: Number(r.count), color: STATUS_COLORS[r.status] || '#94A3B8',
+    label: statusLabels.value[r.status] || r.status, value: Number(r.count), color: STATUS_COLORS[r.status] || '#94A3B8',
   })))
 
 const autoSegs = computed(() => {
   const s = data.value?.summary || {}
   return [
-    { label: 'Avtomatik', value: Number(s.ai_posts || 0), color: '#A855F7' },
-    { label: 'Qo\'lda', value: Number(s.manual_posts || 0), color: '#6366F1' },
+    { label: tt('an.seg.auto'), value: Number(s.ai_posts || 0), color: '#A855F7' },
+    { label: tt('an.seg.manual'), value: Number(s.manual_posts || 0), color: '#6366F1' },
   ]
 })
 const autoPct = computed(() => {
   const s = data.value?.summary || {}
-  const t = (s.ai_posts || 0) + (s.manual_posts || 0)
-  return t ? Math.round((s.ai_posts / t) * 100) : 0
+  const total = (s.ai_posts || 0) + (s.manual_posts || 0)
+  return total ? Math.round((s.ai_posts / total) * 100) : 0
 })
 
 const platformSegs = computed(() =>
@@ -216,7 +227,7 @@ const channelBars = computed(() => (data.value?.views_by_channel || []).map(r =>
 const modelBars = computed(() => (data.value?.by_model || []).map(r => ({ label: r.model, value: Number(r.tokens) })))
 
 function tagSize(count) {
-  const max = Math.max(1, ...(data.value?.top_tags || []).map(t => t.count))
+  const max = Math.max(1, ...(data.value?.top_tags || []).map(tag => tag.count))
   return (12 + (count / max) * 8).toFixed(0) + 'px'
 }
 
@@ -229,10 +240,10 @@ async function load() {
       const list = Array.isArray(cs) ? cs : [cs].filter(Boolean)
       company.value = list[0] || null
     }
-    if (!company.value) { error.value = 'Kompaniya topilmadi'; return }
+    if (!company.value) { error.value = tt('an.err.noCompany'); return }
     data.value = await analyticsApi.overview(company.value.id)
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Analitikani yuklab bo\'lmadi'
+    error.value = e?.response?.data?.message || tt('an.err.load')
   } finally {
     loading.value = false
   }

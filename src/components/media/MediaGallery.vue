@@ -1,17 +1,17 @@
 <template>
-  <AppModal v-model="open" title="Media kutubxona" subtitle="Buckettagi rasmlardan tanlang yoki yangisini yuklang" width="880px">
+  <AppModal v-model="open" :title="tt('mediaGallery.title')" :subtitle="tt('mediaGallery.subtitle')" width="880px">
     <div class="mg-root">
       <!-- Toolbar -->
       <div class="mg-toolbar">
         <div class="mg-search">
           <AppIcon name="Search" :size="13" :style="{ color: 'var(--muted)' }"/>
-          <input v-model="search" placeholder="Qidirish (URL bo'yicha)" @input="debounceLoad"/>
+          <input v-model="search" :placeholder="tt('mediaGallery.searchPlaceholder')" @input="debounceLoad"/>
         </div>
         <input ref="fileInput" type="file" accept="image/*" :multiple="multiple"
           @change="onUpload" hidden/>
         <AppButton variant="primary" size="md" :loading="uploading" @click="fileInput?.click()">
           <template #icon><AppIcon name="Plus" :size="13"/></template>
-          Yangi yuklash
+          {{ tt('mediaGallery.uploadNew') }}
         </AppButton>
       </div>
 
@@ -19,7 +19,7 @@
       <div class="mg-folders">
         <button class="mg-folder" :class="{ active: !scope }" @click="setScope(null)">
           <AppIcon name="Home" :size="13"/>
-          <span class="mg-folder-name">Asosiy</span>
+          <span class="mg-folder-name">{{ tt('mediaGallery.rootFolder') }}</span>
           <span class="mg-folder-count">{{ rootCount }}</span>
         </button>
         <div v-for="f in visibleFolders" :key="f.name"
@@ -32,15 +32,15 @@
           <button type="button"
             class="mg-folder-del"
             :disabled="deletingFolders.has(f.name)"
-            title="Folderni o'chirish"
+            :title="tt('mediaGallery.deleteFolder')"
             @mousedown.stop
             @click="handleFolderDelete($event, f)">
             <AppIcon name="Close" :size="10"/>
           </button>
         </div>
-        <button type="button" class="mg-folder mg-folder-new" @click="newFolderOpen = true" title="Yangi papka">
+        <button type="button" class="mg-folder mg-folder-new" @click="newFolderOpen = true" :title="tt('mediaGallery.newFolder')">
           <AppIcon name="Plus" :size="12"/>
-          <span class="mg-folder-name">Yangi papka</span>
+          <span class="mg-folder-name">{{ tt('mediaGallery.newFolder') }}</span>
         </button>
       </div>
 
@@ -49,9 +49,9 @@
         <AppIcon name="Close" :size="14" :style="{ color: 'var(--danger)' }"/>
         <span class="mg-confirm-msg">{{ pendingConfirm.message }}</span>
         <div style="display:flex;gap:6px;">
-          <AppButton variant="secondary" size="md" @click="pendingConfirm = null">Bekor</AppButton>
+          <AppButton variant="secondary" size="md" @click="pendingConfirm = null">{{ tt('mediaGallery.cancel') }}</AppButton>
           <AppButton variant="primary" size="md" :loading="confirmRunning" @click="runConfirmed">
-            Ha, o'chir
+            {{ tt('mediaGallery.confirmDelete') }}
           </AppButton>
         </div>
       </div>
@@ -59,36 +59,36 @@
       <!-- New folder inline modal -->
       <div v-if="newFolderOpen" class="mg-new-folder">
         <input v-model="newFolderName"
-          placeholder="Papka nomi (masalan: events)"
+          :placeholder="tt('mediaGallery.folderNamePlaceholder')"
           class="mg-new-folder-input"
           @keydown.enter.prevent="createFolder"
           @keydown.escape="newFolderOpen = false"
           ref="newFolderInputEl"/>
-        <AppButton variant="primary" size="md" :loading="creatingFolder" @click="createFolder">Yaratish</AppButton>
-        <AppButton variant="secondary" size="md" @click="newFolderOpen = false">Bekor</AppButton>
+        <AppButton variant="primary" size="md" :loading="creatingFolder" @click="createFolder">{{ tt('mediaGallery.create') }}</AppButton>
+        <AppButton variant="secondary" size="md" @click="newFolderOpen = false">{{ tt('mediaGallery.cancel') }}</AppButton>
       </div>
 
       <!-- Breadcrumb / back -->
       <div v-if="scope" class="mg-breadcrumb">
-        <button type="button" class="mg-back" @click="setScope(null)" title="Orqaga">
+        <button type="button" class="mg-back" @click="setScope(null)" :title="tt('mediaGallery.back')">
           <AppIcon name="ChevronL" :size="13"/>
-          <span>Asosiy</span>
+          <span>{{ tt('mediaGallery.rootFolder') }}</span>
         </button>
         <AppIcon name="ChevronR" :size="11" :style="{ color: 'var(--muted-2)' }"/>
         <span class="mg-crumb-name">{{ scope }}</span>
       </div>
 
       <!-- Loading / empty -->
-      <div v-if="loading" class="mg-status">Yuklanmoqda…</div>
+      <div v-if="loading" class="mg-status">{{ tt('mediaGallery.loading') }}</div>
       <div v-else-if="!scope && !files.length && !visibleFolders.length" class="mg-empty">
         <AppIcon name="Layers" :size="34" :style="{ color: 'var(--muted-2)' }"/>
-        <div class="mg-empty-title">Kutubxona bo'sh</div>
-        <div class="mg-empty-sub">Papka yarating yoki rasm yuklang</div>
+        <div class="mg-empty-title">{{ tt('mediaGallery.libraryEmpty') }}</div>
+        <div class="mg-empty-sub">{{ tt('mediaGallery.libraryEmptyHint') }}</div>
       </div>
       <div v-else-if="scope && !files.length" class="mg-empty">
         <AppIcon name="Tag" :size="34" :style="{ color: 'var(--muted-2)' }"/>
-        <div class="mg-empty-title">Bu papka bo'sh</div>
-        <div class="mg-empty-sub">Yangi rasm yuklang</div>
+        <div class="mg-empty-title">{{ tt('mediaGallery.folderEmpty') }}</div>
+        <div class="mg-empty-sub">{{ tt('mediaGallery.folderEmptyHint') }}</div>
       </div>
 
       <!-- Grid -->
@@ -101,12 +101,12 @@
             <div class="mg-folder-card">
               <AppIcon name="Layers" :size="28" :style="{ color: 'var(--accent)' }"/>
               <div class="mg-folder-card-name">{{ f.name }}</div>
-              <div class="mg-folder-card-meta">{{ f.count }} ta · {{ formatBytes(f.size) }}</div>
+              <div class="mg-folder-card-meta">{{ tt('mediaGallery.folderMeta', { n: f.count, size: formatBytes(f.size) }) }}</div>
             </div>
             <button v-if="f.name !== 'posts'" type="button"
               class="mg-del"
               :disabled="deletingFolders.has(f.name)"
-              title="Folderni o'chirish"
+              :title="tt('mediaGallery.deleteFolder')"
               @mousedown.stop
               @click="handleFolderDelete($event, f)">
               <AppIcon name="Trash" :size="11"/>
@@ -129,7 +129,7 @@
           </div>
           <button type="button" class="mg-del"
             :disabled="deletingIds.has(f.id)"
-            title="O'chirish"
+            :title="tt('mediaGallery.delete')"
             @mousedown.stop
             @click="handleFileDelete($event, f)">
             <AppIcon name="Trash" :size="11"/>
@@ -139,20 +139,20 @@
 
       <!-- Pagination -->
       <div v-if="files.length && total > files.length + offset" class="mg-more">
-        <AppButton variant="secondary" size="md" @click="loadMore">Ko'proq yuklash</AppButton>
+        <AppButton variant="secondary" size="md" @click="loadMore">{{ tt('mediaGallery.loadMore') }}</AppButton>
       </div>
     </div>
 
     <template #footer>
       <div class="mg-footer">
         <span class="mg-footer-info">
-          <template v-if="selected.length">{{ selected.length }} ta tanlandi</template>
-          <template v-else>Tanlang yoki yangi yuklang</template>
+          <template v-if="selected.length">{{ tt('mediaGallery.selectedCount', { n: selected.length }) }}</template>
+          <template v-else>{{ tt('mediaGallery.selectOrUpload') }}</template>
         </span>
         <div style="display:flex;gap:8px;">
-          <AppButton variant="secondary" size="md" @click="open = false">Bekor qilish</AppButton>
+          <AppButton variant="secondary" size="md" @click="open = false">{{ tt('mediaGallery.cancelBtn') }}</AppButton>
           <AppButton variant="primary" size="md" :disabled="!selected.length" @click="confirm">
-            Tanlash ({{ selected.length }})
+            {{ tt('mediaGallery.selectBtn', { n: selected.length }) }}
           </AppButton>
         </div>
       </div>
@@ -167,6 +167,11 @@ import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { uploadsApi } from '@/api/uploads.js'
 import { useStorageStore } from '@/stores/storage.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -244,7 +249,7 @@ async function createFolder() {
       setScope(created.name)
     }
   } catch (e) {
-    alert(e?.response?.data?.message || 'Folder yaratishda xato')
+    alert(e?.response?.data?.message || tt('mediaGallery.errCreateFolder'))
   } finally {
     creatingFolder.value = false
   }
@@ -253,8 +258,8 @@ async function createFolder() {
 function onDeleteFolder(f) {
   if (!f?.name || deletingFolders.value.has(f.name)) return
   const message = f.count
-    ? `"${f.name}" papka va uning ichidagi ${f.count} ta rasm butunlay o'chirilsinmi?`
-    : `"${f.name}" bo'sh papka o'chirilsinmi?`
+    ? tt('mediaGallery.confirmDeleteFolder', { name: f.name, n: f.count })
+    : tt('mediaGallery.confirmDeleteEmptyFolder', { name: f.name })
   pendingConfirm.value = {
     message,
     action: () => doDeleteFolder(f),
@@ -279,9 +284,9 @@ async function doDeleteFolder(f) {
     const status = e?.response?.status
     const msg = e?.response?.data?.message
     if (status === 404) {
-      alert("Backend yangilanmagan — '/uploads/folders/...' endpoint topilmadi. Backend'ni qayta ishga tushiring (npm run start:dev)")
+      alert(tt('mediaGallery.errFolderEndpoint'))
     } else {
-      alert((Array.isArray(msg) ? msg.join('. ') : msg) || `Folder o'chirishda xato (${status || 'tarmoq'})`)
+      alert((Array.isArray(msg) ? msg.join('. ') : msg) || tt('mediaGallery.errDeleteFolder', { status: status || tt('mediaGallery.network') }))
     }
   } finally {
     const next = new Set(deletingFolders.value)
@@ -306,7 +311,7 @@ async function onDelete(f) {
   if (!f?.url || deletingIds.value.has(f.id)) return
   // Custom confirm — UI ichida tasdiqlash
   pendingConfirm.value = {
-    message: `Ushbu rasm (${formatBytes(f.size)}) bucket'dan butunlay o'chirilsinmi?`,
+    message: tt('mediaGallery.confirmDeleteFile', { size: formatBytes(f.size) }),
     action: () => doDeleteFile(f),
   }
 }
@@ -339,9 +344,9 @@ async function doDeleteFile(f) {
     const status = err?.response?.status
     const msg = err?.response?.data?.message
     if (status === 404) {
-      alert("Backend yangilanmagan — DELETE /uploads/by-url endpoint topilmadi. Backend'ni qayta ishga tushiring.")
+      alert(tt('mediaGallery.errFileEndpoint'))
     } else {
-      alert((Array.isArray(msg) ? msg.join('. ') : msg) || `O'chirishda xato (${status || 'tarmoq'})`)
+      alert((Array.isArray(msg) ? msg.join('. ') : msg) || tt('mediaGallery.errDeleteFile', { status: status || tt('mediaGallery.network') }))
     }
   } finally {
     const next = new Set(deletingIds.value)
@@ -431,7 +436,7 @@ async function onUpload(e) {
     storageStore.refresh()
     await load(true)
   } catch (err) {
-    alert(err?.response?.data?.message || 'Yuklashda xato')
+    alert(err?.response?.data?.message || tt('mediaGallery.errUpload'))
   } finally {
     uploading.value = false
   }

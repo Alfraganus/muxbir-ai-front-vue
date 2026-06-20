@@ -7,7 +7,7 @@
         </AppButton>
         <AppButton variant="secondary" size="md" @click="showFromUrl = true">
           <template #icon><AppIcon name="Globe2" :size="13"/></template>
-          Havoladan maqola
+          {{ tt('posts.fromUrl.btn') }}
         </AppButton>
         <AppButton variant="primary" size="md" @click="$router.push('/client/posts/new')">
           <template #icon><AppIcon name="Plus" :size="13"/></template>
@@ -96,7 +96,7 @@
                  class="cp-source-chip"
                  :title="p.ai_source_url">
                 <img v-if="sourceHostOf(p)" :src="faviconUrl(sourceHostOf(p))" alt="" class="cp-source-fav"/>
-                <span class="cp-source-text">{{ sourceHostOf(p) || tt('posts.col.source.unknown') || 'manba' }}</span>
+                <span class="cp-source-text">{{ sourceHostOf(p) || tt('posts.col.source.unknown') || tt('posts.col.source.fallback') }}</span>
               </a>
               <span v-else class="cp-source-empty">—</span>
             </td>
@@ -129,7 +129,7 @@
             <td style="padding:10px 14px;vertical-align:middle;color:var(--muted);">{{ publishLabel(p) }}</td>
             <td style="padding:10px 14px;vertical-align:middle;">
               <span v-if="fmtViews(p.view_count)" class="cp-views"
-                :title="p.views_updated_at ? `Oxirgi yangilanish: ${publishLabel({ publish_at: p.views_updated_at })}` : 'Ko\'rishlar (kuniga 2 marta yangilanadi)'">
+                :title="p.views_updated_at ? tt('posts.views.updatedAt', { time: publishLabel({ publish_at: p.views_updated_at }) }) : tt('posts.views.hint')">
                 <AppIcon name="Eye" :size="12"/>
                 <span class="tabular">{{ fmtViews(p.view_count) }}</span>
               </span>
@@ -165,11 +165,11 @@
         <div class="cp-pag-btns">
           <button class="cp-pag-btn" :disabled="page === 0 || loading" @click="goToPage(page - 1)">
             <AppIcon name="ChevronL" :size="12"/>
-            <span>Oldingi</span>
+            <span>{{ tt('posts.pagination.prev') }}</span>
           </button>
           <span class="cp-pag-page">{{ page + 1 }} / {{ totalPages }}</span>
           <button class="cp-pag-btn" :disabled="page >= totalPages - 1 || loading" @click="goToPage(page + 1)">
-            <span>Keyingi</span>
+            <span>{{ tt('posts.pagination.next') }}</span>
             <AppIcon name="ChevronL" :size="12" :style="{ transform: 'rotate(180deg)' }"/>
           </button>
         </div>
@@ -177,8 +177,8 @@
     </AppPanel>
     <!-- Havoladan maqola modal -->
     <AppModal v-model="showFromUrl"
-              title="Havoladan maqola yozish"
-              subtitle="URL → AI → tahrir uchun editor"
+              :title="tt('posts.fromUrl.modalTitle')"
+              :subtitle="tt('posts.fromUrl.modalSubtitle')"
               width="600px">
       <ArticleFromUrlForm
         @created="onArticleCreated"
@@ -300,11 +300,11 @@ const filtered = computed(() => posts.value)
 const headers = computed(() => [
   { key: 'title',    label: tt('posts.col.title') },
   { key: 'platform', label: tt('posts.col.platform') },
-  { key: 'source',   label: 'Manba' },
-  { key: 'original', label: 'Asl manba' },
+  { key: 'source',   label: tt('posts.col.source') },
+  { key: 'original', label: tt('posts.col.original') },
   { key: 'langs',    label: tt('posts.col.langs') },
   { key: 'time',     label: tt('posts.col.publishAt') },
-  { key: 'views',    label: 'Ko\'rishlar' },
+  { key: 'views',    label: tt('posts.col.views') },
   { key: 'status',   label: tt('posts.col.status') },
   { key: 'actions',  label: '' },
 ])

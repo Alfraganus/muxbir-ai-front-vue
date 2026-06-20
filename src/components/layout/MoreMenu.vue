@@ -19,19 +19,28 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   items: {
     type: Array,
-    default: () => [
-      { label: "Ko'rish" },
-      { label: "Tahrirlash" },
-      { label: "Nusxa olish" },
-      { label: "O'chirish", danger: true },
-    ]
+    default: null,
   }
 })
+
+// defineProps default tt()'ga murojaat qila olmaydi (hoisting) — shuning uchun
+// standart ro'yxat computed orqali tarjima qilinadi.
+const items = computed(() => props.items ?? [
+  { label: tt('moreMenu.view') },
+  { label: tt('moreMenu.edit') },
+  { label: tt('moreMenu.copy') },
+  { label: tt('moreMenu.delete'), danger: true },
+])
 
 const open = ref(false)
 

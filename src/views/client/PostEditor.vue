@@ -10,9 +10,9 @@
           <span class="pe-aib-text">{{ aiBanner.message }}</span>
           <button v-if="aiBanner.tone === 'success' && aiBanner.prev" type="button" class="pe-aib-undo" @click="undoAiRewrite">
             <AppIcon name="Edit" :size="11"/>
-            Qaytarish
+            {{ tt('pe.aib.undo') }}
           </button>
-          <button type="button" class="pe-aib-close" @click="dismissAiBanner" aria-label="Yopish">
+          <button type="button" class="pe-aib-close" @click="dismissAiBanner" :aria-label="tt('pe.close')">
             <AppIcon name="Close" :size="12"/>
           </button>
         </div>
@@ -81,19 +81,19 @@
 
             <!-- Top toolbar (right): upload / library / url / clear -->
             <div class="pe-hc-toolbar">
-              <button class="pe-hc-btn" @click="coverGalleryOpen = true" title="Media kutubxonadan tanlash">
+              <button class="pe-hc-btn" @click="coverGalleryOpen = true" :title="tt('pe.media.pickFromLibrary')">
                 <AppIcon name="Layers" :size="12"/>
-                <span>Kutubxona</span>
+                <span>{{ tt('pe.media.library') }}</span>
               </button>
-              <button class="pe-hc-btn" @click="coverFileInput?.click()" :disabled="coverUploading" title="Rasm yuklash">
+              <button class="pe-hc-btn" @click="coverFileInput?.click()" :disabled="coverUploading" :title="tt('pe.cover.uploadTitle')">
                 <AppIcon :name="coverUploading ? 'Sparkle' : 'Plus'" :size="12"/>
-                <span>{{ coverUploading ? 'Yuklanmoqda…' : 'Yuklash' }}</span>
+                <span>{{ coverUploading ? tt('pe.uploading') : tt('pe.upload') }}</span>
               </button>
               <input v-model="form.cover_image_url"
-                placeholder="yoki https://..."
+                :placeholder="tt('pe.cover.urlPh')"
                 class="pe-hc-url"
-                title="Rasm URL'ini kiriting"/>
-              <button v-if="form.cover_image_url" class="pe-hc-btn pe-hc-btn-icon" @click="clearCover" title="O'chirish">
+                :title="tt('pe.cover.urlTitle')"/>
+              <button v-if="form.cover_image_url" class="pe-hc-btn pe-hc-btn-icon" @click="clearCover" :title="tt('pe.remove')">
                 <AppIcon name="Close" :size="11"/>
               </button>
             </div>
@@ -103,8 +103,8 @@
               <span class="pe-hc-empty-badge">
                 <AppIcon name="Layers" :size="20"/>
               </span>
-              <span class="pe-hc-empty-title">Postingizga muqova tanlang</span>
-              <span class="pe-hc-empty-sub">Chiroyli cover rasm postingizni jonlantiradi</span>
+              <span class="pe-hc-empty-title">{{ tt('pe.cover.emptyTitle') }}</span>
+              <span class="pe-hc-empty-sub">{{ tt('pe.cover.emptySub') }}</span>
             </div>
 
             <!-- Floating language switcher (bottom) -->
@@ -125,45 +125,45 @@
           <!-- ─── AI amallar + til holati (sarlavha tepasida) ─── -->
           <div class="pe-toolbar pe-toolbar-ai">
             <div class="pe-toolbar-left">
-              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite('rewrite')" title="AI bilan qayta yozish — prompt va model tanlash">
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite('rewrite')" :title="tt('pe.ai.rewriteTitle')">
                 <span class="pe-chip-ic pe-chip-ic-ai">
                   <AppIcon name="Sparkle" :size="11"/>
                 </span>
-                <span class="pe-chip-text">{{ aiShortening && aiMode === 'rewrite' ? 'Yozilmoqda…' : 'AI bilan qayta yozish' }}</span>
-                <span class="pe-chip-cost">{{ AI_CREDIT_COST.rewrite }} kr</span>
+                <span class="pe-chip-text">{{ aiShortening && aiMode === 'rewrite' ? tt('pe.ai.writing') : tt('pe.ai.rewrite') }}</span>
+                <span class="pe-chip-cost">{{ AI_CREDIT_COST.rewrite }} {{ tt('pe.creditShort') }}</span>
               </button>
-              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite('shorten')" title="AI bilan qisqartirish — prompt va model tanlash">
+              <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite('shorten')" :title="tt('pe.ai.shortenTitle')">
                 <span class="pe-chip-ic pe-chip-ic-ai">
                   <AppIcon name="Edit" :size="11"/>
                 </span>
-                <span class="pe-chip-text">{{ aiShortening && aiMode === 'shorten' ? 'Qisqartirilmoqda…' : 'AI bilan qisqartirish' }}</span>
-                <span class="pe-chip-cost">{{ AI_CREDIT_COST.shorten }} kr</span>
+                <span class="pe-chip-text">{{ aiShortening && aiMode === 'shorten' ? tt('pe.ai.shortening') : tt('pe.ai.shorten') }}</span>
+                <span class="pe-chip-cost">{{ AI_CREDIT_COST.shorten }} {{ tt('pe.creditShort') }}</span>
               </button>
-              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" title="Avtomatik teglar">
+              <button class="pe-chip pe-chip-ai" :disabled="aiTagging" @click="aiGenerateTags" :title="tt('pe.ai.tagsTitle')">
                 <span class="pe-chip-ic pe-chip-ic-ai">
                   <AppIcon :name="aiTagging ? 'Sparkle' : 'Tag'" :size="11"/>
                 </span>
-                <span class="pe-chip-text">{{ aiTagging ? 'Tahlil qilinmoqda…' : 'AI teglar' }}</span>
-                <span class="pe-chip-cost">{{ AI_CREDIT_COST.tags }} kr</span>
+                <span class="pe-chip-text">{{ aiTagging ? tt('pe.ai.analyzing') : tt('pe.ai.tags') }}</span>
+                <span class="pe-chip-cost">{{ AI_CREDIT_COST.tags }} {{ tt('pe.creditShort') }}</span>
               </button>
               <!-- Joriy til avtomatik holati — faqat o'qish uchun (qo'lda toggle yo'q) -->
               <span class="pe-chip pe-chip-auto" :class="{ 'pe-chip-on': isActiveComplete }"
-                    :title="isActiveComplete ? `Bu til to'liq to'ldirilgan — avtomatik tayyor` : `Sarlavha va matn to'ldirilsa, til avtomatik tayyor bo'ladi`">
+                    :title="isActiveComplete ? tt('pe.lang.completeTitle') : tt('pe.lang.draftTitle')">
                 <AppIcon :name="isActiveComplete ? 'Check' : 'Edit'" :size="11"/>
-                <span class="pe-chip-text">{{ isActiveComplete ? 'Tayyor' : 'Qoralama' }}</span>
+                <span class="pe-chip-text">{{ isActiveComplete ? tt('pe.lang.ready') : tt('pe.lang.draft') }}</span>
               </span>
               <button v-if="hasAnyContent(activeLang)" class="pe-chip pe-chip-danger" @click="removeLang" :title="tt('pe.lang.removeTranslation')">
                 <span class="pe-chip-ic pe-chip-ic-danger">
                   <AppIcon name="Trash" :size="11"/>
                 </span>
-                <span class="pe-chip-text">Ushbu postni {{ tt('pe.lang.' + activeLang) }} qismini o'chirish</span>
+                <span class="pe-chip-text">{{ tt('pe.lang.removePart', { lang: tt('pe.lang.' + activeLang) }) }}</span>
               </button>
             </div>
           </div>
 
           <!-- Composition "paper" — title + short desc + editor as one unified surface -->
           <div class="pe-paper">
-            <label class="pe-label pe-paper-label">Sarlavha</label>
+            <label class="pe-label pe-paper-label">{{ tt('pe.field.titleLabel') }}</label>
             <input v-model="activeTr.title"
               :placeholder="tt('pe.field.langTitlePh')"
               class="pe-paper-title"/>
@@ -177,7 +177,7 @@
               <span class="pe-paper-short-counter">{{ (activeTr.short_description || '').length }}/500</span>
             </div>
 
-            <label class="pe-label pe-paper-label pe-paper-label-content">Asosiy matn</label>
+            <label class="pe-label pe-paper-label pe-paper-label-content">{{ tt('pe.field.contentLabel') }}</label>
 
             <div class="pe-paper-editor">
               <RichEditor :key="`${activeLang}-${editorReloadKey}`" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
@@ -238,23 +238,23 @@
               <AppIcon name="Telegram" :size="13" :style="{ color: '#229ED9' }"/>
               <span style="font-size:11.5px;font-weight:600;color:var(--text);
                            text-transform:uppercase;letter-spacing:0.05em;">
-                Telegram kanallar
+                {{ tt('pe.tg.channels') }}
               </span>
               <span v-if="form.telegram_channel_ids.length"
                     style="font-size:10px;color:#229ED9;font-weight:600;margin-left:auto;
                            padding:2px 7px;background:rgba(34,158,217,.12);border-radius:999px;">
-                {{ form.telegram_channel_ids.length }} tanlandi
+                {{ tt('pe.selectedN', { n: form.telegram_channel_ids.length }) }}
               </span>
               <span v-else
                     style="font-size:10px;color:#f59e0b;font-weight:600;margin-left:auto;
                            padding:2px 7px;background:rgba(245,158,11,.12);border-radius:999px;">
-                Tanlanmagan
+                {{ tt('pe.notSelected') }}
               </span>
             </div>
 
             <div v-if="!connectedTgChannels.length"
                  style="font-size:12px;color:var(--text-2);padding:6px 0;">
-              Ulangan Telegram kanal yo'q. Avval «Kanallar» bo'limidan kanal qo'shing.
+              {{ tt('pe.tg.noChannelsHint') }}
             </div>
 
             <label v-for="ch in connectedTgChannels" :key="ch.id"
@@ -275,7 +275,7 @@
 
             <span v-if="!form.telegram_channel_ids.length && connectedTgChannels.length"
                   style="font-size:11px;color:#92400e;line-height:1.4;">
-              ⚠ Postni e'lon qilish uchun kamida bitta kanal tanlang
+              {{ tt('pe.tg.selectAtLeastOne') }}
             </span>
           </section>
 
@@ -290,12 +290,12 @@
                    }">
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-size:11.5px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:0.05em;">
-                Facebook / Instagram
+                {{ tt('pe.meta.heading') }}
               </span>
               <span v-if="selectedMetaChannelIds.length"
                     style="font-size:10px;color:#1877F2;font-weight:600;margin-left:auto;
                            padding:2px 7px;background:rgba(24,119,242,.12);border-radius:999px;">
-                {{ selectedMetaChannelIds.length }} tanlandi
+                {{ tt('pe.selectedN', { n: selectedMetaChannelIds.length }) }}
               </span>
             </div>
             <label v-for="ch in connectedMetaChannels" :key="ch.id"
@@ -313,13 +313,13 @@
                 {{ ch.display_name || ch.username }}
               </span>
               <span style="font-size:10px;color:var(--muted);margin-left:auto;flex:none;">
-                {{ (ch.platform_type || ch.platform?.slug) === 'instagram' ? 'Instagram' : 'Facebook' }}
+                {{ (ch.platform_type || ch.platform?.slug) === 'instagram' ? tt('pe.meta.instagram') : tt('pe.meta.facebook') }}
               </span>
             </label>
             <!-- IG + rasmsiz ogohlantirish -->
             <div v-if="igChannelsSelected && !hasImage"
                  style="font-size:11.5px;color:#854d0e;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:7px;padding:8px 10px;line-height:1.5;">
-              ⚠ Instagram rasmsiz postni qo'llamaydi. Rasm qo'shmasangiz, IG kanallarga yuborilmaydi.
+              {{ tt('pe.meta.igNoImageWarn') }}
             </div>
           </section>
 
@@ -327,7 +327,7 @@
           <section class="pe-preview-wrap" :class="{ on: previewShown }">
             <div class="pe-preview-head">
               <span class="pe-preview-head-icon"><AppIcon name="Telegram" :size="12"/></span>
-              <span class="pe-preview-head-title">Telegram preview</span>
+              <span class="pe-preview-head-title">{{ tt('pe.preview.title') }}</span>
               <span v-if="previewShown" class="pe-preview-head-lang">{{ activeLang.toUpperCase() }}</span>
               <button
                 type="button"
@@ -350,7 +350,7 @@
                 :gallery="galleryArr"
                 :tags="tagsArr"
                 :signature="previewSignature"/>
-              <div class="pe-preview-hint">Bu — kanalingizdagi taxminiy ko'rinish. Til almashtirsangiz preview ham yangilanadi.</div>
+              <div class="pe-preview-hint">{{ tt('pe.preview.hint') }}</div>
             </div>
           </section>
 
@@ -382,10 +382,10 @@
               <label class="pe-label">{{ tt('pe.field.category') }}</label>
               <div class="pe-cat-row">
                 <select v-model="form.category_id" class="pe-input pe-cat-select">
-                  <option :value="null">— tanlang —</option>
+                  <option :value="null">{{ tt('pe.cat.choose') }}</option>
                   <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
-                <button type="button" class="pe-cat-add" @click="openCategoryModal" :title="'Yangi kategoriya'">
+                <button type="button" class="pe-cat-add" @click="openCategoryModal" :title="tt('pe.cat.new')">
                   <AppIcon name="Plus" :size="12"/>
                 </button>
               </div>
@@ -431,7 +431,7 @@
                 <AppIcon name="Calendar" :size="11" :style="{ verticalAlign: 'middle', marginRight: '4px' }"/>
                 {{ tt('pe.field.publishAt') }}
               </label>
-              <DateTimePicker v-model="form.publish_at"/>
+              <DateTimePicker v-model="form.publish_at" :offset-minutes="companyOffsetMin"/>
               <span class="pe-hint">{{ tt('pe.field.publishAtHint') }}</span>
             </div>
 
@@ -465,14 +465,14 @@
               <input ref="galleryFileInput" type="file" accept="image/*" multiple @change="onGalleryFiles" hidden/>
               <button class="pe-gallery-upload-btn pe-gallery-library-btn" @click="galleryLibraryOpen = true">
                 <AppIcon name="Layers" :size="13"/>
-                Media kutubxonadan tanlash
+                {{ tt('pe.media.pickFromLibrary') }}
               </button>
               <button class="pe-gallery-upload-btn" @click="galleryFileInput?.click()" :disabled="galleryUploading">
                 <AppIcon :name="galleryUploading ? 'Sparkle' : 'Plus'" :size="13"/>
-                {{ galleryUploading ? 'Yuklanmoqda...' : 'Yangi yuklash' }}
+                {{ galleryUploading ? tt('pe.uploadingDots') : tt('pe.gallery.uploadNew') }}
               </button>
               <input v-model="galleryInput" @keydown.enter.prevent="addGallery"
-                placeholder="yoki https://... + Enter" class="pe-input"/>
+                :placeholder="tt('pe.gallery.urlPh')" class="pe-input"/>
             </div>
           </section>
 
@@ -493,24 +493,24 @@
     <MediaGallery v-model="galleryLibraryOpen" :multiple="true" @pick="onPickGallery"/>
 
     <!-- Category create modal -->
-    <AppModal v-model="catModalOpen" title="Yangi kategoriya" subtitle="Faqat ushbu kompaniya uchun">
+    <AppModal v-model="catModalOpen" :title="tt('pe.cat.new')" :subtitle="tt('pe.cat.modalSub')">
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <label class="pe-label">Nom</label>
-          <input v-model="catForm.name" placeholder="Masalan: Yangiliklar"
+          <label class="pe-label">{{ tt('pe.cat.name') }}</label>
+          <input v-model="catForm.name" :placeholder="tt('pe.cat.namePh')"
             class="pe-input" @keydown.enter.prevent="saveCategory"/>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <label class="pe-label">Rang (ixtiyoriy)</label>
+          <label class="pe-label">{{ tt('pe.cat.color') }}</label>
           <input v-model="catForm.color" type="color" class="pe-input" style="height:36px;padding:2px 6px;"/>
         </div>
         <div v-if="catError" class="pe-error" style="margin:0;">
           <AppIcon name="Close" :size="12"/> {{ catError }}
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
-          <AppButton variant="secondary" size="md" @click="catModalOpen = false">Bekor qilish</AppButton>
+          <AppButton variant="secondary" size="md" @click="catModalOpen = false">{{ tt('pe.cancel') }}</AppButton>
           <AppButton variant="primary" size="md" :loading="catSaving" @click="saveCategory">
-            Saqlash
+            {{ tt('pe.save') }}
           </AppButton>
         </div>
       </div>
@@ -524,7 +524,7 @@
       <div style="display:flex;flex-direction:column;gap:14px;">
         <!-- Prompt -->
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">1. Prompt</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('pe.aire.step1') }}</span>
 
           <!-- Tavsiya etilgan promptdan foydalanish — faqat admin shu turdagi
                prompt yaratgan bo'lsa ko'rinadi -->
@@ -533,14 +533,13 @@
             <input type="checkbox" v-model="aiRewriteForm.useRecommended" :disabled="aiShortening"/>
             <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
               <span style="font-size:13px;font-weight:600;color:var(--text);">
-                ✨ Tavsiya etilgan promptdan foydalanish
+                {{ tt('pe.aire.useRecommended') }}
                 <span v-if="aiRecommended.name" style="color:var(--muted);font-weight:400;">
                   — {{ aiRecommended.name }}
                 </span>
               </span>
               <span style="font-size:11px;color:var(--muted);">
-                Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi.
-                Ushbu rejimda quyidagi ro'yxat o'chiriladi.
+                {{ tt('pe.aire.useRecommendedHint') }}
               </span>
             </div>
           </label>
@@ -549,21 +548,18 @@
           <div v-else-if="aiRecommended.loaded"
                style="padding:9px 11px;border-radius:7px;background:rgba(245,158,11,.08);
                       border:1px solid rgba(245,158,11,.25);color:#92400e;font-size:11.5px;
-                      line-height:1.5;">
-            ⚠️ <strong>Tavsiya etilgan prompt mavjud emas.</strong>
-            Admin <code>/admin/prompts</code> sahifasida <code>article_shorten</code>
-            (Maqola qisqartirish va sayqallash) toifasi belgilangan prompt yaratsin —
-            keyin shu yerda "Tavsiya etilgan promptdan foydalanish" checkbox ko'rinadi.
+                      line-height:1.5;"
+               v-html="tt('pe.aire.noRecommended')">
           </div>
 
           <div v-if="!aiPromptGroups.length && !aiRewriteForm.useRecommended"
                style="padding:14px;text-align:center;border:1px dashed var(--border-2);border-radius:8px;
                       display:flex;flex-direction:column;gap:8px;align-items:center;font-size:12.5px;">
-            <span style="color:var(--text);">Hali prompt yo'q. Avval Sozlamalar → AI prompt'da yarating.</span>
+            <span style="color:var(--text);">{{ tt('pe.aire.noPrompts') }}</span>
             <button type="button" @click="showAiRewrite = false; $router.push('/client/settings?tab=ai-prompt')"
                     style="padding:7px 14px;border-radius:6px;background:var(--accent);color:#fff;
                            border:none;cursor:pointer;font-size:12px;font-weight:500;">
-              AI prompt →
+              {{ tt('pe.aire.goToPrompt') }}
             </button>
           </div>
           <select v-else v-model="aiRewriteForm.groupId"
@@ -578,16 +574,16 @@
                     opacity: aiRewriteForm.useRecommended ? 0.5 : 1,
                     cursor: aiRewriteForm.useRecommended ? 'not-allowed' : 'pointer',
                   }">
-            <option value="" disabled>Promptni tanlang…</option>
+            <option value="" disabled>{{ tt('pe.aire.choosePrompt') }}</option>
             <option v-for="g in aiPromptGroups" :key="g.id" :value="g.id">
-              {{ g.name }} · {{ g.prompts.length }} bo'lim{{ anyApplyBaseInGroup(g) ? ' · BASE' : '' }}
+              {{ g.name }} · {{ tt('pe.aire.sections', { n: g.prompts.length }) }}{{ anyApplyBaseInGroup(g) ? ' · BASE' : '' }}
             </option>
           </select>
         </div>
 
         <!-- Provider -->
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">2. AI provayder</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('pe.aire.step2') }}</span>
           <div style="display:flex;gap:8px;">
             <label v-for="p in aiProviders" :key="p.id"
                    :style="{
@@ -609,20 +605,20 @@
 
         <!-- Model -->
         <label style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">3. Model</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('pe.aire.step3') }}</span>
           <select v-model="aiRewriteForm.model" :disabled="aiShortening"
                   style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
                          background:var(--bg);color:var(--text);font-size:13px;
                          font-family:'JetBrains Mono',monospace;">
             <option v-for="m in aiAvailableModels" :key="m.id" :value="m.id">
-              {{ m.label }} {{ m.note ? '— ' + m.note : '' }}
+              {{ m.label }} {{ m.noteKey ? '— ' + tt(m.noteKey) : '' }}
             </option>
           </select>
         </label>
 
         <!-- Chiqish tili -->
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">4. Chiqish tili</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('pe.aire.step4') }}</span>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <label v-for="l in AI_OUTPUT_LANGS" :key="l.id"
                    :style="{
@@ -634,11 +630,11 @@
                    }">
               <input v-model="aiRewriteForm.outputLanguage" type="radio" :value="l.id" :disabled="aiShortening"
                      style="margin:0;cursor:pointer;"/>
-              <span style="font-size:12.5px;font-weight:600;color:var(--text);">{{ l.label }}</span>
+              <span style="font-size:12.5px;font-weight:600;color:var(--text);">{{ tt(l.labelKey) }}</span>
             </label>
           </div>
           <span style="font-size:11px;color:var(--muted);">
-            AI matnni shu tilda va yozuvda qaytaradi — manba qaysi tilda bo'lishidan qat'i nazar.
+            {{ tt('pe.aire.outputLangHint') }}
           </span>
         </div>
 
@@ -652,7 +648,7 @@
         <button type="button" @click="showAiRewrite = false" :disabled="aiShortening"
                 style="padding:8px 14px;border-radius:6px;background:transparent;color:var(--muted);
                        border:1px solid var(--border-2);cursor:pointer;font-size:12.5px;">
-          Bekor qilish
+          {{ tt('pe.cancel') }}
         </button>
         <button type="button" @click="runAiRewrite"
                 :disabled="!canRunAiRewrite"
@@ -670,14 +666,14 @@
 
     <!-- ─── Telegram publish — til tanlash ─── -->
     <AppModal v-model="showPublishLang"
-              title="Qaysi tilda e'lon qilinsin?"
-              subtitle="Tanlangan til keyingi postlar uchun ham default bo'ladi"
+              :title="tt('pe.pub.title')"
+              :subtitle="tt('pe.pub.subtitle')"
               width="460px">
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div v-if="!publishableLangs.length"
              style="padding:12px;border-radius:8px;background:rgba(245,158,11,.08);
                     border:1px solid rgba(245,158,11,.25);color:#92400e;font-size:12.5px;">
-          ⚠️ Hali birorta til to'ldirilmagan. Avval postni biror tilda yozing.
+          {{ tt('pe.pub.noLangs') }}
         </div>
         <label v-for="l in publishableLangs" :key="l"
                :style="{
@@ -695,7 +691,7 @@
           <span style="font-size:13px;font-weight:600;color:var(--text);">{{ tt('pe.lang.' + l) }}</span>
           <span v-if="company?.default_publish_lang === l"
                 style="margin-left:auto;font-size:10.5px;color:var(--accent);font-weight:600;">
-            default
+            {{ tt('pe.pub.default') }}
           </span>
         </label>
       </div>
@@ -703,7 +699,7 @@
         <button type="button" @click="showPublishLang = false"
                 style="padding:8px 14px;border-radius:6px;background:transparent;color:var(--muted);
                        border:1px solid var(--border-2);cursor:pointer;font-size:12.5px;">
-          Bekor qilish
+          {{ tt('pe.cancel') }}
         </button>
         <button type="button" @click="confirmPublishLang"
                 :disabled="!publishableLangs.length"
@@ -714,7 +710,7 @@
                   border: 'none', cursor: publishableLangs.length ? 'pointer' : 'default',
                   fontSize: '12.5px', fontWeight: 600,
                 }">
-          ➤ E'lon qilish
+          {{ tt('pe.pub.publishBtn') }}
         </button>
       </template>
     </AppModal>
@@ -722,14 +718,14 @@
     <!-- ─── AI rewrite / shorten — sahifa bo'ylab loader ─── -->
     <AiFullPageLoader
       :model-value="aiShortening"
-      title="AI maqolani qayta yozmoqda"
-      subtitle="Tanlangan prompt va model bo'yicha matn qayta ishlanmoqda"
+      :title="tt('pe.loader.title')"
+      :subtitle="tt('pe.loader.subtitle')"
       :steps="[
-        'Mavjud matn tahlil qilinmoqda',
-        'AI yangi versiyani yozmoqda',
-        'Natija tayyorlanmoqda',
+        tt('pe.loader.step1'),
+        tt('pe.loader.step2'),
+        tt('pe.loader.step3'),
       ]"
-      hint="Bu jarayon odatda 10–30 soniya davom etadi. Sahifani yopmang."
+      :hint="tt('pe.loader.hint')"
     />
 
     <!-- ─── Video yuklab olinmoqda — sahifani yopmang ─── -->
@@ -745,10 +741,9 @@
             </svg>
             <AppIcon name="Eye" :size="20" style="position:absolute;"/>
           </div>
-          <h3 class="pe-vp-title">Ushbu postda video bor — ko'chirilmoqda</h3>
+          <h3 class="pe-vp-title">{{ tt('pe.video.title') }}</h3>
           <p class="pe-vp-sub">
-            Iltimos, sahifani yopmang va boshqa joyga o'tib ketmang.
-            Video o'lchamiga qarab 10–60 soniya vaqt olishi mumkin.
+            {{ tt('pe.video.sub') }}
           </p>
           <div class="pe-vp-bar"><div class="pe-vp-bar-fill"/></div>
         </div>
@@ -776,6 +771,7 @@ import { usePostsUsageStore } from '@/stores/postsUsage.js'
 import { useQuotaStore } from '@/stores/quota.js'
 import { AI_CREDIT_COST } from '@/config/aiCredits.js'
 import { companiesApi } from '@/api/companies.js'
+import { resolveOffsetMin, utcToWall, wallToUtcISO } from '@/utils/timezone.js'
 import { channelsApi } from '@/api/channels.js'
 import { postsApi } from '@/api/posts.js'
 import { uploadsApi } from '@/api/uploads.js'
@@ -796,11 +792,11 @@ const quotaStore = useQuotaStore()
 function aiErrorMessage(e) {
   const data = e?.response?.data || {}
   if (e?.response?.status === 402 || data.code === 'INSUFFICIENT_CREDITS') {
-    const need = data.required != null ? `${data.required} kredit` : 'kredit'
-    const have = data.balance != null ? `${data.balance} kredit` : '0'
-    return `Kredit yetarli emas (kerak: ${need}, mavjud: ${have}). Billing bo'limidan kredit to'ldiring.`
+    const need = data.required != null ? `${data.required} ${tt('pe.credit')}` : tt('pe.credit')
+    const have = data.balance != null ? `${data.balance} ${tt('pe.credit')}` : '0'
+    return tt('pe.err.insufficientCredits', { need, have })
   }
-  const msg = data.message || 'AI amalida xato'
+  const msg = data.message || tt('pe.err.aiGeneric')
   return Array.isArray(msg) ? msg.join('. ') : msg
 }
 const t = computed(() => store.t)
@@ -834,11 +830,11 @@ const AI_REWRITE_LS_KEY = 'muxbir.ai-rewrite.preferences'
 const showAiRewrite = ref(false)
 // 'rewrite' (qayta yozish) yoki 'shorten' (qisqartirish) — bitta modal, ikki rejim.
 const aiMode = ref('rewrite')
-const aiModalTitle = computed(() => aiMode.value === 'shorten' ? 'AI bilan qisqartirish' : 'AI bilan qayta yozish')
+const aiModalTitle = computed(() => aiMode.value === 'shorten' ? tt('pe.ai.shorten') : tt('pe.ai.rewrite'))
 const aiModalSubtitle = computed(() => aiMode.value === 'shorten'
-  ? 'Matnni qisqartirish uchun prompt, provayder va modelni tanlang'
-  : 'Promptni, AI provayderini va modelni tanlang')
-const aiRunLabel = computed(() => aiMode.value === 'shorten' ? '✂️ Qisqartirish' : '✨ Qayta yozish')
+  ? tt('pe.aire.subtitleShorten')
+  : tt('pe.aire.subtitleRewrite'))
+const aiRunLabel = computed(() => aiMode.value === 'shorten' ? tt('pe.aire.runShorten') : tt('pe.aire.runRewrite'))
 const aiPromptGroups = ref([])
 const aiSavedPrefs = (() => {
   try { return JSON.parse(localStorage.getItem(AI_REWRITE_LS_KEY) || '{}') }
@@ -857,11 +853,16 @@ const aiRewriteForm = reactive({
 
 // AI rewrite chiqish tili variantlari
 const AI_OUTPUT_LANGS = [
-  { id: 'uz',     label: "O'zbek (lotin)" },
-  { id: 'uz_cyr', label: "O'zbek (kirill)" },
-  { id: 'ru',     label: 'Rus tili' },
-  { id: 'en',     label: 'Ingliz tili' },
+  { id: 'uz',     labelKey: 'pe.outLang.uz' },
+  { id: 'uz_cyr', labelKey: 'pe.outLang.uz_cyr' },
+  { id: 'ru',     labelKey: 'pe.outLang.ru' },
+  { id: 'en',     labelKey: 'pe.outLang.en' },
 ]
+// Chiqish tili nomini joriy interfeys tilida qaytaradi
+function outLangLabel(id) {
+  const item = AI_OUTPUT_LANGS.find(l => l.id === id)
+  return item ? tt(item.labelKey) : id
+}
 
 // Admin tavsiya etgan prompt mavjudligi — modal har ochilganda yangilanadi.
 const aiRecommended = ref({ exists: false, name: null, loaded: false })
@@ -878,22 +879,22 @@ const aiProviders = [
 ]
 const aiModelsByProvider = {
   openai: [
-    { id: 'gpt-4o-mini',   label: 'gpt-4o-mini',   note: 'tezkor (default)' },
-    { id: 'gpt-4o',        label: 'gpt-4o',        note: 'eng kuchli' },
-    { id: 'gpt-4-turbo',   label: 'gpt-4-turbo',   note: 'oldingi avlod' },
-    { id: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo', note: 'eng arzon' },
+    { id: 'gpt-4o-mini',   label: 'gpt-4o-mini',   noteKey: 'pe.modelNote.fastDefault' },
+    { id: 'gpt-4o',        label: 'gpt-4o',        noteKey: 'pe.modelNote.strongest' },
+    { id: 'gpt-4-turbo',   label: 'gpt-4-turbo',   noteKey: 'pe.modelNote.prevGen' },
+    { id: 'gpt-3.5-turbo', label: 'gpt-3.5-turbo', noteKey: 'pe.modelNote.cheapest' },
   ],
   gemini: [
-    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
-    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'kuchli' },
-    { id: 'gemini-3.1-pro',        label: 'gemini-3.1-pro',        note: 'eng kuchli Gemini' },
-    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon' },
-    { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'eng yangi Flash' },
+    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      noteKey: 'pe.modelNote.fastDefault' },
+    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        noteKey: 'pe.modelNote.strong' },
+    { id: 'gemini-3.1-pro',        label: 'gemini-3.1-pro',        noteKey: 'pe.modelNote.strongestGemini' },
+    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', noteKey: 'pe.modelNote.cheapest' },
+    { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   noteKey: 'pe.modelNote.latestFlash' },
   ],
   anthropic: [
-    { id: 'claude-sonnet-4-6',         label: 'claude-sonnet-4-6',         note: 'tezkor (default)' },
-    { id: 'claude-opus-4-8',           label: 'claude-opus-4-8',           note: 'eng kuchli' },
-    { id: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5-20251001', note: 'eng arzon, tez' },
+    { id: 'claude-sonnet-4-6',         label: 'claude-sonnet-4-6',         noteKey: 'pe.modelNote.fastDefault' },
+    { id: 'claude-opus-4-8',           label: 'claude-opus-4-8',           noteKey: 'pe.modelNote.strongest' },
+    { id: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5-20251001', noteKey: 'pe.modelNote.cheapestFast' },
   ],
 }
 const aiAvailableModels = computed(() => aiModelsByProvider[aiRewriteForm.provider] || [])
@@ -905,6 +906,8 @@ watch(() => aiRewriteForm.provider, (p) => {
 })
 
 const company = ref(null)
+// Workspace UTC offset (minut) — "E'lon qilish vaqti" shu mintaqada talqin qilinadi.
+const companyOffsetMin = computed(() => resolveOffsetMin(company.value?.utc_offset_minutes))
 const allChannels = ref([])
 const post = ref(null)
 
@@ -980,8 +983,8 @@ function openCategoryModal() {
 async function saveCategory() {
   catError.value = ''
   const name = catForm.name.trim()
-  if (!name) { catError.value = 'Nom kiritilishi shart'; return }
-  if (!company.value) { catError.value = 'Kompaniya topilmadi'; return }
+  if (!name) { catError.value = tt('pe.cat.errNameRequired'); return }
+  if (!company.value) { catError.value = tt('pe.err.companyNotFound'); return }
   catSaving.value = true
   try {
     const created = await categoriesApi.create(company.value.id, {
@@ -995,7 +998,7 @@ async function saveCategory() {
     catModalOpen.value = false
   } catch (e) {
     const msg = e?.response?.data?.message
-    catError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Saqlashda xato')
+    catError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.saveFailed'))
   } finally {
     catSaving.value = false
   }
@@ -1051,7 +1054,7 @@ async function onCoverFile(e) {
     }
     storageStore.refresh()
   } catch (err) {
-    const msg = err?.response?.data?.message || 'Yuklashda xato'
+    const msg = err?.response?.data?.message || tt('pe.err.uploadFailed')
     formError.value = Array.isArray(msg) ? msg.join('. ') : msg
   } finally {
     coverUploading.value = false
@@ -1077,7 +1080,7 @@ async function onGalleryFiles(e) {
     storageStore.refresh()
   } catch (err) {
     const msg = err?.response?.data?.message
-    formError.value = (Array.isArray(msg) ? msg.join('. ') : msg) || 'Yuklashda xato'
+    formError.value = (Array.isArray(msg) ? msg.join('. ') : msg) || tt('pe.err.uploadFailed')
   } finally {
     galleryUploading.value = false
   }
@@ -1224,7 +1227,7 @@ const primaryChannel = computed(() =>
   connectedTgChannels.value.find(c => c.id === primaryChannelId.value) || null,
 )
 const previewChannelName = computed(() =>
-  primaryChannel.value?.display_name || primaryChannel.value?.username || store.companyName || 'Mening kanalim',
+  primaryChannel.value?.display_name || primaryChannel.value?.username || store.companyName || tt('pe.preview.myChannel'),
 )
 const previewSubscriberCount = computed(() =>
   typeof primaryChannel.value?.subscriber_count === 'number' ? primaryChannel.value.subscriber_count : null,
@@ -1358,13 +1361,12 @@ async function loadInitial() {
 }
 
 function toLocalDatetime(d) {
+  // UTC momentni workspace offset ichidagi devor-vaqtiga ('YYYY-MM-DDTHH:MM')
+  // aylantiramiz — brauzer vaqt mintaqasiga emas, kompaniya offset'iga nisbatan.
   try {
     let s = String(d).trim()
     if (/^\d{4}-\d{2}-\d{2}\s/.test(s)) s = s.replace(' ', 'T')
-    const dt = new Date(s)
-    if (isNaN(dt.getTime())) return ''
-    const pad = n => String(n).padStart(2, '0')
-    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`
+    return utcToWall(s, companyOffsetMin.value)
   } catch { return '' }
 }
 
@@ -1442,7 +1444,9 @@ async function saveAll() {
       tags: tagsArr.value,
       cover_image_url: form.cover_image_url || null,
       gallery: galleryArr.value,
-      publish_at: form.publish_at ? new Date(form.publish_at).toISOString() : null,
+      // form.publish_at — workspace offset ichidagi devor-vaqti; UTC ISO'ga shu
+      // offset bo'yicha o'giriladi (brauzer mintaqasiga bog'liq emas).
+      publish_at: form.publish_at ? wallToUtcISO(form.publish_at, companyOffsetMin.value) : null,
       telegram_channel_id: form.telegram_channel_ids[0] || null,
       telegram_channel_ids: [...new Set([...form.telegram_channel_ids, ...selectedMetaChannelIds.value])],
       telegram_raw_long_text: form.telegram_raw_long_text || null,
@@ -1493,7 +1497,7 @@ async function saveAll() {
     if (!isEdit.value && saved?.id) {
       router.replace(`/client/posts/${saved.id}/edit`)
     }
-    showAiBanner('success', isEdit.value ? 'Post saqlandi' : 'Post yaratildi')
+    showAiBanner('success', isEdit.value ? tt('pe.toast.saved') : tt('pe.toast.created'))
   } catch (e) {
     const msg = e?.response?.data?.message
     formError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('pe.err.generic'))
@@ -1534,8 +1538,8 @@ const publishableLangs = computed(() => LANGS.filter(l => hasAnyContent(l)))
 function onPublishClick() {
   if (!isEdit.value || !post.value) return
   if (!form.telegram_channel_ids.length && !selectedMetaChannelIds.value.length) {
-    formError.value = 'Kanal tanlanmagan — o\'ng tomondagi panel orqali kanal(lar)ni tanlang'
-    alert('⚠ Kanal tanlanmagan!\n\nO\'ng tomondagi panel orqali kamida bitta kanalni tanlang va qaytadan urinib ko\'ring.')
+    formError.value = tt('pe.err.noChannelShort')
+    alert(tt('pe.err.noChannelAlert'))
     return
   }
   // Default til: kompaniya sozlamasi → joriy tab → birinchi to'ldirilgan til
@@ -1581,16 +1585,16 @@ async function publishNow(lang) {
     // Kompaniya default tilini lokal obyektda ham yangilab qo'yamiz
     if (lang && company.value) company.value.default_publish_lang = lang
     lastSavedAt.value = Date.now()
-    const lbl = (AI_OUTPUT_LANGS.find(l => l.id === lang) || {}).label || lang
+    const lbl = outLangLabel(lang)
     // Ko'p kanal natijasi: nechtasiga ketdi / nechtasida xato
     const dels = Array.isArray(res?.deliveries) ? res.deliveries : []
     const sent = dels.filter(d => d.status === 'sent').length
     const failed = dels.filter(d => d.status === 'failed').length
     if (dels.length > 1) {
-      if (failed) showAiBanner('success', `${sent} ta kanalga yuborildi, ${failed} tasida xato (${lbl})`)
-      else showAiBanner('success', `${sent} ta kanalga e'lon qilindi (${lbl})`)
+      if (failed) showAiBanner('success', tt('pe.toast.publishedPartial', { sent, failed, lang: lbl }))
+      else showAiBanner('success', tt('pe.toast.publishedMulti', { sent, lang: lbl }))
     } else {
-      showAiBanner('success', `Post Telegram'ga e'lon qilindi (${lbl})`)
+      showAiBanner('success', tt('pe.toast.publishedOne', { lang: lbl }))
     }
   } catch (e) {
     const msg = e?.response?.data?.message
@@ -1643,7 +1647,7 @@ async function openAiRewrite(mode = 'rewrite') {
   aiMode.value = mode === 'shorten' ? 'shorten' : 'rewrite'
   aiError.value = ''
   if (!await ensurePostSaved()) {
-    aiError.value = formError.value || 'Avval postni saqlash kerak'
+    aiError.value = formError.value || tt('pe.err.saveFirst')
     return
   }
 
@@ -1735,7 +1739,7 @@ watch(
 
 async function runAiRewrite() {
   if (!aiRewriteForm.useRecommended && !aiRewriteForm.groupId) {
-    aiError.value = 'Promptni tanlang yoki tavsiya etilgandan foydalaning'
+    aiError.value = tt('pe.err.choosePromptOrRecommended')
     return
   }
   aiError.value = ''
@@ -1786,9 +1790,9 @@ async function runAiRewrite() {
       // Natija qaysi tilda bo'lsa — o'sha til tabiga o'tamiz.
       activeLang.value = target
       editorReloadKey.value++ // editor'ni majburiy re-mount qilamiz
-      const lbl = (AI_OUTPUT_LANGS.find(l => l.id === target) || {}).label || target
-      const verb = aiMode.value === 'shorten' ? 'qisqartirildi' : 'qayta yozildi'
-      showAiBanner('success', `Sarlavha, matn va teglar "${lbl}" tilida ${verb}`, prevTargetJson)
+      const lbl = outLangLabel(target)
+      const msgKey = aiMode.value === 'shorten' ? 'pe.ai.doneShorten' : 'pe.ai.doneRewrite'
+      showAiBanner('success', tt(msgKey, { lang: lbl }), prevTargetJson)
     }
     aiUsageStore.refresh()
     quotaStore.refresh() // kredit balansi yangilandi
@@ -1830,7 +1834,7 @@ function anyApplyBaseInGroup(g) {
 async function aiGenerateTags() {
   aiError.value = ''
   if (!await ensurePostSaved()) {
-    aiError.value = formError.value || 'Avval postni saqlash kerak'
+    aiError.value = formError.value || tt('pe.err.saveFirst')
     return
   }
   aiTagging.value = true
@@ -1841,7 +1845,7 @@ async function aiGenerateTags() {
     }
     aiUsageStore.refresh()
     quotaStore.refresh() // kredit balansi yangilandi
-    showAiBanner('success', `Teglar generatsiya qilindi (${AI_CREDIT_COST.tags} kredit)`)
+    showAiBanner('success', tt('pe.toast.tagsGenerated', { n: AI_CREDIT_COST.tags }))
   } catch (e) {
     const msg = aiErrorMessage(e)
     aiError.value = msg

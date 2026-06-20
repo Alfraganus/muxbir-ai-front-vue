@@ -4,9 +4,9 @@
     <div class="dws-head">
       <span class="dws-head-ic"><AppIcon name="Search" :size="14"/></span>
       <div>
-        <div class="dws-title">Internetdan qidirish</div>
+        <div class="dws-title">{{ tt('discoverWebSearch.title') }}</div>
         <div class="dws-sub">
-          Google'ga o'xshab istalgan mavzuni qidiring — butun internet bo'ylab yoki tanlangan manbalardan
+          {{ tt('discoverWebSearch.subtitle') }}
         </div>
       </div>
     </div>
@@ -18,26 +18,26 @@
         <input
           v-model="query"
           class="dws-input"
-          placeholder="Masalan: o'zbek migrantlari"
+          :placeholder="tt('discoverWebSearch.queryPlaceholder')"
           :disabled="searching"/>
       </div>
       <select v-model="timeRange" class="dws-select" :disabled="searching">
-        <option value="24h">So'nggi 24 soat</option>
-        <option value="3d">So'nggi 3 kun</option>
-        <option value="7d">So'nggi 7 kun</option>
-        <option value="30d">So'nggi 30 kun</option>
+        <option value="24h">{{ tt('discoverWebSearch.range24h') }}</option>
+        <option value="3d">{{ tt('discoverWebSearch.range3d') }}</option>
+        <option value="7d">{{ tt('discoverWebSearch.range7d') }}</option>
+        <option value="30d">{{ tt('discoverWebSearch.range30d') }}</option>
       </select>
       <select v-model="lang" class="dws-select dws-select-lang" :disabled="searching">
-        <option value="uz">O'zbekcha</option>
-        <option value="ru">Ruscha</option>
-        <option value="en">Inglizcha</option>
+        <option value="uz">{{ tt('discoverWebSearch.langUz') }}</option>
+        <option value="ru">{{ tt('discoverWebSearch.langRu') }}</option>
+        <option value="en">{{ tt('discoverWebSearch.langEn') }}</option>
       </select>
       <AppButton variant="primary" size="md" :disabled="searching || query.trim().length < 2" @click="runSearch">
         <template #icon>
           <span v-if="searching" class="dws-spinner"/>
           <AppIcon v-else name="Search" :size="13"/>
         </template>
-        {{ searching ? 'Qidirilmoqda…' : 'Qidirish' }}
+        {{ searching ? tt('discoverWebSearch.searching') : tt('discoverWebSearch.searchBtn') }}
       </AppButton>
     </form>
 
@@ -47,12 +47,12 @@
         <button type="button" class="dws-mode" :class="{ active: sourceMode === 'web' }"
                 :disabled="searching" @click="sourceMode = 'web'">
           <AppIcon name="Globe" :size="12"/>
-          Butun internet
+          {{ tt('discoverWebSearch.wholeInternet') }}
         </button>
         <button type="button" class="dws-mode" :class="{ active: sourceMode === 'picked' }"
                 :disabled="searching" @click="sourceMode = 'picked'">
           <AppIcon name="Layers" :size="12"/>
-          Tanlangan manbalar
+          {{ tt('discoverWebSearch.pickedSources') }}
           <span v-if="pickedCount" class="dws-mode-count">{{ pickedCount }}</span>
         </button>
       </div>
@@ -70,7 +70,7 @@
           </label>
         </div>
         <div v-else class="dws-src-none">
-          Bu kanalga manba biriktirilmagan — quyida o'zingiz kiritishingiz mumkin.
+          {{ tt('discoverWebSearch.noSources') }}
         </div>
 
         <!-- Qo'lda manba qo'shish -->
@@ -78,12 +78,12 @@
           <input
             v-model="customInput"
             class="dws-custom-input"
-            placeholder="Boshqa manba qo'shish: bbc.com, kun.uz yoki t.me/kanal"
+            :placeholder="tt('discoverWebSearch.customPlaceholder')"
             :disabled="searching"
             @keydown.enter.prevent="addCustom"/>
           <AppButton variant="secondary" size="sm" :disabled="searching || !customInput.trim()" @click="addCustom">
             <template #icon><AppIcon name="Plus" :size="11"/></template>
-            Qo'shish
+            {{ tt('discoverWebSearch.addBtn') }}
           </AppButton>
         </div>
         <div v-if="customDomains.length" class="dws-custom-chips">
@@ -103,10 +103,10 @@
     <!-- Natijalar -->
     <div v-if="searched && !searching" class="dws-results">
       <div v-if="!items.length" class="dws-empty">
-        Hech narsa topilmadi. Boshqa so'z bilan urinib ko'ring yoki manba saytini olib tashlang.
+        {{ tt('discoverWebSearch.emptyResults') }}
       </div>
       <template v-else>
-        <div class="dws-results-count">{{ items.length }} ta natija topildi</div>
+        <div class="dws-results-count">{{ tt('discoverWebSearch.resultsCount', { n: items.length }) }}</div>
         <div v-for="(it, i) in items" :key="i" class="dws-item">
           <div class="dws-item-body">
             <div class="dws-item-title">{{ it.title }}</div>
@@ -126,7 +126,7 @@
                 <span v-if="resolvingIdx === i && resolvingAction === 'open'" class="dws-spinner dws-spinner-dark"/>
                 <AppIcon v-else name="Arrow" :size="11"/>
               </template>
-              Ochish
+              {{ tt('discoverWebSearch.openBtn') }}
             </AppButton>
             <AppButton variant="primary" size="sm"
                        :disabled="resolvingIdx !== null"
@@ -135,7 +135,7 @@
                 <span v-if="resolvingIdx === i && resolvingAction === 'write'" class="dws-spinner"/>
                 <AppIcon v-else name="Sparkle" :size="11"/>
               </template>
-              AI maqola yozish
+              {{ tt('discoverWebSearch.writeArticleBtn') }}
             </AppButton>
           </div>
         </div>
@@ -144,8 +144,8 @@
 
     <!-- AI maqola modal -->
     <AppModal v-model="showWriteModal"
-              title="Havoladan maqola yozish"
-              subtitle="Topilgan xabar asosida AI maqola yozadi"
+              :title="tt('discoverWebSearch.modalTitle')"
+              :subtitle="tt('discoverWebSearch.modalSubtitle')"
               width="600px">
       <ArticleFromUrlForm
         v-if="showWriteModal"
@@ -165,6 +165,11 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import ArticleFromUrlForm from '@/components/posts/ArticleFromUrlForm.vue'
 import { discoverApi } from '@/api/discover.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   companyId: { type: String, default: null },
@@ -252,7 +257,7 @@ async function runSearch() {
     items.value = r?.items || []
     searched.value = true
   } catch (e) {
-    error.value = e?.response?.data?.message || e?.message || 'Qidiruvda xato yuz berdi'
+    error.value = e?.response?.data?.message || e?.message || tt('discoverWebSearch.searchError')
     items.value = []
     searched.value = true
   } finally {
@@ -274,7 +279,7 @@ async function openOriginal(it, i) {
   try {
     const url = await resolveItem(it)
     if (url) window.open(url, '_blank', 'noopener')
-    else error.value = 'Havolani ochib bo\'lmadi — Google himoyasi. Boshqa xabarni tanlang.'
+    else error.value = tt('discoverWebSearch.openError')
   } finally {
     resolvingIdx.value = null
     resolvingAction.value = null
@@ -288,7 +293,7 @@ async function writeArticle(it, i) {
   try {
     const url = await resolveItem(it)
     if (!url) {
-      error.value = 'Havolani yechib bo\'lmadi — Google himoyasi. Boshqa xabarni tanlang.'
+      error.value = tt('discoverWebSearch.resolveError')
       return
     }
     pickedUrl.value = url
@@ -308,9 +313,9 @@ function formatDate(iso) {
   const d = new Date(iso)
   if (isNaN(d.getTime())) return ''
   const diff = (Date.now() - d.getTime()) / 1000
-  if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))} daqiqa oldin`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} soat oldin`
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} kun oldin`
+  if (diff < 3600) return tt('discoverWebSearch.minutesAgo', { n: Math.max(1, Math.floor(diff / 60)) })
+  if (diff < 86400) return tt('discoverWebSearch.hoursAgo', { n: Math.floor(diff / 3600) })
+  if (diff < 86400 * 7) return tt('discoverWebSearch.daysAgo', { n: Math.floor(diff / 86400) })
   return d.toLocaleDateString('uz-UZ', { dateStyle: 'medium' })
 }
 </script>

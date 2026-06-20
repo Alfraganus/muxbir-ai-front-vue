@@ -7,17 +7,17 @@
         </span>
         <div class="sc-head-txt">
           <div class="sc-title">
-            {{ ok ? 'Sozlamalar to\'liq' : 'Ilova to\'liq ishlashi uchun sozlamalarni to\'ldiring' }}
+            {{ ok ? tt('setupChecklistCard.titleOk') : tt('setupChecklistCard.titleWarn') }}
           </div>
           <div class="sc-sub">
-            <template v-if="ok">Barcha bosqichlar bajarilgan — avto-post tayyor.</template>
-            <template v-else>{{ doneCount }}/{{ totalCount }} bosqich bajarildi · {{ missingCount }} ta qoldi</template>
+            <template v-if="ok">{{ tt('setupChecklistCard.subOk') }}</template>
+            <template v-else>{{ tt('setupChecklistCard.subProgress', { done: doneCount, total: totalCount, missing: missingCount }) }}</template>
           </div>
         </div>
       </div>
       <div class="sc-head-r">
         <AppButton variant="ghost" size="sm" :loading="loading" @click.stop="$emit('refresh')">
-          <template #icon><AppIcon name="Chart" :size="12"/></template>Tekshirish
+          <template #icon><AppIcon name="Chart" :size="12"/></template>{{ tt('setupChecklistCard.checkBtn') }}
         </AppButton>
         <span class="sc-chev" :class="{ 'sc-chev-open': open }"><AppIcon name="Chevron" :size="16"/></span>
       </div>
@@ -40,9 +40,9 @@
           <div v-if="!it.done" class="sc-item-hint">{{ it.hint }}</div>
         </div>
         <RouterLink v-if="!it.done && it.link" :to="it.link" class="sc-fix">
-          Sozlash<AppIcon name="ChevronR" :size="12"/>
+          {{ tt('setupChecklistCard.setupLink') }}<AppIcon name="ChevronR" :size="12"/>
         </RouterLink>
-        <span v-else-if="it.done" class="sc-tag">Tayyor</span>
+        <span v-else-if="it.done" class="sc-tag">{{ tt('setupChecklistCard.readyTag') }}</span>
       </li>
     </ul>
   </div>
@@ -52,6 +52,11 @@
 import { ref, computed } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   items: { type: Array, default: () => [] },

@@ -89,7 +89,7 @@ const showLogoutSplash = ref(false)
 
 const displayName = computed(() => {
   const u = authStore.user
-  return u?.full_name || u?.fullName || u?.name || u?.email || 'Foydalanuvchi'
+  return u?.full_name || u?.fullName || u?.name || u?.email || store.t('appTopbar.defaultUser')
 })
 const displayEmail = computed(() => authStore.user?.email || '')
 

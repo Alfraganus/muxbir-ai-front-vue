@@ -2,27 +2,27 @@
   <div class="rich-editor-wrap">
     <div v-if="!readOnly" class="rich-toolbar">
       <template v-if="!sourceMode">
-        <button type="button" class="rt-btn" :class="{ on: isActive('bold') }" @click="run(c => c.toggleBold())" title="Qalin (Ctrl+B)"><b>B</b></button>
-        <button type="button" class="rt-btn" :class="{ on: isActive('italic') }" @click="run(c => c.toggleItalic())" title="Kursiv (Ctrl+I)"><i>I</i></button>
-        <button type="button" class="rt-btn" :class="{ on: isActive('underline') }" @click="run(c => c.toggleUnderline())" title="Tag ostida"><u>U</u></button>
-        <button type="button" class="rt-btn" :class="{ on: isActive('strike') }" @click="run(c => c.toggleStrike())" title="Chizilgan"><s>S</s></button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('bold') }" @click="run(c => c.toggleBold())" :title="tt('richEditor.boldTitle')"><b>B</b></button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('italic') }" @click="run(c => c.toggleItalic())" :title="tt('richEditor.italicTitle')"><i>I</i></button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('underline') }" @click="run(c => c.toggleUnderline())" :title="tt('richEditor.underlineTitle')"><u>U</u></button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('strike') }" @click="run(c => c.toggleStrike())" :title="tt('richEditor.strikeTitle')"><s>S</s></button>
         <span class="rt-sep"/>
         <button type="button" class="rt-btn" :class="{ on: isActive('heading', { level: 2 }) }" @click="run(c => c.toggleHeading({ level: 2 }))" title="H2">H2</button>
         <button type="button" class="rt-btn" :class="{ on: isActive('heading', { level: 3 }) }" @click="run(c => c.toggleHeading({ level: 3 }))" title="H3">H3</button>
         <span class="rt-sep"/>
-        <button type="button" class="rt-btn" :class="{ on: isActive('bulletList') }" @click="run(c => c.toggleBulletList())" title="Belgi ro'yxat">• List</button>
-        <button type="button" class="rt-btn" :class="{ on: isActive('orderedList') }" @click="run(c => c.toggleOrderedList())" title="Raqamli ro'yxat">1. List</button>
-        <button type="button" class="rt-btn" :class="{ on: isActive('blockquote') }" @click="run(c => c.toggleBlockquote())" title="Iqtibos">❝</button>
-        <button type="button" class="rt-btn" :class="{ on: isActive('code') }" @click="run(c => c.toggleCode())" title="Inline code"><code>&lt;/&gt;</code></button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('bulletList') }" @click="run(c => c.toggleBulletList())" :title="tt('richEditor.bulletListTitle')">• List</button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('orderedList') }" @click="run(c => c.toggleOrderedList())" :title="tt('richEditor.orderedListTitle')">1. List</button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('blockquote') }" @click="run(c => c.toggleBlockquote())" :title="tt('richEditor.blockquoteTitle')">❝</button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('code') }" @click="run(c => c.toggleCode())" :title="tt('richEditor.inlineCodeTitle')"><code>&lt;/&gt;</code></button>
         <span class="rt-sep"/>
-        <button type="button" class="rt-btn" :class="{ on: isActive('link') }" @click="onLinkClick" title="Havola">🔗</button>
-        <button type="button" class="rt-btn" @click="onImageClick" title="Rasm">🖼</button>
+        <button type="button" class="rt-btn" :class="{ on: isActive('link') }" @click="onLinkClick" :title="tt('richEditor.linkTitle')">🔗</button>
+        <button type="button" class="rt-btn" @click="onImageClick" :title="tt('richEditor.imageTitle')">🖼</button>
         <span class="rt-sep"/>
-        <button type="button" class="rt-btn" @click="run(c => c.undo())" title="Bekor qilish (Ctrl+Z)">↶</button>
-        <button type="button" class="rt-btn" @click="run(c => c.redo())" title="Qaytarish (Ctrl+Shift+Z)">↷</button>
+        <button type="button" class="rt-btn" @click="run(c => c.undo())" :title="tt('richEditor.undoTitle')">↶</button>
+        <button type="button" class="rt-btn" @click="run(c => c.redo())" :title="tt('richEditor.redoTitle')">↷</button>
       </template>
       <template v-else>
-        <span class="rt-source-label">HTML manba — to'g'ridan-to'g'ri tag yozing</span>
+        <span class="rt-source-label">{{ tt('richEditor.sourceLabel') }}</span>
       </template>
       <span class="rt-spacer"/>
       <button
@@ -30,8 +30,8 @@
         class="rt-btn rt-btn-source"
         :class="{ on: sourceMode }"
         @click="toggleSource"
-        :title="sourceMode ? 'Vizual rejimga qaytish' : 'HTML manbasini ko\'rish/tahrirlash'"
-      >&lt;/&gt; {{ sourceMode ? 'Vizual' : 'HTML' }}</button>
+        :title="sourceMode ? tt('richEditor.backToVisualTitle') : tt('richEditor.viewHtmlTitle')"
+      >&lt;/&gt; {{ sourceMode ? tt('richEditor.visualBtn') : tt('richEditor.htmlBtn') }}</button>
     </div>
 
     <editor-content v-show="!sourceMode" :editor="editor" class="rich-editor-holder"/>
@@ -48,7 +48,8 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import { useAppStore } from '@/stores/app.js'
 import { Editor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -64,6 +65,10 @@ const props = defineProps({
   readOnly: { type: Boolean, default: false },
 })
 const emit = defineEmits(['update:modelValue'])
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const editor = shallowRef(null)
 // Editor'ning oxirgi emit qilgan HTML qiymati — watch shu bilan solishtirib,
@@ -116,7 +121,7 @@ function run(fn) {
 function onLinkClick() {
   if (!editor.value) return
   const prev = editor.value.getAttributes('link')?.href || ''
-  const url = window.prompt('Havola URL (bo\'sh — olib tashlash):', prev)
+  const url = window.prompt(tt('richEditor.linkPrompt'), prev)
   if (url === null) return
   if (url === '') {
     editor.value.chain().focus().unsetLink().run()

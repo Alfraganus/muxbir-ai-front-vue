@@ -22,8 +22,7 @@
 
         <h2 class="dp-title">{{ post.title }}</h2>
         <p class="dp-text">
-          {{ post.snippet }} Tafsilotlar manba kanalda ko'rsatilgan, AI shunga asoslanib mazmunni qayta yozadi va
-          sizning kanalingiz tilida moslashtiradi. Hashtag va emojilarni avtomatik moslashtiradi.
+          {{ post.snippet }} {{ tt('discoverPreview.snippetNote') }}
         </p>
 
         <div class="dp-tags">
@@ -43,7 +42,7 @@
         <div>
           <div class="dp-ai-head">
             <AppIcon name="Sparkle" :size="13" :style="{ color: 'var(--accent)' }"/>
-            <span style="font-size:12px;font-weight:600;">AI baholash tafsiloti</span>
+            <span style="font-size:12px;font-weight:600;">{{ tt('discoverPreview.aiBreakdownTitle') }}</span>
             <div style="flex:1"/>
             <span class="tabular" :style="{ fontSize:'18px', fontWeight:700, color: post.ai.total >= 85 ? 'var(--success)' : 'var(--accent)' }">
               {{ post.ai.total }}<span style="font-size:12px;color:var(--muted);font-weight:500;">/100</span>
@@ -70,13 +69,13 @@
       <footer class="dp-foot">
         <AppButton variant="secondary" size="md">
           <template #icon><AppIcon name="Telegram" :size="12" :style="{ color: '#229ED9' }"/></template>
-          Manbada ochish
+          {{ tt('discoverPreview.openInSource') }}
         </AppButton>
         <div style="flex:1"/>
-        <AppButton variant="secondary" size="md" @click="$emit('close')">Yopish</AppButton>
+        <AppButton variant="secondary" size="md" @click="$emit('close')">{{ tt('discoverPreview.close') }}</AppButton>
         <AppButton variant="primary" size="md" @click="$emit('toggle')">
           <template #icon><AppIcon :name="isSelected ? 'Close' : 'Plus'" :size="12"/></template>
-          {{ isSelected ? "Tanlovdan olib tashlash" : "Tanlash va tahrirlash" }}
+          {{ isSelected ? tt('discoverPreview.unselect') : tt('discoverPreview.selectEdit') }}
         </AppButton>
       </footer>
     </div>
@@ -87,6 +86,11 @@
 import { computed } from 'vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   post: { type: Object, required: true },
@@ -96,17 +100,17 @@ const props = defineProps({
 defineEmits(['close', 'toggle'])
 
 const metrics = computed(() => [
-  { label: "Ko'rishlar",    val: fmt(props.post.views),     icon: 'Eye' },
-  { label: 'Reaksiyalar',   val: fmt(props.post.reactions), icon: 'Sparkle' },
-  { label: 'Ulashishlar',   val: fmt(props.post.shares),    icon: 'Send' },
+  { label: tt('discoverPreview.metricViews'),     val: fmt(props.post.views),     icon: 'Eye' },
+  { label: tt('discoverPreview.metricReactions'), val: fmt(props.post.reactions), icon: 'Sparkle' },
+  { label: tt('discoverPreview.metricShares'),    val: fmt(props.post.shares),    icon: 'Send' },
 ])
 
-const aiBreakdown = [
-  { k: 'relevance', l: 'Dolzarblik',          desc: "Mavzu hozir qanchalik muhokama qilinmoqda" },
-  { k: 'virality',  l: 'Virallik salohiyati', desc: "Auditoriya ulashish ehtimoli" },
-  { k: 'freshness', l: 'Yangilik darajasi',   desc: "Vaqt jihatidan dolzarbligi" },
-  { k: 'audience',  l: 'Auditoriyaga moslik', desc: "Sizning kanalingiz tomonchasiga mos" },
-]
+const aiBreakdown = computed(() => [
+  { k: 'relevance', l: tt('discoverPreview.aiRelevanceLabel'), desc: tt('discoverPreview.aiRelevanceDesc') },
+  { k: 'virality',  l: tt('discoverPreview.aiViralityLabel'),  desc: tt('discoverPreview.aiViralityDesc') },
+  { k: 'freshness', l: tt('discoverPreview.aiFreshnessLabel'), desc: tt('discoverPreview.aiFreshnessDesc') },
+  { k: 'audience',  l: tt('discoverPreview.aiAudienceLabel'),  desc: tt('discoverPreview.aiAudienceDesc') },
+])
 
 function fmt(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'

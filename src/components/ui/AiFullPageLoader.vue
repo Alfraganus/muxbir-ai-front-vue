@@ -50,26 +50,36 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  title: { type: String, default: 'AI maqola yozmoqda' },
-  subtitle: { type: String, default: 'Bir necha soniya kuting — sahifani yopmang' },
+  title: { type: String, default: null },
+  subtitle: { type: String, default: null },
   steps: {
     type: Array,
-    default: () => [
-      'Havola yuklanmoqda',
-      'Matn tahlil qilinmoqda',
-      'AI yangi maqola yozmoqda',
-      'Editor tayyorlanmoqda',
-    ],
+    default: null,
   },
   hint: {
     type: String,
-    default: 'Bu jarayon odatda 10–40 soniya davom etadi. Sahifani yopmang.',
+    default: null,
   },
   stepIntervalMs: { type: Number, default: 4000 },
 })
+
+const title = computed(() => props.title ?? tt('aiFullPageLoader.title'))
+const subtitle = computed(() => props.subtitle ?? tt('aiFullPageLoader.subtitle'))
+const steps = computed(() => props.steps ?? [
+  tt('aiFullPageLoader.step1'),
+  tt('aiFullPageLoader.step2'),
+  tt('aiFullPageLoader.step3'),
+  tt('aiFullPageLoader.step4'),
+])
+const hint = computed(() => props.hint ?? tt('aiFullPageLoader.hint'))
 
 const activeStep = ref(0)
 let timer = null
@@ -78,7 +88,7 @@ function startTimer() {
   stopTimer()
   activeStep.value = 0
   timer = setInterval(() => {
-    if (activeStep.value < props.steps.length - 1) {
+    if (activeStep.value < steps.value.length - 1) {
       activeStep.value++
     }
   }, props.stepIntervalMs)

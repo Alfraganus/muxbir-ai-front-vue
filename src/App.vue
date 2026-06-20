@@ -34,11 +34,6 @@
                 <component v-else :is="Component" :key="r.path"/>
               </RouterView>
             </main>
-            <!-- O'ng panel: tarif / kvota / kredit kartasi (faqat client) -->
-            <aside v-if="store.workspace === 'client'"
-                   style="width:264px;flex-shrink:0;border-left:1px solid var(--border);background:var(--bg-2);overflow-y:auto;padding:16px 12px;">
-              <QuotaUsageCard/>
-            </aside>
           </div>
         </div>
       </div>
@@ -58,7 +53,6 @@ import { useQuotaStore } from '@/stores/quota.js'
 import { companiesApi } from '@/api/companies.js'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
-import QuotaUsageCard from '@/components/layout/QuotaUsageCard.vue'
 import StorageQuotaBanner from '@/components/layout/StorageQuotaBanner.vue'
 import TariffExpiryBanner from '@/components/billing/TariffExpiryBanner.vue'
 import AppToast from '@/components/ui/AppToast.vue'

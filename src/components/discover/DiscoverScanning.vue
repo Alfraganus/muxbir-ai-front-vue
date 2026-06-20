@@ -14,16 +14,16 @@
       </div>
 
       <div style="text-align:center;display:flex;flex-direction:column;gap:6px;">
-        <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.022em;">AI postlarni topmoqda</h2>
+        <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.022em;">{{ tt('discoverScanning.title') }}</h2>
         <p style="margin:0;font-size:13px;color:var(--muted);">
-          {{ activeSources.length }} ta kanaldan {{ config.perChannel * activeSources.length }} ta eng yaxshi postni tanlayapti
+          {{ tt('discoverScanning.subtitle', { channels: activeSources.length, posts: config.perChannel * activeSources.length }) }}
         </p>
       </div>
 
       <!-- Progress bar -->
       <div>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;">
-          <span>Jarayon</span>
+          <span>{{ tt('discoverScanning.progress') }}</span>
           <span class="tabular">{{ Math.round(progress) }}%</span>
         </div>
         <div class="dscan-bar">
@@ -41,11 +41,11 @@
           <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
             <span class="dscan-name" :style="{ opacity: statusOf(i) === 'queued' ? 0.5 : 1 }">{{ s.name }}</span>
             <span class="dscan-sub">
-              <template v-if="statusOf(i) === 'done'">{{ foundCounts[i] || config.perChannel }} ta post tanlandi</template>
+              <template v-if="statusOf(i) === 'done'">{{ tt('discoverScanning.postsSelected', { n: foundCounts[i] || config.perChannel }) }}</template>
               <template v-else-if="statusOf(i) === 'active'">
-                Skanerlash... <span v-if="foundCounts[i]" class="tabular" style="color:var(--accent);font-weight:600;">{{ foundCounts[i] }} topildi</span>
+                {{ tt('discoverScanning.scanning') }} <span v-if="foundCounts[i]" class="tabular" style="color:var(--accent);font-weight:600;">{{ tt('discoverScanning.foundCount', { n: foundCounts[i] }) }}</span>
               </template>
-              <template v-else>Navbatda</template>
+              <template v-else>{{ tt('discoverScanning.queued') }}</template>
             </span>
           </div>
           <AppIcon v-if="statusOf(i) === 'done'" name="Check" :size="14" :style="{ color:'var(--success)' }"/>
@@ -67,6 +67,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   config: { type: Object, required: true },
@@ -87,22 +92,22 @@ onMounted(() => {
   const phases = []
   activeSources.value.forEach((s, i) => {
     phases.push({
-      label: `${s.name} kanaliga ulanmoqda...`,
+      label: tt('discoverScanning.logConnecting', { name: s.name }),
       src: i, p: (i / activeSources.value.length) * 100 + 5,
       action: 'connect',
     })
     phases.push({
-      label: `${s.name} — ${props.config.perChannel * 4} ta post tahlil qilinmoqda`,
+      label: tt('discoverScanning.logAnalyzing', { name: s.name, n: props.config.perChannel * 4 }),
       src: i, p: (i / activeSources.value.length) * 100 + 10,
       action: 'analyze', target: Math.floor(props.config.perChannel * 1.5),
     })
     phases.push({
-      label: `${s.name} — AI baholash`,
+      label: tt('discoverScanning.logScoring', { name: s.name }),
       src: i, p: ((i + 1) / activeSources.value.length) * 100 - 2,
       action: 'score', target: props.config.perChannel,
     })
   })
-  phases.push({ label: 'Natijalar tartiblanmoqda...', src: activeSources.value.length - 1, p: 99, action: 'finalize' })
+  phases.push({ label: tt('discoverScanning.logFinalizing'), src: activeSources.value.length - 1, p: 99, action: 'finalize' })
 
   let i = 0
   const tick = () => {

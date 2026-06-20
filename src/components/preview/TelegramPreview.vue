@@ -39,7 +39,7 @@
 
           <!-- Chat body -->
           <div class="tg-body">
-            <div class="tg-date-chip">Bugun</div>
+            <div class="tg-date-chip">{{ tt('telegramPreview.today') }}</div>
 
             <div class="tg-bubble">
               <!-- 1) Cover (asosiy rasm) — tepada katta -->
@@ -70,7 +70,7 @@
           <!-- Input bar (visual only) -->
           <div class="tg-input">
             <span class="tg-input-emoji">😀</span>
-            <span class="tg-input-paper">Xabar...</span>
+            <span class="tg-input-paper">{{ tt('telegramPreview.messagePlaceholder') }}</span>
             <span class="tg-input-mic">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></svg>
             </span>
@@ -87,6 +87,11 @@
 <script setup>
 import { computed } from 'vue'
 import { buildTelegramHtml, telegramHtmlToBrowserHtml } from '@/utils/contentHtml.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   channelName: { type: String, default: 'Mening kanalim' },
@@ -109,8 +114,8 @@ function formatCount(n) {
 }
 const subscribersLabel = computed(() => {
   const n = props.subscriberCount
-  if (n == null) return 'channel'
-  return `channel · ${formatCount(n)} subscribers`
+  if (n == null) return tt('telegramPreview.channel')
+  return tt('telegramPreview.channelSubscribers', { n: formatCount(n) })
 })
 
 const galleryPhotos = computed(() => (props.gallery || []).filter(Boolean).slice(0, 10))

@@ -4,18 +4,17 @@
       <div class="ca-bg"/>
 
       <div class="ca-icon"><AppIcon name="Tag" :size="26"/></div>
-      <h1 class="ca-title">Tarifni faollashtiring</h1>
+      <h1 class="ca-title">{{ tt('clientActivate.title') }}</h1>
       <p class="ca-sub">
-        Tarifni tanlang va to'lov orqali faollashtiring.
-        To'lov muvaffaqiyatli bo'lgach, hisobingiz avtomatik ochiladi.
+        {{ tt('clientActivate.subtitle') }}
       </p>
 
       <!-- Tarif tanlash -->
       <div v-if="loadingPlan" class="ca-plan ca-plan-loading">
-        <span class="ca-spinner"/> Yuklanmoqda...
+        <span class="ca-spinner"/> {{ tt('clientActivate.loading') }}
       </div>
       <div v-else-if="!tariffs.length" class="ca-plan ca-plan-empty">
-        Tarif topilmadi. Iltimos, qo'llab-quvvatlash bilan bog'laning.
+        {{ tt('clientActivate.noTariffs') }}
       </div>
       <div v-else class="ca-tariffs">
         <button
@@ -27,10 +26,10 @@
           <span class="ca-tariff-info">
             <span class="ca-tariff-name">{{ tName(tr) }}</span>
             <span class="ca-tariff-meta">
-              {{ limitLabel(tr.posts_daily_limit) }} post/kun · {{ tr.duration_days }} kunlik · {{ tr.free_credits_monthly }} kredit
+              {{ tt('clientActivate.tariffMeta', { limit: limitLabel(tr.posts_daily_limit), days: tr.duration_days, credits: tr.free_credits_monthly }) }}
             </span>
           </span>
-          <span class="ca-tariff-price">{{ formatSom(tr.price_monthly) }} <small>so'm</small></span>
+          <span class="ca-tariff-price">{{ formatSom(tr.price_monthly) }} <small>{{ tt('clientActivate.som') }}</small></span>
         </button>
       </div>
 
@@ -40,26 +39,30 @@
       <button class="ca-pay" :disabled="paying || !selectedTariffId" @click="pay">
         <span v-if="paying" class="ca-spinner ca-spinner-light"/>
         <template v-else>
-          <span class="ca-click-logo">Click</span> bilan to'lash
+          <span class="ca-click-logo">Click</span> {{ tt('clientActivate.payWith') }}
         </template>
       </button>
 
-      <button class="ca-logout" @click="logout">Chiqish</button>
+      <button class="ca-logout" @click="logout">{{ tt('clientActivate.logout') }}</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { subscriptionsApi } from '@/api/subscriptions.js'
 import { tariffsApi } from '@/api/tariffs.js'
 import { paymentsApi } from '@/api/payments.js'
 import { useAuthStore } from '@/stores/auth.js'
+import { useAppStore } from '@/stores/app.js'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const tariffs = ref([])
 const selectedTariffId = ref(null)
@@ -69,7 +72,7 @@ const error = ref('')
 
 function tName(tr) {
   const n = tr?.name_i18n
-  return (typeof n === 'string' ? n : (n?.uz || n?.ru || n?.en)) || tr?.slug || 'Tarif'
+  return (typeof n === 'string' ? n : (n?.uz || n?.ru || n?.en)) || tr?.slug || tt('clientActivate.tariffFallback')
 }
 function limitLabel(v) { return Number(v) > 0 ? Number(v).toLocaleString('uz-UZ').replace(/,/g, ' ') : '∞' }
 function formatSom(n) { return (Number(n) || 0).toLocaleString('uz-UZ').replace(/,/g, ' ') }
@@ -85,7 +88,7 @@ async function load() {
     // Joriy tarif bo'lsa oldindan tanlanadi, bo'lmasa birinchisi
     selectedTariffId.value = sub?.tariff_id || tariffs.value[0]?.id || null
   } catch (e) {
-    error.value = e?.response?.data?.message ?? 'Tariflarni yuklab bo\'lmadi'
+    error.value = e?.response?.data?.message ?? tt('clientActivate.loadError')
   } finally {
     loadingPlan.value = false
   }
@@ -98,10 +101,10 @@ async function pay() {
   try {
     // Tarif FAQAT to'lov muvaffaqiyatli bo'lganda faollashadi (deferred)
     const { payment_url } = await paymentsApi.initiateTariff(selectedTariffId.value)
-    if (!payment_url) throw new Error('To\'lov havolasi olinmadi')
+    if (!payment_url) throw new Error(tt('clientActivate.noPaymentUrl'))
     window.location.href = payment_url
   } catch (e) {
-    error.value = e?.response?.data?.message ?? e?.message ?? 'To\'lovni boshlashda xatolik'
+    error.value = e?.response?.data?.message ?? e?.message ?? tt('clientActivate.payError')
     paying.value = false
   }
 }

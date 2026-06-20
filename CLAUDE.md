@@ -48,3 +48,25 @@ Vue 3 (`<script setup>`) + Vite. Bundan keyin **barcha kod SOLID prinsiplariga a
 - Til/matnlar o'zbekcha (lotin) — UI bo'yicha mavjud uslubga mos.
 - Yangi funksiya yozishdan oldin: "bu qaysi qatlamga tegishli — view, component, composable, util yoki api?" deb o'yla; eng oson yo'l (mavjud katta komponentga yopishtirish) emas.
 - `publish_at` kabi sana/vaqt formatlash yagona util'da bo'lsin (har komponentda qayta yozilmasin).
+
+---
+
+## Internatsionalizatsiya (i18n) — MAJBURIY QOIDA
+
+**Barcha UI matni 3 tilda bo'lishi shart: `uz` (o'zbek lotin), `ru` (rus), `en` (ingliz).**
+
+### Qanday ishlaydi
+- Barcha tarjimalar `src/i18n/index.js` dagi `DICT` obyektida, nuqtali kalit (`'an.title'`) ko'rinishida.
+- Har bir kalit uchun **uchala til** (`uz`, `ru`, `en`) bo'limida yozilishi shart.
+- Komponent ichida: `const store = useAppStore()` → `const t = computed(() => store.t)` → `function tt(key, params) { return t.value(key, params) }`.
+- Shablonda: `{{ tt('my.key') }}` yoki `:prop="tt('my.key')"`.
+- Parametrli matn: `tt('key', { n: 5 })` — DICT da `{n}` yoziladi.
+
+### Har bir o'zgarishda:
+1. Yangi UI matn qo'shsang — uni avval `src/i18n/index.js` dagi **uchala til** bo'limiga qo'sh.
+2. Template yoki script da hech qachon matnni qattiq (hardcode) yozma — `tt()` orqali ol.
+3. Mavjud komponentga i18n qo'shayotganda `computed` import va `tt()` funksiyasi allaqachon borligini tekshir, takrorlamaslik (DRY).
+
+### Kalit nomlash
+- Sahifa prefiksi: `an.*` (analytics), `ov.*` (overview), `billing.*`, `queue.*`, `cats.*`, `tz.*`, `settings.*`, `nav.*`, `teb.*` (TariffExpiryBanner), `tsm.*` (TariffSwitchModal), `qpc.*` (QueuePostCard) va hokazo.
+- Yangi sahifa/komponent uchun yangi qisqa prefiks tanla va uchala tilda yoz.

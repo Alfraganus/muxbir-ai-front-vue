@@ -5,17 +5,17 @@
         <div class="ts-modal">
           <div class="ts-header">
             <div>
-              <div class="ts-title">Tarifni tanlash</div>
-              <div class="ts-sub">Boshqa tarifga o'tish yoki joriy tarifni uzaytirish</div>
+              <div class="ts-title">{{ tt('tsm.title') }}</div>
+              <div class="ts-sub">{{ tt('tsm.subtitle') }}</div>
             </div>
-            <button class="ts-close" @click="close" aria-label="Yopish">
+            <button class="ts-close" @click="close" :aria-label="tt('tsm.close')">
               <AppIcon name="Close" :size="16"/>
             </button>
           </div>
 
           <div class="ts-body">
-            <div v-if="loading" class="ts-state"><span class="ts-spin"/> Yuklanmoqda…</div>
-            <div v-else-if="!tariffs.length" class="ts-state">Tarif topilmadi</div>
+            <div v-if="loading" class="ts-state"><span class="ts-spin"/> {{ tt('tsm.loading') }}</div>
+            <div v-else-if="!tariffs.length" class="ts-state">{{ tt('tsm.noTariffs') }}</div>
 
             <div v-else class="ts-list">
               <button
@@ -25,13 +25,13 @@
               >
                 <div class="ts-card-head">
                   <span class="ts-card-name">{{ name(tr) }}</span>
-                  <span v-if="tr.id === currentTariffId" class="ts-badge">Joriy</span>
+                  <span v-if="tr.id === currentTariffId" class="ts-badge">{{ tt('tsm.current') }}</span>
                 </div>
-                <div class="ts-card-price">{{ formatSom(tr.price_monthly) }} <span>so'm</span></div>
+                <div class="ts-card-price">{{ formatSom(tr.price_monthly) }} <span>{{ tt('billing.som') }}</span></div>
                 <ul class="ts-card-feats">
-                  <li><AppIcon name="Check" :size="12"/> {{ tr.duration_days }} kunlik muddat</li>
-                  <li><AppIcon name="Check" :size="12"/> Kuniga {{ tr.posts_daily_limit || '∞' }} post</li>
-                  <li><AppIcon name="Check" :size="12"/> {{ tr.free_credits_monthly }} bepul kredit</li>
+                  <li><AppIcon name="Check" :size="12"/> {{ tt('tsm.duration', { days: tr.duration_days }) }}</li>
+                  <li><AppIcon name="Check" :size="12"/> {{ tt('tsm.postDaily', { n: tr.posts_daily_limit || '∞' }) }}</li>
+                  <li><AppIcon name="Check" :size="12"/> {{ tt('tsm.credits', { n: tr.free_credits_monthly }) }}</li>
                 </ul>
               </button>
             </div>
@@ -40,12 +40,12 @@
           </div>
 
           <div class="ts-footer">
-            <button class="ts-btn-ghost" @click="close" :disabled="paying">Bekor qilish</button>
+            <button class="ts-btn-ghost" @click="close" :disabled="paying">{{ tt('tsm.cancel') }}</button>
             <button class="ts-btn-pay" :disabled="paying || !selectedId" @click="proceed">
               <span v-if="paying" class="ts-spin ts-spin-sm"/>
               <template v-else>
                 <AppIcon name="Coin" :size="14"/>
-                {{ selectedId === currentTariffId ? 'Uzaytirish va to\'lash' : 'Tanlash va to\'lash' }}
+                {{ selectedId === currentTariffId ? tt('tsm.extend') : tt('tsm.select') }}
               </template>
             </button>
           </div>
@@ -56,10 +56,15 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { tariffsApi } from '@/api/tariffs.js'
 import { paymentsApi } from '@/api/payments.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -88,7 +93,7 @@ async function load() {
     tariffs.value = Array.isArray(list) ? list : []
     selectedId.value = props.currentTariffId || tariffs.value[0]?.id || null
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Tariflarni yuklab bo\'lmadi'
+    error.value = e?.response?.data?.message || tt('tsm.err.load')
   } finally {
     loading.value = false
   }
@@ -103,10 +108,10 @@ async function proceed() {
     // bo'lganda o'zgartiradi (initiate paytida emas). To'lov bekor qilinsa,
     // tarif eski holicha qoladi.
     const { payment_url } = await paymentsApi.initiateTariff(selectedId.value)
-    if (!payment_url) throw new Error('To\'lov havolasi olinmadi')
+    if (!payment_url) throw new Error(tt('tsm.err.noUrl'))
     window.location.href = payment_url
   } catch (e) {
-    error.value = e?.response?.data?.message || e.message || 'To\'lovni boshlashda xatolik'
+    error.value = e?.response?.data?.message || e.message || tt('tsm.err.generic')
     paying.value = false
   }
 }

@@ -5,33 +5,33 @@
       <div class="sig-editor">
         <div class="sig-toolbar">
           <button type="button" class="sig-btn" @click="exec('bold')"
-                  :class="{ on: state.bold }" title="Qalin (Ctrl+B)"><b>B</b></button>
+                  :class="{ on: state.bold }" :title="tt('signatureModal.boldTitle')"><b>B</b></button>
           <button type="button" class="sig-btn" @click="exec('italic')"
-                  :class="{ on: state.italic }" title="Kursiv (Ctrl+I)"><i>I</i></button>
+                  :class="{ on: state.italic }" :title="tt('signatureModal.italicTitle')"><i>I</i></button>
           <button type="button" class="sig-btn" @click="exec('underline')"
-                  :class="{ on: state.underline }" title="Tag ostida"><u>U</u></button>
+                  :class="{ on: state.underline }" :title="tt('signatureModal.underlineTitle')"><u>U</u></button>
           <button type="button" class="sig-btn" @click="exec('strikeThrough')"
-                  :class="{ on: state.strike }" title="Chizilgan"><s>S</s></button>
+                  :class="{ on: state.strike }" :title="tt('signatureModal.strikeTitle')"><s>S</s></button>
           <span class="sig-sep"/>
           <button type="button" class="sig-btn" @click="toggleBlockquote"
-                  :class="{ on: state.blockquote }" title="Iqtibos (Telegram blockquote)">
-            ❝ Iqtibos
+                  :class="{ on: state.blockquote }" :title="tt('signatureModal.blockquoteTitle')">
+            ❝ {{ tt('signatureModal.blockquoteBtn') }}
           </button>
           <button type="button" class="sig-btn" @click="exec('formatBlock', 'p')"
-                  title="Oddiy paragraf (iqtibosdan chiqish)">¶</button>
+                  :title="tt('signatureModal.paragraphTitle')">¶</button>
           <span class="sig-sep"/>
-          <button type="button" class="sig-btn" @click="openLinkDialog" title="Havola qo'shish">
-            <AppIcon name="Globe" :size="13"/> Havola
+          <button type="button" class="sig-btn" @click="openLinkDialog" :title="tt('signatureModal.addLinkTitle')">
+            <AppIcon name="Globe" :size="13"/> {{ tt('signatureModal.linkBtn') }}
           </button>
-          <button type="button" class="sig-btn" @click="removeLink" title="Havolani olib tashlash">
+          <button type="button" class="sig-btn" @click="removeLink" :title="tt('signatureModal.removeLinkTitle')">
             <AppIcon name="Close" :size="11"/>
           </button>
           <span class="sig-sep"/>
-          <button type="button" class="sig-btn" @click="insertSeparator" title="Vertical chiziq | ajratuvchi">
+          <button type="button" class="sig-btn" @click="insertSeparator" :title="tt('signatureModal.separatorTitle')">
             |
           </button>
-          <button type="button" class="sig-btn" @click="clearAll" title="Hammasini tozalash">
-            Tozalash
+          <button type="button" class="sig-btn" @click="clearAll" :title="tt('signatureModal.clearAllTitle')">
+            {{ tt('signatureModal.clearBtn') }}
           </button>
         </div>
         <div
@@ -48,9 +48,7 @@
 
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:11px;color:var(--muted);">
-          Imzo har bir yuborilgan post oxiriga avtomatik qo'shiladi.
-          Telegram qo'llab-quvvatlaydigan teglar: &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;s&gt;,
-          &lt;a href&gt;, &lt;code&gt;.
+          {{ tt('signatureModal.helpText') }}
         </span>
         <span style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">
           {{ textLength }}/2000
@@ -59,9 +57,9 @@
 
       <!-- Live preview (Telegram-style) -->
       <div v-if="hasContent" class="sig-preview">
-        <div class="sig-preview-label">Telegramda qanday ko'rinadi:</div>
+        <div class="sig-preview-label">{{ tt('signatureModal.previewLabel') }}</div>
         <div class="sig-preview-bubble">
-          <div class="sig-preview-msg">[AI yozgan postingiz matni shu yerda…]</div>
+          <div class="sig-preview-msg">{{ tt('signatureModal.previewMsg') }}</div>
           <div class="sig-preview-sig" v-html="htmlValue"/>
         </div>
       </div>
@@ -73,31 +71,31 @@
 
     <template #footer>
       <AppButton variant="secondary" size="md" @click="close" :disabled="saving">
-        Bekor qilish
+        {{ tt('signatureModal.cancelBtn') }}
       </AppButton>
       <AppButton variant="danger" size="md" :disabled="saving || !hasContent"
-                 @click="clearAndSave" title="Imzoni o'chirish">
+                 @click="clearAndSave" :title="tt('signatureModal.deleteSignatureTitle')">
         <template #icon><AppIcon name="Trash" :size="12"/></template>
-        Imzoni olib tashlash
+        {{ tt('signatureModal.removeSignatureBtn') }}
       </AppButton>
       <AppButton variant="primary" size="md" :loading="saving" @click="save">
         <template #icon><AppIcon name="Check" :size="13"/></template>
-        Saqlash
+        {{ tt('signatureModal.saveBtn') }}
       </AppButton>
     </template>
 
     <!-- Link sub-modal -->
-    <AppModal v-model="linkOpen" title="Havola qo'shish" subtitle="Tanlangan matnga URL biriktiring"
+    <AppModal v-model="linkOpen" :title="tt('signatureModal.addLinkTitle')" :subtitle="tt('signatureModal.linkModalSubtitle')"
               width="480px">
       <div style="display:flex;flex-direction:column;gap:12px;">
         <label style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">Matn</span>
-          <input v-model="linkForm.text" placeholder="Masalan: RASMIY"
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('signatureModal.linkTextLabel') }}</span>
+          <input v-model="linkForm.text" :placeholder="tt('signatureModal.linkTextPlaceholder')"
                  style="padding:9px 12px;border:1px solid var(--border-2);border-radius:7px;
                         background:var(--bg);color:var(--text);font-size:13px;outline:none;"/>
         </label>
         <label style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">URL</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('signatureModal.linkUrlLabel') }}</span>
           <input v-model="linkForm.url" placeholder="https://t.me/yourchannel"
                  type="url" autocomplete="off"
                  style="padding:9px 12px;border:1px solid var(--border-2);border-radius:7px;
@@ -106,10 +104,10 @@
         </label>
       </div>
       <template #footer>
-        <AppButton variant="secondary" size="md" @click="linkOpen = false">Bekor</AppButton>
+        <AppButton variant="secondary" size="md" @click="linkOpen = false">{{ tt('signatureModal.linkCancelBtn') }}</AppButton>
         <AppButton variant="primary" size="md" @click="applyLink"
                    :disabled="!linkForm.text.trim() || !linkForm.url.trim()">
-          Qo'shish
+          {{ tt('signatureModal.linkAddBtn') }}
         </AppButton>
       </template>
     </AppModal>
@@ -121,6 +119,11 @@ import { ref, computed, watch, nextTick, reactive } from 'vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -152,10 +155,10 @@ const state = reactive({
 
 const title = computed(() =>
   props.channel
-    ? `Kanal imzosi — ${props.channel.display_name || props.channel.username || 'kanal'}`
-    : 'Kanal imzosi'
+    ? tt('signatureModal.titleWithChannel', { name: props.channel.display_name || props.channel.username || tt('signatureModal.channelFallback') })
+    : tt('signatureModal.title')
 )
-const subtitle = "Har bir yuborilayotgan post oxiriga qo'shiladigan imzo. Havolalar qo'llab-quvvatlanadi."
+const subtitle = computed(() => tt('signatureModal.subtitle'))
 
 const hasContent = computed(() => !!htmlValue.value.replace(/<[^>]+>/g, '').trim())
 const textLength = computed(() => htmlValue.value.length)
@@ -267,7 +270,7 @@ function removeLink() {
 }
 
 function clearAll() {
-  if (!confirm("Imzo matni to'liq tozalansin?")) return
+  if (!confirm(tt('signatureModal.confirmClear'))) return
   if (editorRef.value) editorRef.value.innerHTML = ''
   htmlValue.value = ''
 }
@@ -283,21 +286,21 @@ function escapeAttr(s) {
 async function save() {
   error.value = ''
   if (htmlValue.value.length > 2000) {
-    error.value = '2000 belgidan oshmasin'
+    error.value = tt('signatureModal.errorMaxLength')
     return
   }
   saving.value = true
   try {
     await emit('save', htmlValue.value.trim() || null)
   } catch (e) {
-    error.value = e?.message || "Saqlashda xato"
+    error.value = e?.message || tt('signatureModal.errorSave')
   } finally {
     saving.value = false
   }
 }
 
 async function clearAndSave() {
-  if (!confirm("Imzo butunlay olib tashlansin?")) return
+  if (!confirm(tt('signatureModal.confirmRemove'))) return
   htmlValue.value = ''
   saving.value = true
   try {

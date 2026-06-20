@@ -20,10 +20,10 @@
           {{ post.channel_name }}
         </span>
         <span v-if="post.flow_stage === 'preview'" class="qpc-chip qpc-chip-stage">
-          1-bosqich · taklif
+          {{ tt('qpc.stage1') }}
         </span>
         <span v-else-if="post.flow_stage === 'publish'" class="qpc-chip qpc-chip-stage2">
-          2-bosqich · yakuniy
+          {{ tt('qpc.stage2') }}
         </span>
         <span v-if="post.prepared_at" class="qpc-chip qpc-chip-muted">
           {{ timeAgo(post.prepared_at) }}
@@ -40,11 +40,11 @@
       <!-- Sent/approved status label -->
       <div v-if="activeTab === 'approved'" class="qpc-status qpc-status-approved">
         <AppIcon name="Check" :size="11"/>
-        Tasdiqlandi · {{ formatDate(post.approved_at) }}
+        {{ tt('qpc.approved', { date: formatDate(post.approved_at) }) }}
       </div>
       <div v-else-if="activeTab === 'sent'" class="qpc-status qpc-status-sent">
         <AppIcon name="Send" :size="11"/>
-        Yuborildi
+        {{ tt('qpc.sent') }}
       </div>
     </div>
 
@@ -53,21 +53,21 @@
       <!-- 1-bosqich: taklif -->
       <template v-if="post.flow_stage === 'preview'">
         <button class="qpc-lbtn qpc-lbtn-danger" :disabled="post._acting" @click="$emit('reject-preview', post)">
-          ❌ Bekor
+          {{ tt('qpc.cancel') }}
         </button>
         <button class="qpc-lbtn qpc-lbtn-success" :disabled="post._acting" @click="$emit('approve-preview', post)">
           <span v-if="post._acting" class="cp-spinner-xs"/>
-          <template v-else>✍️ Muxbirda yozish</template>
+          <template v-else>{{ tt('qpc.write') }}</template>
         </button>
       </template>
       <!-- 2-bosqich: yakuniy -->
       <template v-else-if="post.flow_stage === 'publish'">
         <button class="qpc-lbtn qpc-lbtn-danger" :disabled="post._acting" @click="$emit('decline-publish', post)">
-          🚫 Chiqarmaslik (50 kredit)
+          {{ tt('qpc.decline') }}
         </button>
         <button class="qpc-lbtn qpc-lbtn-success" :disabled="post._acting" @click="$emit('confirm-publish', post)">
           <span v-if="post._acting" class="cp-spinner-xs"/>
-          <template v-else>📢 Kanalga chiqarish</template>
+          <template v-else>{{ tt('qpc.publish') }}</template>
         </button>
       </template>
       <!-- Oddiy (approval) rejim -->
@@ -87,6 +87,11 @@
 <script setup>
 import { computed } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   post: { type: Object, required: true },

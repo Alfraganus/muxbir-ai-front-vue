@@ -1,14 +1,14 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;max-width:900px;">
-    <PageHeader title="Click to'lov sinovi" subtitle="Har bir tur 1000 so'mlik haqiqiy to'lov yaratadi" />
+    <PageHeader :title="tt('clientClickTest.title')" :subtitle="tt('clientClickTest.subtitle')" />
 
     <AppPanel :padding="14">
       <div style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--muted);line-height:1.55;">
         <AppIcon name="Bolt" :size="14" style="margin-top:1px;flex-shrink:0;"/>
         <span>
-          Har bir tugma bosilganda <strong style="color:var(--text);">yangi 1000 so'mlik</strong> PENDING to'lov yaratiladi va Click to'lov sahifasiga o'tiladi.
-          To'lov tugagach Click <code>prepare</code> → <code>complete</code> chaqiradi va to'lov holati <code>completed</code> bo'ladi.
-          Sinov uchun Click Up ilovasi kerak.
+          {{ tt('clientClickTest.infoBefore') }} <strong style="color:var(--text);">{{ tt('clientClickTest.infoStrong') }}</strong> {{ tt('clientClickTest.infoMid') }}
+          {{ tt('clientClickTest.infoFlow1') }} <code>prepare</code> → <code>complete</code> {{ tt('clientClickTest.infoFlow2') }} <code>completed</code> {{ tt('clientClickTest.infoFlow3') }}
+          {{ tt('clientClickTest.infoClickUp') }}
         </span>
       </div>
     </AppPanel>
@@ -23,7 +23,7 @@
           <div style="font-size:13.5px;font-weight:600;">{{ t.name }}</div>
           <div style="font-size:11.5px;color:var(--muted);line-height:1.5;flex:1;">{{ t.desc }}</div>
           <AppButton variant="primary" size="md" :loading="loading===t.id" @click="runType(t.id)">
-            <template #icon><AppIcon name="Coin" :size="13"/></template>1000 so'm to'lash
+            <template #icon><AppIcon name="Coin" :size="13"/></template>{{ tt('clientClickTest.payBtn') }}
           </AppButton>
         </div>
       </AppPanel>
@@ -32,27 +32,27 @@
     <span v-if="err" style="font-size:12.5px;color:var(--danger);">{{ err }}</span>
 
     <!-- Havola turi natijasi -->
-    <AppPanel v-if="last && lastType==='link'" title="To'lov havolasi" :padding="16">
+    <AppPanel v-if="last && lastType==='link'" :title="tt('clientClickTest.payLinkTitle')" :padding="16">
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div style="font-size:11px;color:var(--muted);">Payment ID: <span class="mono">{{ last.payment_id }}</span></div>
         <div style="display:flex;gap:8px;align-items:center;">
           <input :value="last.pay_url" readonly
             style="flex:1;font-size:11.5px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2);font-family:var(--font-mono);"/>
           <AppButton variant="secondary" size="md" @click="copyLink(last.pay_url)">
-            {{ copied ? 'Nusxalandi' : 'Nusxalash' }}
+            {{ copied ? tt('clientClickTest.copied') : tt('clientClickTest.copy') }}
           </AppButton>
-          <AppButton variant="primary" size="md" @click="openLink(last.pay_url)">Ochish</AppButton>
+          <AppButton variant="primary" size="md" @click="openLink(last.pay_url)">{{ tt('clientClickTest.open') }}</AppButton>
         </div>
-        <div style="font-size:11px;color:var(--muted);">Bu havolani telefonда ochib Click Up orqali to'lashingiz mumkin.</div>
+        <div style="font-size:11px;color:var(--muted);">{{ tt('clientClickTest.payLinkHint') }}</div>
       </div>
     </AppPanel>
 
     <!-- Holatni tekshirish -->
-    <AppPanel title="To'lov holatini tekshirish" :padding="16">
+    <AppPanel :title="tt('clientClickTest.checkTitle')" :padding="16">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <input v-model="checkId" placeholder="Payment ID (bo'sh — oxirgisi)"
+        <input v-model="checkId" :placeholder="tt('clientClickTest.checkPlaceholder')"
           style="flex:1;min-width:240px;font-size:12px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2);font-family:var(--font-mono);"/>
-        <AppButton variant="secondary" size="md" :loading="checking" @click="checkStatus">Tekshirish</AppButton>
+        <AppButton variant="secondary" size="md" :loading="checking" @click="checkStatus">{{ tt('clientClickTest.checkBtn') }}</AppButton>
       </div>
       <div v-if="checkResult" style="margin-top:12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;">
         <template v-if="checkResult.error">
@@ -60,20 +60,20 @@
         </template>
         <template v-else>
           <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">ID</span><span class="mono">{{ checkResult.id }}</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:var(--muted);">Holat</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:var(--muted);">{{ tt('clientClickTest.statusLabel') }}</span>
             <AppBadge :tone="statusTone(checkResult.status)">{{ checkResult.status }}</AppBadge>
           </div>
-          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Summa</span><span class="tabular">{{ checkResult.amount }} so'm</span></div>
-          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Usul</span><span>{{ checkResult.method }}</span></div>
-          <div v-if="checkResult.transaction_id" style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Click trans</span><span class="mono">{{ checkResult.transaction_id }}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">{{ tt('clientClickTest.amountLabel') }}</span><span class="tabular">{{ checkResult.amount }} {{ tt('clientClickTest.sum') }}</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">{{ tt('clientClickTest.methodLabel') }}</span><span>{{ checkResult.method }}</span></div>
+          <div v-if="checkResult.transaction_id" style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">{{ tt('clientClickTest.clickTransLabel') }}</span><span class="mono">{{ checkResult.transaction_id }}</span></div>
         </template>
       </div>
     </AppPanel>
 
     <!-- Kabinet sozlamalari -->
-    <AppPanel title="merchant.click.uz uchun sozlamalar" :padding="16">
+    <AppPanel :title="tt('clientClickTest.merchantTitle')" :padding="16">
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;">
-        <div style="color:var(--muted);">Сервисы → qalam ikonkasi → quyidagi URL'larni yozing:</div>
+        <div style="color:var(--muted);">{{ tt('clientClickTest.merchantHint') }}</div>
         <div style="display:flex;justify-content:space-between;gap:8px;"><span style="color:var(--muted);">Prepare URL</span><span class="mono" style="word-break:break-all;text-align:right;">{{ prepareUrl }}</span></div>
         <div style="display:flex;justify-content:space-between;gap:8px;"><span style="color:var(--muted);">Complete URL</span><span class="mono" style="word-break:break-all;text-align:right;">{{ completeUrl }}</span></div>
         <div v-if="last?.params" style="display:flex;justify-content:space-between;gap:8px;margin-top:4px;"><span style="color:var(--muted);">service_id</span><span class="mono">{{ last.params.service_id }}</span></div>
@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
@@ -92,12 +92,17 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { paymentsApi } from '@/api/payments.js'
 import { API_BASE } from '@/api/base.js'
+import { useAppStore } from '@/stores/app.js'
 
-const types = [
-  { id: 'redirect', name: 'Yo\'naltirish', icon: 'Arrow', desc: 'JS orqali Click to\'lov sahifasiga o\'tadi (window.location).' },
-  { id: 'form', name: 'Click tugma (form)', icon: 'Bolt', desc: 'HTML GET-form orqali Click sahifasiga yuboriladi — saytga o\'rnatiladigan tugma usuli.' },
-  { id: 'link', name: 'Havola / QR', icon: 'Send', desc: 'To\'lov havolasini ko\'rsatadi — telefonda ochib yoki ulashib to\'lash uchun.' },
-]
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
+
+const types = computed(() => [
+  { id: 'redirect', name: tt('clientClickTest.typeRedirectName'), icon: 'Arrow', desc: tt('clientClickTest.typeRedirectDesc') },
+  { id: 'form', name: tt('clientClickTest.typeFormName'), icon: 'Bolt', desc: tt('clientClickTest.typeFormDesc') },
+  { id: 'link', name: tt('clientClickTest.typeLinkName'), icon: 'Send', desc: tt('clientClickTest.typeLinkDesc') },
+])
 
 const loading = ref(null)
 const err = ref('')
@@ -122,7 +127,7 @@ async function runType(type) {
     }
     // 'link' — natija pastda ko'rsatiladi
   } catch (e) {
-    err.value = e?.response?.data?.message || e.message || 'Xatolik yuz berdi'
+    err.value = e?.response?.data?.message || e.message || tt('clientClickTest.errGeneric')
   } finally {
     loading.value = null
   }
@@ -162,12 +167,12 @@ const checkResult = ref(null)
 
 async function checkStatus() {
   const id = checkId.value.trim() || last.value?.payment_id
-  if (!id) { checkResult.value = { error: 'Payment ID kiriting yoki avval to\'lov yarating' }; return }
+  if (!id) { checkResult.value = { error: tt('clientClickTest.errNoId') }; return }
   checking.value = true
   try {
     checkResult.value = await paymentsApi.getOne(id)
   } catch (e) {
-    checkResult.value = { error: e?.response?.data?.message || 'To\'lov topilmadi' }
+    checkResult.value = { error: e?.response?.data?.message || tt('clientClickTest.errNotFound') }
   } finally {
     checking.value = false
   }

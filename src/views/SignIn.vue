@@ -113,6 +113,7 @@
     <section class="signin-form-wrap">
       <div aria-hidden class="signin-form-dots"/>
       <div aria-hidden class="signin-form-glow-1"/>
+      <div aria-hidden class="signin-form-glow-2"/>
 
       <header class="signin-header">
         <div class="signin-status">
@@ -133,11 +134,6 @@
       </header>
 
       <div class="signin-center">
-        <!-- brand logo above card -->
-        <div class="signin-form-logo">
-          <img :src="logoLockup" alt="Muxbir.ai" class="signin-form-logo-img"/>
-        </div>
-
         <div class="signin-card">
           <div aria-hidden class="signin-card-accent"/>
 
@@ -149,7 +145,7 @@
           </p>
 
           <!-- Method tabs -->
-          <div class="signin-tabs">
+          <div v-if="methods.length > 1" class="signin-tabs">
             <button v-for="m in methods" :key="m.id"
               @click="method = m.id"
               class="signin-tab" :class="{ active: method === m.id }">
@@ -167,9 +163,9 @@
           <!-- Password method -->
           <div v-if="method === 'password'" style="display:flex;flex-direction:column;gap:13px;">
             <div class="signin-field">
-              <label class="signin-field-label">{{ t('signin.email') }}</label>
-              <AppInput v-model="email" :placeholder="t('signin.emailPlaceholder')" type="email">
-                <template #icon><AppIcon name="Globe" :size="12" style="color:var(--muted);"/></template>
+              <label class="signin-field-label">{{ t('signin.username') }}</label>
+              <AppInput v-model="username" :placeholder="t('signin.usernamePlaceholder')" type="text" :style="signinInputStyle">
+                <template #icon><AppIcon name="Users" :size="12" style="color:var(--muted);"/></template>
               </AppInput>
             </div>
             <div class="signin-field">
@@ -177,7 +173,7 @@
                 <span>{{ t('signin.password') }}</span>
                 <a class="signin-link" @click.prevent>{{ t('signin.forgotPassword') }}</a>
               </label>
-              <AppInput v-model="password" :type="showPw ? 'text' : 'password'" placeholder="••••••••••••">
+              <AppInput v-model="password" :type="showPw ? 'text' : 'password'" placeholder="••••••••••••" :style="signinInputStyle">
                 <template #suffix>
                   <button @click="showPw = !showPw" class="signin-eye">
                     <AppIcon name="Eye" :size="13"/>
@@ -189,7 +185,7 @@
               <input type="checkbox" v-model="remember" style="accent-color:var(--accent);"/>
               <span>{{ t('signin.rememberMe') }}</span>
             </label>
-            <AppButton variant="primary" size="lg" :loading="loading" :style="{ width: '100%', marginTop: '4px', justifyContent: 'center' }" @click="onLogin">
+            <AppButton class="signin-cta" variant="primary" size="lg" :loading="loading" :style="signinPrimaryStyle" @click="onLogin">
               {{ t('signin.loginBtn') }}
               <template #icon-right><AppIcon name="Arrow" :size="14"/></template>
             </AppButton>
@@ -200,7 +196,7 @@
             <template v-if="!magicSent">
               <div class="signin-field">
                 <label class="signin-field-label">{{ t('signin.email') }}</label>
-                <AppInput v-model="email" :placeholder="t('signin.emailPlaceholder')" type="email"/>
+                <AppInput v-model="email" :placeholder="t('signin.emailPlaceholder')" type="email" :style="signinInputStyle"/>
                 <span class="signin-field-hint">{{ t('signin.magicHint') }}</span>
               </div>
               <div class="signin-magic-note">
@@ -209,7 +205,7 @@
                   {{ t('signin.magicNote') }}
                 </div>
               </div>
-              <AppButton variant="primary" size="lg" :loading="loading" :style="{ width: '100%', marginTop: '4px', justifyContent: 'center' }" @click="onSendMagicLink">
+              <AppButton class="signin-cta" variant="primary" size="lg" :loading="loading" :style="signinPrimaryStyle" @click="onSendMagicLink">
                 {{ t('signin.sendLink') }}
                 <template #icon-right><AppIcon name="Arrow" :size="14"/></template>
               </AppButton>
@@ -267,7 +263,6 @@ import { DICT } from '@/i18n/index.js'
 import { useAppStore } from '@/stores/app.js'
 import { useAuthStore } from '@/stores/auth.js'
 import logoWordmarkWhite from '@/assets/muxbir-wordmark-white.png'
-import logoLockup from '@/assets/muxbir-logo.png'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -278,7 +273,8 @@ const t = (key) => (DICT[lang.value]?.[key]) ?? DICT.uz[key] ?? key
 
 const method = ref('password')
 const showPw = ref(false)
-const email = ref('')
+const username = ref('')
+const email = ref('') // magic link uchun (hozircha yashirilgan)
 const password = ref('')
 const remember = ref(true)
 const loading = ref(false)
@@ -295,8 +291,30 @@ async function goToSignup() {
 
 const methods = [
   { id: 'password', labelKey: 'signin.methodPassword', icon: 'Shield' },
-  { id: 'magic',    labelKey: 'signin.methodMagic',    icon: 'Sparkle' },
+  // Magic link hozircha yashirilgan
+  // { id: 'magic', labelKey: 'signin.methodMagic', icon: 'Sparkle' },
 ]
+
+// Sign-in formasi uchun kattaroq, brendga mos input/CTA uslublari (AppInput/AppButton
+// inline style'larini ustidan merge qiladi — global komponentlarga tegmaydi).
+const signinInputStyle = {
+  height: '44px',
+  borderRadius: '11px',
+  padding: '0 13px',
+  gap: '8px',
+}
+const signinPrimaryStyle = {
+  width: '100%',
+  marginTop: '6px',
+  justifyContent: 'center',
+  height: '46px',
+  fontSize: '13.5px',
+  fontWeight: '600',
+  borderRadius: '12px',
+  background: 'linear-gradient(135deg, var(--mx-blue), var(--mx-sky))',
+  border: '1px solid color-mix(in oklab, var(--mx-blue) 65%, black)',
+  boxShadow: '0 12px 26px -12px var(--mx-glow), 0 1px 0 rgba(255,255,255,0.25) inset',
+}
 
 // ── Live AI pipeline (topildi → AI tahrir → tarjima → joylandi) ──────
 const pipeStages = [
@@ -322,11 +340,11 @@ let pipeTimer = null
 
 async function onLogin() {
   error.value = ''
-  if (!email.value) { error.value = t('signin.err.noEmail'); return }
+  if (!username.value) { error.value = t('signin.err.noUsername'); return }
   if (!password.value) { error.value = t('signin.err.noPassword'); return }
   loading.value = true
   try {
-    const data = await authApi.login({ email: email.value, password: password.value })
+    const data = await authApi.login({ username: username.value.trim(), password: password.value })
     authStore.setTokens(data)
     const target = homePathForRole(resolveRole(data.user))
     console.log('[signin] login response:', data, 'target:', target)
@@ -566,7 +584,10 @@ async function onSendMagicLink() {
   position: relative;
   display: flex; flex-direction: column;
   padding: 26px 48px 22px;
-  background: var(--bg);
+  background:
+    radial-gradient(1100px 720px at 88% -12%, color-mix(in oklab, var(--mx-sky) 11%, transparent), transparent 58%),
+    radial-gradient(820px 560px at -8% 112%, color-mix(in oklab, var(--mx-cyan) 9%, transparent), transparent 55%),
+    var(--bg);
   overflow: hidden;
 }
 .signin-form-dots {
@@ -583,6 +604,13 @@ async function onSendMagicLink() {
   width: 360px; height: 360px; border-radius: 999px;
   background: radial-gradient(circle, color-mix(in oklab, var(--mx-blue) 16%, transparent) 0%, transparent 62%);
   filter: blur(18px);
+  pointer-events: none;
+}
+.signin-form-glow-2 {
+  position: absolute; bottom: -150px; left: -110px;
+  width: 380px; height: 380px; border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in oklab, var(--mx-cyan) 14%, transparent) 0%, transparent 60%);
+  filter: blur(22px);
   pointer-events: none;
 }
 
@@ -621,23 +649,27 @@ async function onSendMagicLink() {
   max-width: 416px; width: 100%; margin: 0 auto;
   padding: 20px 0;
 }
-.signin-form-logo {
-  display: flex; align-items: center; margin-bottom: 20px;
-}
-.signin-form-logo-img {
-  height: 52px; width: auto; display: block; user-select: none;
-}
-
 .signin-card {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 26px 26px 24px;
+  padding: 28px 28px 26px;
   box-shadow:
-    0 30px 80px -28px rgba(8,24,52,0.22),
-    0 8px 24px -12px rgba(8,24,52,0.10),
-    0 0 0 1px rgba(255,255,255,0.55) inset;
+    0 40px 90px -30px rgba(8,24,52,0.28),
+    0 12px 30px -14px rgba(8,24,52,0.14),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
   position: relative;
+  animation: signinCardIn .55s cubic-bezier(.34,1.18,.64,1) both;
+}
+/* Karta ortidagi yumshoq brend nuri (suzuvchi ko'rinish) */
+.signin-card::after {
+  content: ''; position: absolute; inset: -36px -26px -16px; z-index: -1;
+  background: radial-gradient(64% 70% at 50% 0%, color-mix(in oklab, var(--mx-blue) 20%, transparent), transparent 72%);
+  filter: blur(26px); pointer-events: none;
+}
+@keyframes signinCardIn {
+  from { opacity: 0; transform: translateY(12px) scale(.99); }
+  to   { opacity: 1; transform: none; }
 }
 .signin-card-accent {
   position: absolute; top: -1px; left: 26px; right: 26px; height: 2px;
@@ -654,27 +686,48 @@ async function onSendMagicLink() {
   margin-bottom: 16px;
 }
 .signin-tab {
-  flex: 1; height: 30px;
+  flex: 1; height: 32px;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   font-size: 12px; font-weight: 500;
   background: transparent;
   color: var(--muted);
   border: 1px solid transparent;
   border-radius: 7px; cursor: pointer;
+  transition: color .18s ease, background .18s ease, box-shadow .18s ease;
 }
+.signin-tab:hover:not(.active) { color: var(--text-2); }
 .signin-tab.active {
   background: var(--panel);
-  color: var(--text);
-  border-color: var(--border);
-  box-shadow: var(--shadow-sm);
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--mx-blue) 28%, var(--border));
+  box-shadow: 0 2px 8px -3px color-mix(in oklab, var(--mx-blue) 35%, transparent);
 }
 
 /* Field */
-.signin-field { display: flex; flex-direction: column; gap: 5px; }
+.signin-field { display: flex; flex-direction: column; gap: 6px; }
+/* AppInput wrapper (root div) — silliq fokus + brend halqa */
+.signin-field :deep(div) {
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.signin-field :deep(div:focus-within) {
+  border-color: var(--mx-blue) !important;
+  box-shadow: 0 0 0 3.5px color-mix(in oklab, var(--mx-blue) 16%, transparent);
+}
 .signin-field-label {
   font-size: 11.5px; color: var(--text-2); font-weight: 500;
   width: 100%;
 }
+
+/* Brend CTA — gradient tugma uchun hover lift / glow */
+.signin-card :deep(.signin-cta) {
+  transition: transform .15s ease, box-shadow .25s ease, filter .15s ease;
+}
+.signin-card :deep(.signin-cta:hover) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 16px 32px -12px var(--mx-glow), 0 1px 0 rgba(255,255,255,0.25) inset;
+}
+.signin-card :deep(.signin-cta:active) { transform: translateY(0); }
 .signin-field-hint {
   font-size: 11px; color: var(--muted); margin-top: 2px;
 }

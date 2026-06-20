@@ -1,10 +1,10 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
-    <PageHeader title="Spravochniklar" subtitle="Biznes turlari, platformalar va manba kategoriyalarini boshqarish">
+    <PageHeader :title="tt('adminReferences.title')" :subtitle="tt('adminReferences.subtitle')">
       <template #right>
         <AppButton variant="primary" size="md" @click="openCreate">
           <template #icon><AppIcon name="Plus" :size="13"/></template>
-          Yangi qo'shish
+          {{ tt('adminReferences.addNew') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -36,14 +36,14 @@
     <div style="display:flex;gap:8px;align-items:center;">
       <div style="flex:1;display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r-sm);">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input v-model="search" placeholder="Qidirish..." style="flex:1;border:none;outline:none;background:transparent;font-size:13px;color:var(--text);" />
+        <input v-model="search" :placeholder="tt('adminReferences.searchPlaceholder')" style="flex:1;border:none;outline:none;background:transparent;font-size:13px;color:var(--text);" />
         <button v-if="search" @click="search=''" style="background:transparent;border:none;cursor:pointer;color:var(--muted);padding:0;display:inline-flex;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
       <AppButton variant="secondary" size="md" @click="loadData">
         <template #icon><AppIcon name="Sort" :size="13"/></template>
-        Yangilash
+        {{ tt('adminReferences.refresh') }}
       </AppButton>
     </div>
 
@@ -52,13 +52,13 @@
       <!-- Loading -->
       <div v-if="loading" style="padding:48px;text-align:center;color:var(--muted);font-size:13px;">
         <div style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 8px;"></div>
-        Yuklanmoqda...
+        {{ tt('adminReferences.loading') }}
       </div>
 
       <!-- Error -->
       <div v-else-if="error" style="padding:48px;text-align:center;color:var(--danger);font-size:13px;">
         <div style="margin-bottom:8px;">{{ error }}</div>
-        <AppButton variant="secondary" size="md" @click="loadData">Qayta urinish</AppButton>
+        <AppButton variant="secondary" size="md" @click="loadData">{{ tt('adminReferences.retry') }}</AppButton>
       </div>
 
       <!-- Business Types table -->
@@ -66,7 +66,7 @@
         <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
           <thead>
             <tr>
-              <th v-for="h in ['Slug','Nomi (uz)','Nomi (ru)','Nomi (en)','Tartib','Holat','']" :key="h"
+              <th v-for="h in [tt('adminReferences.colSlug'),tt('adminReferences.colNameUz'),tt('adminReferences.colNameRu'),tt('adminReferences.colNameEn'),tt('adminReferences.colOrder'),tt('adminReferences.colStatus'),'']" :key="h"
                 style="text-align:left;padding:10px 14px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:1px solid var(--border-2);">
                 {{ h }}
               </th>
@@ -74,7 +74,7 @@
           </thead>
           <tbody>
             <tr v-if="filteredItems.length===0">
-              <td colspan="7" style="padding:32px;text-align:center;color:var(--muted);">Ma'lumot topilmadi</td>
+              <td colspan="7" style="padding:32px;text-align:center;color:var(--muted);">{{ tt('adminReferences.noData') }}</td>
             </tr>
             <tr v-for="item in filteredItems" :key="item.id"
               style="border-top:1px solid var(--border-2);transition:background .1s;"
@@ -95,18 +95,18 @@
                   color: item.is_active ? 'var(--success)' : 'var(--muted)',
                 }">
                   <span :style="{ width:'5px',height:'5px',borderRadius:'50%',background:'currentColor',display:'inline-block' }"></span>
-                  {{ item.is_active ? 'Faol' : "Nofaol" }}
+                  {{ item.is_active ? tt('adminReferences.statusActive') : tt('adminReferences.statusInactive') }}
                 </span>
               </td>
               <td style="padding:10px 14px;text-align:right;">
                 <div style="display:inline-flex;gap:4px;">
                   <button @click="openEdit(item)"
                     style="height:28px;padding:0 10px;border-radius:6px;border:1px solid var(--border);background:var(--panel);cursor:pointer;font-size:12px;color:var(--text-2);">
-                    Tahrirlash
+                    {{ tt('adminReferences.edit') }}
                   </button>
                   <button @click="confirmDelete(item)"
                     style="height:28px;padding:0 10px;border-radius:6px;border:1px solid color-mix(in oklab,var(--danger) 30%,transparent);background:color-mix(in oklab,var(--danger) 8%,transparent);cursor:pointer;font-size:12px;color:var(--danger);">
-                    O'chirish
+                    {{ tt('adminReferences.delete') }}
                   </button>
                 </div>
               </td>
@@ -120,7 +120,7 @@
         <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
           <thead>
             <tr>
-              <th v-for="h in ['Slug','Nomi (uz)','Nomi (ru)','Mavjud','Holat','']" :key="h"
+              <th v-for="h in [tt('adminReferences.colSlug'),tt('adminReferences.colNameUz'),tt('adminReferences.colNameRu'),tt('adminReferences.colAvailable'),tt('adminReferences.colStatus'),'']" :key="h"
                 style="text-align:left;padding:10px 14px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:1px solid var(--border-2);">
                 {{ h }}
               </th>
@@ -128,7 +128,7 @@
           </thead>
           <tbody>
             <tr v-if="filteredItems.length===0">
-              <td colspan="6" style="padding:32px;text-align:center;color:var(--muted);">Ma'lumot topilmadi</td>
+              <td colspan="6" style="padding:32px;text-align:center;color:var(--muted);">{{ tt('adminReferences.noData') }}</td>
             </tr>
             <tr v-for="item in filteredItems" :key="item.id"
               style="border-top:1px solid var(--border-2);transition:background .1s;"
@@ -156,24 +156,24 @@
                   padding:'2px 8px',borderRadius:'999px',fontSize:'11.5px',fontWeight:500,
                   background: item.is_available ? 'color-mix(in oklab,var(--success) 12%,transparent)' : 'color-mix(in oklab,var(--muted) 12%,transparent)',
                   color: item.is_available ? 'var(--success)' : 'var(--muted)',
-                }">{{ item.is_available ? 'Faol' : 'Tez kunda' }}</span>
+                }">{{ item.is_available ? tt('adminReferences.statusActive') : tt('adminReferences.comingSoon') }}</span>
               </td>
               <td style="padding:10px 14px;">
                 <span :style="{
                   padding:'2px 8px',borderRadius:'999px',fontSize:'11.5px',fontWeight:500,
                   background: item.is_active ? 'color-mix(in oklab,var(--success) 12%,transparent)' : 'color-mix(in oklab,var(--muted) 12%,transparent)',
                   color: item.is_active ? 'var(--success)' : 'var(--muted)',
-                }">{{ item.is_active ? 'Yoqilgan' : 'O\'chirilgan' }}</span>
+                }">{{ item.is_active ? tt('adminReferences.enabled') : tt('adminReferences.disabled') }}</span>
               </td>
               <td style="padding:10px 14px;text-align:right;">
                 <div style="display:inline-flex;gap:4px;">
                   <button @click="openEdit(item)"
                     style="height:28px;padding:0 10px;border-radius:6px;border:1px solid var(--border);background:var(--panel);cursor:pointer;font-size:12px;color:var(--text-2);">
-                    Tahrirlash
+                    {{ tt('adminReferences.edit') }}
                   </button>
                   <button @click="confirmDelete(item)"
                     style="height:28px;padding:0 10px;border-radius:6px;border:1px solid color-mix(in oklab,var(--danger) 30%,transparent);background:color-mix(in oklab,var(--danger) 8%,transparent);cursor:pointer;font-size:12px;color:var(--danger);">
-                    O'chirish
+                    {{ tt('adminReferences.delete') }}
                   </button>
                 </div>
               </td>
@@ -187,7 +187,7 @@
         <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
           <thead>
             <tr>
-              <th v-for="h in ['Slug','Nomi (uz)','Nomi (ru)','Nomi (en)','Tartib','Holat','']" :key="h"
+              <th v-for="h in [tt('adminReferences.colSlug'),tt('adminReferences.colNameUz'),tt('adminReferences.colNameRu'),tt('adminReferences.colNameEn'),tt('adminReferences.colOrder'),tt('adminReferences.colStatus'),'']" :key="h"
                 style="text-align:left;padding:10px 14px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:1px solid var(--border-2);">
                 {{ h }}
               </th>
@@ -195,7 +195,7 @@
           </thead>
           <tbody>
             <tr v-if="filteredItems.length===0">
-              <td colspan="7" style="padding:32px;text-align:center;color:var(--muted);">Ma'lumot topilmadi</td>
+              <td colspan="7" style="padding:32px;text-align:center;color:var(--muted);">{{ tt('adminReferences.noData') }}</td>
             </tr>
             <tr v-for="item in filteredItems" :key="item.id"
               style="border-top:1px solid var(--border-2);transition:background .1s;"
@@ -213,17 +213,17 @@
                   padding:'2px 8px',borderRadius:'999px',fontSize:'11.5px',fontWeight:500,
                   background: item.is_active ? 'color-mix(in oklab,var(--success) 12%,transparent)' : 'color-mix(in oklab,var(--muted) 12%,transparent)',
                   color: item.is_active ? 'var(--success)' : 'var(--muted)',
-                }">{{ item.is_active ? 'Faol' : "Nofaol" }}</span>
+                }">{{ item.is_active ? tt('adminReferences.statusActive') : tt('adminReferences.statusInactive') }}</span>
               </td>
               <td style="padding:10px 14px;text-align:right;">
                 <div style="display:inline-flex;gap:4px;">
                   <button @click="openEdit(item)"
                     style="height:28px;padding:0 10px;border-radius:6px;border:1px solid var(--border);background:var(--panel);cursor:pointer;font-size:12px;color:var(--text-2);">
-                    Tahrirlash
+                    {{ tt('adminReferences.edit') }}
                   </button>
                   <button @click="confirmDelete(item)"
                     style="height:28px;padding:0 10px;border-radius:6px;border:1px solid color-mix(in oklab,var(--danger) 30%,transparent);background:color-mix(in oklab,var(--danger) 8%,transparent);cursor:pointer;font-size:12px;color:var(--danger);">
-                    O'chirish
+                    {{ tt('adminReferences.delete') }}
                   </button>
                 </div>
               </td>
@@ -234,7 +234,7 @@
     </AppPanel>
 
     <!-- ─── CREATE / EDIT MODAL ─────────────────────────── -->
-    <AppModal v-model="showModal" :title="editingItem ? 'Tahrirlash' : 'Yangi qo\'shish'" :subtitle="currentTabLabel">
+    <AppModal v-model="showModal" :title="editingItem ? tt('adminReferences.edit') : tt('adminReferences.addNew')" :subtitle="currentTabLabel">
       <div style="display:flex;flex-direction:column;gap:14px;">
         <!-- Slug -->
         <FormField label="Slug" :error="formErrors.slug" required>
@@ -246,30 +246,30 @@
 
         <!-- i18n names -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-          <FormField label="Nomi (uz)" :error="formErrors['name_i18n.uz']" required>
+          <FormField :label="tt('adminReferences.colNameUz')" :error="formErrors['name_i18n.uz']" required>
             <FieldInput v-model="form.name_i18n.uz" placeholder="E-tijorat" />
           </FormField>
-          <FormField label="Nomi (ru)" :error="formErrors['name_i18n.ru']">
+          <FormField :label="tt('adminReferences.colNameRu')" :error="formErrors['name_i18n.ru']">
             <FieldInput v-model="form.name_i18n.ru" placeholder="Э-коммерция" />
           </FormField>
-          <FormField label="Nomi (en)" :error="formErrors['name_i18n.en']">
+          <FormField :label="tt('adminReferences.colNameEn')" :error="formErrors['name_i18n.en']">
             <FieldInput v-model="form.name_i18n.en" placeholder="E-commerce" />
           </FormField>
         </div>
 
         <!-- Platform-specific: is_available -->
         <template v-if="activeTab==='platforms'">
-          <FormField label="Icon nomi (ixtiyoriy)">
+          <FormField :label="tt('adminReferences.iconName')">
             <FieldInput v-model="form.icon" placeholder="telegram-icon" />
           </FormField>
           <div style="display:flex;gap:24px;">
             <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
               <input type="checkbox" v-model="form.is_available" style="accent-color:var(--accent);width:14px;height:14px;" />
-              Mavjud (is_available)
+              {{ tt('adminReferences.availableField') }}
             </label>
             <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
               <input type="checkbox" v-model="form.is_active" style="accent-color:var(--accent);width:14px;height:14px;" />
-              Faol (is_active)
+              {{ tt('adminReferences.activeField') }}
             </label>
           </div>
         </template>
@@ -277,7 +277,7 @@
         <!-- sort_order + is_active for others -->
         <template v-else>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;">
-            <FormField label="Tartib raqami">
+            <FormField :label="tt('adminReferences.sortOrder')">
               <div style="display:flex;align-items:center;height:32px;padding:0 10px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r-sm);">
                 <input v-model.number="form.sort_order" type="number" min="0"
                   style="flex:1;border:none;outline:none;background:transparent;font-size:13px;color:var(--text);font-family:var(--font-mono);" />
@@ -286,7 +286,7 @@
             <FormField label="&nbsp;">
               <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;height:32px;">
                 <input type="checkbox" v-model="form.is_active" style="accent-color:var(--accent);width:14px;height:14px;" />
-                Faol holat
+                {{ tt('adminReferences.activeStatus') }}
               </label>
             </FormField>
           </div>
@@ -299,22 +299,22 @@
       </div>
 
       <template #footer>
-        <AppButton variant="secondary" size="md" @click="showModal=false">Bekor qilish</AppButton>
+        <AppButton variant="secondary" size="md" @click="showModal=false">{{ tt('adminReferences.cancel') }}</AppButton>
         <AppButton variant="primary" size="md" :loading="saving" @click="saveItem">
-          {{ editingItem ? 'Saqlash' : "Qo'shish" }}
+          {{ editingItem ? tt('adminReferences.save') : tt('adminReferences.add') }}
         </AppButton>
       </template>
     </AppModal>
 
     <!-- ─── DELETE CONFIRM MODAL ───────────────────────── -->
-    <AppModal v-model="showDeleteModal" title="O'chirishni tasdiqlang" width="400px">
+    <AppModal v-model="showDeleteModal" :title="tt('adminReferences.deleteConfirmTitle')" width="400px">
       <p style="font-size:13px;color:var(--text-2);margin:0 0 4px;">
-        <strong style="color:var(--text);">{{ deletingItem?.name_i18n?.uz || deletingItem?.slug }}</strong> ni o'chirmoqchimisiz?
+        <strong style="color:var(--text);">{{ deletingItem?.name_i18n?.uz || deletingItem?.slug }}</strong> {{ tt('adminReferences.deleteConfirmQuestion') }}
       </p>
-      <p style="font-size:12px;color:var(--muted);margin:0;">Bu amaliyot qaytarib bo'lmaydi.</p>
+      <p style="font-size:12px;color:var(--muted);margin:0;">{{ tt('adminReferences.deleteIrreversible') }}</p>
       <template #footer>
-        <AppButton variant="secondary" size="md" @click="showDeleteModal=false">Bekor qilish</AppButton>
-        <AppButton variant="danger" size="md" :loading="deleting" @click="deleteItem">O'chirish</AppButton>
+        <AppButton variant="secondary" size="md" @click="showDeleteModal=false">{{ tt('adminReferences.cancel') }}</AppButton>
+        <AppButton variant="danger" size="md" :loading="deleting" @click="deleteItem">{{ tt('adminReferences.delete') }}</AppButton>
       </template>
     </AppModal>
 
@@ -327,6 +327,7 @@
 import { ref, computed, watch, onMounted, defineComponent, h } from 'vue'
 import { referencesApi } from '@/api/references.js'
 import { useToast } from '@/composables/useToast.js'
+import { useAppStore } from '@/stores/app.js'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -334,6 +335,9 @@ import AppPanel from '@/components/ui/AppPanel.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 
 const toast = useToast()
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 // ── Inline mini components ────────────────────────────────
 const FormField = defineComponent({
@@ -412,13 +416,13 @@ const defaultForm = () => ({
 const form = ref(defaultForm())
 
 // ── Computed ──────────────────────────────────────────────
-const tabs = [
-  { id: 'business-types',    label: 'Biznes turlari' },
-  { id: 'platforms',         label: 'Platformalar' },
-  { id: 'source-categories', label: 'Manba kategoriyalari' },
-]
+const tabs = computed(() => [
+  { id: 'business-types',    label: tt('adminReferences.tabBusinessTypes') },
+  { id: 'platforms',         label: tt('adminReferences.tabPlatforms') },
+  { id: 'source-categories', label: tt('adminReferences.tabSourceCategories') },
+])
 
-const currentTabLabel = computed(() => tabs.find(t => t.id === activeTab.value)?.label || '')
+const currentTabLabel = computed(() => tabs.value.find(tab => tab.id === activeTab.value)?.label || '')
 
 const currentItems = computed(() => {
   if (activeTab.value === 'business-types') return businessTypes.value
@@ -456,7 +460,7 @@ async function loadData() {
     platforms.value = pl
     sourceCategories.value = sc
   } catch (e) {
-    error.value = "Ma'lumotlarni yuklashda xatolik. Backend ishga tushirilganligini tekshiring."
+    error.value = tt('adminReferences.loadError')
   } finally {
     loading.value = false
   }
@@ -488,9 +492,9 @@ function openEdit(item) {
 
 function validateForm() {
   const errs = {}
-  if (!form.value.slug.trim()) errs.slug = 'Slug kiritilishi shart'
-  if (!/^[a-z0-9_-]+$/.test(form.value.slug)) errs.slug = "Faqat kichik harf, raqam, '-' yoki '_'"
-  if (!form.value.name_i18n.uz.trim()) errs['name_i18n.uz'] = 'O\'zbek nomi kiritilishi shart'
+  if (!form.value.slug.trim()) errs.slug = tt('adminReferences.errSlugRequired')
+  if (!/^[a-z0-9_-]+$/.test(form.value.slug)) errs.slug = tt('adminReferences.errSlugFormat')
+  if (!form.value.name_i18n.uz.trim()) errs['name_i18n.uz'] = tt('adminReferences.errNameUzRequired')
   formErrors.value = errs
   return Object.keys(errs).length === 0
 }
@@ -522,7 +526,7 @@ async function saveItem() {
         const idx = sourceCategories.value.findIndex(i => i.id === editingItem.value.id)
         if (idx > -1) sourceCategories.value[idx] = updated
       }
-      toast.success('Muvaffaqiyatli yangilandi')
+      toast.success(tt('adminReferences.toastUpdated'))
     } else {
       if (activeTab.value === 'business-types') {
         const created = await referencesApi.createBusinessType(payload)
@@ -534,12 +538,12 @@ async function saveItem() {
         const created = await referencesApi.createSourceCategory(payload)
         sourceCategories.value.push(created)
       }
-      toast.success("Muvaffaqiyatli qo'shildi")
+      toast.success(tt('adminReferences.toastAdded'))
     }
     showModal.value = false
   } catch (e) {
     const msg = e.response?.data?.message
-    saveError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Saqlashda xatolik yuz berdi')
+    saveError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('adminReferences.saveError'))
   } finally {
     saving.value = false
   }
@@ -564,10 +568,10 @@ async function deleteItem() {
       await referencesApi.deleteSourceCategory(deletingItem.value.id)
       sourceCategories.value = sourceCategories.value.filter(i => i.id !== deletingItem.value.id)
     }
-    toast.success("O'chirildi")
+    toast.success(tt('adminReferences.toastDeleted'))
     showDeleteModal.value = false
   } catch (e) {
-    toast.error(e.response?.data?.message || "O'chirishda xatolik")
+    toast.error(e.response?.data?.message || tt('adminReferences.deleteError'))
   } finally {
     deleting.value = false
   }

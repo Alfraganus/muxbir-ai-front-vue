@@ -1,17 +1,17 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
     <PageHeader
-      title="Admin promptlari"
-      subtitle="Platforma uchun nomli prompt kutubxonasi — turli vazifalar uchun qayta ishlatiladigan shablonlar"
+      :title="tt('adminPrompts.title')"
+      :subtitle="tt('adminPrompts.subtitle')"
     >
       <template #right>
         <AppButton variant="secondary" size="md" @click="load" :loading="loading">
           <template #icon><AppIcon name="Sort" :size="13"/></template>
-          Yangilash
+          {{ tt('adminPrompts.refresh') }}
         </AppButton>
         <AppButton variant="primary" size="md" @click="openCreate">
           <template #icon><AppIcon name="Plus" :size="13"/></template>
-          Yangi prompt
+          {{ tt('adminPrompts.newPrompt') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -19,17 +19,17 @@
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <div class="ap-stat">
         <span class="ap-stat-val">{{ prompts.length }}</span>
-        <span class="ap-stat-lbl">jami prompt</span>
+        <span class="ap-stat-lbl">{{ tt('adminPrompts.totalLabel') }}</span>
       </div>
       <div style="flex:1;"/>
-      <AppInput v-model="query" placeholder="Kalit, nom yoki matn..." :style="{ width:'320px' }">
+      <AppInput v-model="query" :placeholder="tt('adminPrompts.searchPlaceholder')" :style="{ width:'320px' }">
         <template #icon><AppIcon name="Search" :size="13" :style="{color:'var(--muted)'}"/></template>
       </AppInput>
     </div>
 
     <AppPanel :padding="0">
       <div v-if="loading" style="padding:48px;text-align:center;color:var(--muted);font-size:13px;">
-        <span class="ap-spinner"/> Yuklanmoqda…
+        <span class="ap-spinner"/> {{ tt('adminPrompts.loading') }}
       </div>
       <div v-else-if="error"
            style="padding:14px 16px;background:rgba(239,68,68,.08);
@@ -43,10 +43,10 @@
           <AppIcon name="Sparkle" :size="24"/>
         </span>
         <div style="font-size:14px;font-weight:600;">
-          {{ prompts.length ? "Filtr bo'yicha topilmadi" : 'Hali admin prompt yo\'q' }}
+          {{ prompts.length ? tt('adminPrompts.emptyFiltered') : tt('adminPrompts.emptyNone') }}
         </div>
         <div style="font-size:12px;color:var(--muted);max-width:380px;">
-          "Yangi prompt" tugmasi orqali birinchi promptni yarating.
+          {{ tt('adminPrompts.emptyHint') }}
         </div>
       </div>
       <table v-else style="width:100%;border-collapse:collapse;font-size:12.5px;">
@@ -83,7 +83,7 @@
                   {{ usageLabel(u) }}
                 </span>
               </div>
-              <span v-else style="color:var(--muted);font-size:11px;">— belgilanmagan —</span>
+              <span v-else style="color:var(--muted);font-size:11px;">{{ tt('adminPrompts.unassigned') }}</span>
             </td>
             <!-- Name -->
             <td style="padding:10px 12px;vertical-align:middle;font-weight:500;">
@@ -99,10 +99,10 @@
             </td>
             <!-- Actions -->
             <td style="padding:8px 12px;vertical-align:middle;text-align:right;white-space:nowrap;">
-              <AppButton variant="ghost" size="sm" @click="openEdit(p)" title="Tahrirlash">
+              <AppButton variant="ghost" size="sm" @click="openEdit(p)" :title="tt('adminPrompts.edit')">
                 <template #icon><AppIcon name="Edit" :size="12"/></template>
               </AppButton>
-              <AppButton variant="ghost" size="sm" @click="openDelete(p)" title="O'chirish">
+              <AppButton variant="ghost" size="sm" @click="openDelete(p)" :title="tt('adminPrompts.delete')">
                 <template #icon><AppIcon name="Trash" :size="12"/></template>
               </AppButton>
             </td>
@@ -113,13 +113,13 @@
 
     <!-- Create / Edit modal -->
     <AppModal v-model="formOpen"
-              :title="form.id ? 'Promptni tahrirlash' : 'Yangi admin prompt'"
-              :subtitle="form.id ? 'Mavjud promptning maydonlarini yangilang' : 'Yangi prompt qo\'shish — kalit unikal bo\'lishi kerak'"
+              :title="form.id ? tt('adminPrompts.editTitle') : tt('adminPrompts.createTitle')"
+              :subtitle="form.id ? tt('adminPrompts.editSubtitle') : tt('adminPrompts.createSubtitle')"
               width="640px">
       <div style="display:flex;flex-direction:column;gap:14px;">
         <label style="display:flex;flex-direction:column;gap:6px;">
           <span style="font-size:12px;font-weight:600;color:var(--text);">
-            prompt_key <span style="color:var(--muted);font-weight:400;">(unikal, a-z 0-9 _)</span>
+            prompt_key <span style="color:var(--muted);font-weight:400;">{{ tt('adminPrompts.keyHintInline') }}</span>
           </span>
           <input v-model="form.prompt_key"
             placeholder="rewrite_short"
@@ -127,14 +127,14 @@
             autocomplete="off"
             class="ap-input mono"/>
           <span style="font-size:11px;color:var(--muted);">
-            Kod ichidan murojaat qilish uchun ishlatiladi. Snake_case tavsiya etiladi.
+            {{ tt('adminPrompts.keyHelp') }}
           </span>
         </label>
 
         <label style="display:flex;flex-direction:column;gap:6px;">
           <span style="font-size:12px;font-weight:600;color:var(--text);">prompt_name</span>
           <input v-model="form.prompt_name"
-            placeholder="Qisqartirib qayta yozish"
+            :placeholder="tt('adminPrompts.namePlaceholder')"
             :disabled="formBusy"
             autocomplete="off"
             class="ap-input"/>
@@ -142,8 +142,8 @@
 
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span style="font-size:12px;font-weight:600;color:var(--text);">
-            Qayerda ishlatiladi <span style="color:var(--danger);">*</span>
-            <span style="color:var(--muted);font-weight:400;">— bir nechta belgilash mumkin</span>
+            {{ tt('adminPrompts.usageLabel') }} <span style="color:var(--danger);">*</span>
+            <span style="color:var(--muted);font-weight:400;">{{ tt('adminPrompts.usageMulti') }}</span>
           </span>
           <div style="display:flex;flex-direction:column;gap:6px;">
             <label v-for="o in USAGE_OPTIONS" :key="o.value"
@@ -163,8 +163,7 @@
             </label>
           </div>
           <span style="font-size:11px;color:var(--muted);">
-            Promptning qaysi oqimlarda ishlatilishi — bir nechta toifani belgilashingiz mumkin
-            (masalan bitta prompt ham "Havoladan maqola", ham "AI bilan qayta yozish" uchun).
+            {{ tt('adminPrompts.usageHelp') }}
           </span>
         </div>
 
@@ -174,10 +173,10 @@
             rows="12"
             spellcheck="false"
             :disabled="formBusy"
-            placeholder="Promptning to'liq matni…"
+            :placeholder="tt('adminPrompts.textPlaceholder')"
             class="ap-textarea mono"/>
           <span style="font-size:11px;color:var(--muted);">
-            {{ (form.prompt_text || '').length }} belgi
+            {{ tt('adminPrompts.charCount', { n: (form.prompt_text || '').length }) }}
           </span>
         </label>
 
@@ -190,19 +189,19 @@
 
       <template #footer>
         <AppButton variant="secondary" size="md" @click="formOpen = false" :disabled="formBusy">
-          Bekor qilish
+          {{ tt('adminPrompts.cancel') }}
         </AppButton>
         <AppButton variant="primary" size="md" :loading="formBusy" @click="formSubmit">
           <template #icon><AppIcon name="Check" :size="12"/></template>
-          {{ form.id ? 'Saqlash' : 'Yaratish' }}
+          {{ form.id ? tt('adminPrompts.save') : tt('adminPrompts.create') }}
         </AppButton>
       </template>
     </AppModal>
 
     <!-- Delete confirm -->
     <AppModal v-model="deleteOpen"
-              title="Promptni o'chirish?"
-              subtitle="Ushbu amal qaytarib bo'lmaydi"
+              :title="tt('adminPrompts.deleteTitle')"
+              :subtitle="tt('adminPrompts.deleteSubtitle')"
               width="480px">
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;flex-direction:column;gap:3px;padding:10px 12px;
@@ -215,11 +214,11 @@
       </div>
       <template #footer>
         <AppButton variant="secondary" size="md" @click="deleteOpen = false" :disabled="deleteBusy">
-          Bekor qilish
+          {{ tt('adminPrompts.cancel') }}
         </AppButton>
         <AppButton variant="danger" size="md" :loading="deleteBusy" @click="deleteRun">
           <template #icon><AppIcon name="Trash" :size="12"/></template>
-          O'chirish
+          {{ tt('adminPrompts.delete') }}
         </AppButton>
       </template>
     </AppModal>
@@ -245,6 +244,11 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import { adminApi } from '@/api/admin.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const loading = ref(true)
 const error = ref('')
@@ -278,27 +282,27 @@ function showToast(kind, text, ms = 3500) {
   setTimeout(() => { if (toast.value?.text === text) toast.value = null }, ms)
 }
 
-const headers = [
+const headers = computed(() => [
   { key: 'id',       label: 'ID' },
   { key: 'key',      label: 'prompt_key' },
-  { key: 'usage',    label: 'Qayerda ishlatiladi' },
+  { key: 'usage',    label: tt('adminPrompts.usageLabel') },
   { key: 'name',     label: 'prompt_name' },
   { key: 'text',     label: 'prompt_text' },
-  { key: 'updated',  label: 'Yangilangan' },
+  { key: 'updated',  label: tt('adminPrompts.updatedLabel') },
   { key: 'actions',  label: '', right: true },
-]
+])
 
-const USAGE_OPTIONS = [
-  { value: 'article_from_url', label: 'Maqola yozish (havoladan)', icon: 'Globe2' },
-  { value: 'article_shorten',  label: 'Maqola qisqartirish va sayqallash', icon: 'Sparkle' },
-  { value: 'autopost',         label: 'Autopost', icon: 'Send' },
-  { value: 'article_tags',     label: 'Maqola ichida teg yaratish', icon: 'Tag' },
-]
+const USAGE_OPTIONS = computed(() => [
+  { value: 'article_from_url', label: tt('adminPrompts.usageArticleFromUrl'), icon: 'Globe2' },
+  { value: 'article_shorten',  label: tt('adminPrompts.usageArticleShorten'), icon: 'Sparkle' },
+  { value: 'autopost',         label: tt('adminPrompts.usageAutopost'), icon: 'Send' },
+  { value: 'article_tags',     label: tt('adminPrompts.usageArticleTags'), icon: 'Tag' },
+])
 function usageLabel(u) {
-  return USAGE_OPTIONS.find(o => o.value === u)?.label || u
+  return USAGE_OPTIONS.value.find(o => o.value === u)?.label || u
 }
 function usageIcon(u) {
-  return USAGE_OPTIONS.find(o => o.value === u)?.icon || 'Sparkle'
+  return USAGE_OPTIONS.value.find(o => o.value === u)?.icon || 'Sparkle'
 }
 
 async function load() {
@@ -307,7 +311,7 @@ async function load() {
   try {
     prompts.value = await adminApi.listPrompts()
   } catch (e) {
-    error.value = e?.response?.data?.message || e.message || "Yuklashda xato"
+    error.value = e?.response?.data?.message || e.message || tt('adminPrompts.errLoad')
     prompts.value = []
   } finally {
     loading.value = false
@@ -354,10 +358,10 @@ async function formSubmit() {
   const name = (form.prompt_name || '').trim()
   const text = (form.prompt_text || '').trim()
   const usages = Array.isArray(form.usages) ? form.usages.slice() : []
-  if (!key) { formError.value = 'prompt_key kiritilishi shart'; return }
-  if (!name) { formError.value = 'prompt_name kiritilishi shart'; return }
-  if (!text) { formError.value = 'prompt_text bo\'sh bo\'lmasin'; return }
-  if (!usages.length) { formError.value = "Kamida bitta 'qayerda ishlatiladi' tanlang"; return }
+  if (!key) { formError.value = tt('adminPrompts.errKeyRequired'); return }
+  if (!name) { formError.value = tt('adminPrompts.errNameRequired'); return }
+  if (!text) { formError.value = tt('adminPrompts.errTextRequired'); return }
+  if (!usages.length) { formError.value = tt('adminPrompts.errUsageRequired'); return }
 
   formBusy.value = true
   try {
@@ -365,17 +369,17 @@ async function formSubmit() {
       await adminApi.updatePrompt(form.id, {
         prompt_key: key, prompt_name: name, prompt_text: text, usages,
       })
-      showToast('success', 'Prompt yangilandi')
+      showToast('success', tt('adminPrompts.toastUpdated'))
     } else {
       await adminApi.createPrompt({
         prompt_key: key, prompt_name: name, prompt_text: text, usages,
       })
-      showToast('success', 'Yangi prompt yaratildi')
+      showToast('success', tt('adminPrompts.toastCreated'))
     }
     formOpen.value = false
     await load()
   } catch (e) {
-    formError.value = e?.response?.data?.message || e.message || "Saqlashda xato"
+    formError.value = e?.response?.data?.message || e.message || tt('adminPrompts.errSave')
   } finally {
     formBusy.value = false
   }
@@ -391,11 +395,11 @@ async function deleteRun() {
   deleteBusy.value = true
   try {
     await adminApi.deletePrompt(pending.value.id)
-    showToast('success', "Prompt o'chirildi")
+    showToast('success', tt('adminPrompts.toastDeleted'))
     deleteOpen.value = false
     await load()
   } catch (e) {
-    showToast('error', e?.response?.data?.message || e.message || "O'chirishda xato", 5000)
+    showToast('error', e?.response?.data?.message || e.message || tt('adminPrompts.errDelete'), 5000)
   } finally {
     deleteBusy.value = false
   }

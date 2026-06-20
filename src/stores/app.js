@@ -2,14 +2,24 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { createTranslator } from '@/i18n/index.js'
 import { getUserRole, isAdminRole } from '@/utils/authRole.js'
+import { DEFAULT_UTC_OFFSET_MIN, resolveOffsetMin } from '@/utils/timezone.js'
+
+const SUPPORTED_LANGS = ['uz', 'ru', 'en']
+function loadInitialLang() {
+  const saved = localStorage.getItem('lang')
+  return SUPPORTED_LANGS.includes(saved) ? saved : 'uz'
+}
 
 export const useAppStore = defineStore('app', () => {
-  const lang = ref('uz')
+  const lang = ref(loadInitialLang())
   const darkMode = ref(false)
   const accentColor = ref('#2F6FED')
   const currentPage = ref('overview')
   const companyName = ref('')
   const companyId = ref(null)
+  // Workspace UTC offset (minut) — sana/vaqt ko'rsatishda brauzer emas, shu offset
+  // ishlatiladi. setCompany orqali yangilanadi; default UTC+5 (Toshkent).
+  const companyOffsetMin = ref(DEFAULT_UTC_OFFSET_MIN)
   const langSwitching = ref(false)
   // workspace'ni manual saqlamaymiz — token o'zgargani sayin reactive
   // o'zgarish kerak. Manual override uchun (kelajakda super admin client
@@ -30,6 +40,9 @@ export const useAppStore = defineStore('app', () => {
 
   function setLang(l) {
     if (lang.value === l) return
+    if (!SUPPORTED_LANGS.includes(l)) return
+    // Tanlangan tilni brauzerда saqlaymiz — refresh'dan keyin ham qoladi.
+    localStorage.setItem('lang', l)
     // Til almashinish animatsiyasi: veil ko'rinadi → til o'zgaradi → veil yopiladi
     langSwitching.value = true
     setTimeout(() => { lang.value = l }, 180) // veil to'liq paydo bo'lgach til'ni almashtiramiz
@@ -56,10 +69,18 @@ export const useAppStore = defineStore('app', () => {
   }
   function setPage(page) { currentPage.value = page }
   function setCompany(c) {
-    if (!c) { companyName.value = ''; companyId.value = null; return }
+    if (!c) {
+      companyName.value = ''
+      companyId.value = null
+      companyOffsetMin.value = DEFAULT_UTC_OFFSET_MIN
+      return
+    }
     companyName.value = c.name || c.display_name || ''
     companyId.value = c.id || null
+    companyOffsetMin.value = resolveOffsetMin(c.utc_offset_minutes)
   }
+  /** Settings'da offset o'zgartirilganda darhol global holatni yangilash uchun. */
+  function setCompanyOffset(min) { companyOffsetMin.value = resolveOffsetMin(min) }
 
-  return { lang, langSwitching, darkMode, accentColor, workspace, companyName, companyId, currentPage, t, setLang, setDarkMode, setAccent, setWorkspace, setPage, setCompany, refreshAuthDerivedState }
+  return { lang, langSwitching, darkMode, accentColor, workspace, companyName, companyId, companyOffsetMin, currentPage, t, setLang, setDarkMode, setAccent, setWorkspace, setPage, setCompany, setCompanyOffset, refreshAuthDerivedState }
 })

@@ -1,24 +1,24 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
-    <PageHeader title="Komanda" :subtitle="`Olcha Express workspace · ${TEAM.length} ta a'zo, 5 ta joy tarifda kiritilgan`">
+    <PageHeader :title="tt('team.title')">
       <template #right>
-        <AppButton variant="secondary" size="md"><template #icon><AppIcon name="Eye" :size="13"/></template>Audit log</AppButton>
-        <AppButton variant="primary" size="md" @click="inviteOpen = true"><template #icon><AppIcon name="Plus" :size="13"/></template>A'zo qo'shish</AppButton>
+        <AppButton variant="secondary" size="md"><template #icon><AppIcon name="Eye" :size="13"/></template>{{ tt('team.auditLog') }}</AppButton>
+        <AppButton variant="primary" size="md" @click="inviteOpen = true"><template #icon><AppIcon name="Plus" :size="13"/></template>{{ tt('team.addMember') }}</AppButton>
       </template>
     </PageHeader>
 
     <!-- KPIs -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-      <AppKPI label="Komanda joylari" :value="`${TEAM.length}`" delta="+2 qo'shimcha" delta-tone="warn" sub="+180 000 so'm/oy">
+      <AppKPI :label="tt('team.kpi.seats')" :value="`${TEAM.length}`" :delta="tt('team.kpi.seatsExtra')" delta-tone="warn" :sub="tt('team.kpi.seatsExtraSub')">
         <template #icon><AppIcon name="Users" :size="14" :style="{color:'var(--muted)'}" /></template>
       </AppKPI>
-      <AppKPI label="Faol bugun" :value="`${activeToday}`" delta="84% komanda" delta-tone="success" sub="So'nggi 24 soat">
+      <AppKPI :label="tt('team.kpi.activeToday')" :value="`${activeToday}`" :delta="tt('team.kpi.activeTodayDelta')" delta-tone="success" :sub="tt('team.kpi.activeTodaySub')">
         <template #icon><AppIcon name="Bolt" :size="14" :style="{color:'var(--muted)'}" /></template>
       </AppKPI>
-      <AppKPI label="Kutilayotgan takliflar" :value="`${invitedCount}`" delta="1 javobsiz" delta-tone="warn" sub="7 kunda muddati tugaydi">
+      <AppKPI :label="tt('team.kpi.pendingInvites')" :value="`${invitedCount}`" :delta="tt('team.kpi.pendingInvitesDelta')" delta-tone="warn" :sub="tt('team.kpi.pendingInvitesSub')">
         <template #icon><AppIcon name="Send" :size="14" :style="{color:'var(--muted)'}" /></template>
       </AppKPI>
-      <AppKPI label="MFA yoqilgan" value="86%" delta="6/7 a'zo" delta-tone="success" sub="Maqsad: 100%">
+      <AppKPI :label="tt('team.kpi.mfa')" value="86%" :delta="tt('team.kpi.mfaDelta')" delta-tone="success" :sub="tt('team.kpi.mfaGoal')">
         <template #icon><AppIcon name="Shield" :size="14" :style="{color:'var(--muted)'}" /></template>
       </AppKPI>
     </div>
@@ -26,7 +26,7 @@
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <AppTabs v-model="view" :items="viewTabs"/>
       <div style="flex:1;"/>
-      <AppInput v-model="query" placeholder="A'zolarni qidirish..." :style="{width:'220px'}">
+      <AppInput v-model="query" :placeholder="tt('team.search')" :style="{width:'220px'}">
         <template #icon><AppIcon name="Search" :size="13" :style="{color:'var(--muted)'}" /></template>
       </AppInput>
     </div>
@@ -37,8 +37,13 @@
         <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
           <thead>
             <tr style="border-bottom:1px solid var(--border);">
-              <th style="text-align:left;padding:8px 14px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">A'zo</th>
-              <th v-for="h in ['Rol','Kanal kirishi','Holat','Oxirgi faollik','Qo\'shilgan','']" :key="h" style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ h }}</th>
+              <th style="text-align:left;padding:8px 14px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.member') }}</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.role') }}</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.channels') }}</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.status') }}</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.lastActive') }}</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.joined') }}</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);"></th>
             </tr>
           </thead>
           <tbody>
@@ -62,8 +67,8 @@
               </td>
               <td style="padding:10px;vertical-align:middle;"><span style="font-size:12px;color:var(--text-2);">{{ u.channels }}</span></td>
               <td style="padding:10px;vertical-align:middle;">
-                <AppBadge v-if="u.status === 'invited'" tone="warn" :dot="true">Taklif yuborilgan</AppBadge>
-                <AppBadge v-else tone="success" :dot="true">Faol</AppBadge>
+                <AppBadge v-if="u.status === 'invited'" tone="warn" :dot="true">{{ tt('team.status.invited') }}</AppBadge>
+                <AppBadge v-else tone="success" :dot="true">{{ tt('team.status.active') }}</AppBadge>
               </td>
               <td style="padding:10px;vertical-align:middle;">
                 <span class="mono" :style="{ fontSize:'11.5px',color: u.last.includes('Hozir') ? 'var(--success)' : 'var(--muted)' }">{{ u.last }}</span>
@@ -71,7 +76,7 @@
               <td style="padding:10px;vertical-align:middle;" class="mono" style2="font-size:11.5px;color:var(--muted);">{{ u.joined }}</td>
               <td style="padding:10px;vertical-align:middle;">
                 <div style="display:flex;gap:4px;justify-content:flex-end;">
-                  <AppButton v-if="u.status === 'invited'" variant="ghost" size="sm">Qaytatdan</AppButton>
+                  <AppButton v-if="u.status === 'invited'" variant="ghost" size="sm">{{ tt('team.resend') }}</AppButton>
                   <MoreMenu/>
                 </div>
               </td>
@@ -79,8 +84,8 @@
           </tbody>
         </table>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);background:var(--panel-2);border-radius:0 0 var(--r-lg) var(--r-lg);">
-          <span>{{ TEAM.length }} a'zo · {{ TEAM.filter(t => t.status === 'active').length }} faol</span>
-          <span><span style="color:var(--warn);font-weight:500;">2 ta qo'shimcha joy</span> · +180 000 so'm/oy</span>
+          <span>{{ tt('team.footer', { total: TEAM.length, active: TEAM.filter(u => u.status === 'active').length }) }}</span>
+          <span>{{ tt('team.footerExtra') }}</span>
         </div>
       </AppPanel>
     </template>
@@ -92,20 +97,20 @@
           <div style="padding:16px 18px;border-bottom:1px solid var(--border-2);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
               <AppBadge :tone="r.tone">{{ r.name }}</AppBadge>
-              <span v-if="r.builtin" class="mono" style="font-size:10px;color:var(--muted);">BUILT-IN</span>
+              <span v-if="r.builtin" class="mono" style="font-size:10px;color:var(--muted);">{{ tt('team.builtin') }}</span>
             </div>
             <p style="margin:0;font-size:12.5px;color:var(--text-2);line-height:1.45;">{{ r.desc }}</p>
           </div>
           <div style="padding:12px 18px;display:flex;flex-direction:column;gap:8px;">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;">
-              <span style="color:var(--muted);">A'zolar</span>
+              <span style="color:var(--muted);">{{ tt('team.roleMembers') }}</span>
               <span class="tabular" style="font-weight:500;">{{ TEAM.filter(t => t.role === r.id).length }}</span>
             </div>
             <AppProgress :value="getGrantCount(r)" :max="ALL_PERMS.length" :tone="r.tone === 'muted' ? 'accent' : r.tone"/>
           </div>
           <div style="padding:10px 14px;border-top:1px solid var(--border-2);background:var(--panel-2);display:flex;justify-content:space-between;border-radius:0 0 var(--r-lg) var(--r-lg);">
-            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Users" :size="12"/></template>A'zolar</AppButton>
-            <AppButton variant="ghost" size="sm" @click="editingRole = r.id; view = 'matrix'"><template #icon><AppIcon name="Eye" :size="12"/></template>Matritsa</AppButton>
+            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Users" :size="12"/></template>{{ tt('team.roleMembers') }}</AppButton>
+            <AppButton variant="ghost" size="sm" @click="editingRole = r.id; view = 'matrix'"><template #icon><AppIcon name="Eye" :size="12"/></template>{{ tt('team.roleMatrix') }}</AppButton>
           </div>
         </AppPanel>
       </div>
@@ -116,16 +121,16 @@
       <AppPanel :padding="0">
         <div style="padding:14px 18px;border-bottom:1px solid var(--border-2);display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font-size:13px;font-weight:600;">Permission matritsa</div>
-            <div style="font-size:11.5px;color:var(--muted);">Workspace roli uchun yoqilgan amallar</div>
+            <div style="font-size:13px;font-weight:600;">{{ tt('team.matrix.title') }}</div>
+            <div style="font-size:11.5px;color:var(--muted);">{{ tt('team.matrix.sub') }}</div>
           </div>
-          <AppButton variant="primary" size="md"><template #icon><AppIcon name="Check" :size="13"/></template>Saqlash</AppButton>
+          <AppButton variant="primary" size="md"><template #icon><AppIcon name="Check" :size="13"/></template>{{ tt('team.matrix.save') }}</AppButton>
         </div>
         <div style="overflow-x:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:880px;">
             <thead>
               <tr style="border-bottom:1px solid var(--border);background:var(--panel-2);">
-                <th style="text-align:left;padding:12px 18px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);position:sticky;left:0;background:var(--panel-2);z-index:2;width:280px;">Permission</th>
+                <th style="text-align:left;padding:12px 18px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);position:sticky;left:0;background:var(--panel-2);z-index:2;width:280px;">{{ tt('team.matrix.col') }}</th>
                 <th v-for="r in ROLES" :key="r.id" :style="{ padding:'10px 8px',fontWeight:500,textAlign:'center',background: r.id===editingRole ? 'var(--accent-bg)' : 'var(--panel-2)' }">
                   <AppBadge :tone="r.tone">{{ r.name }}</AppBadge>
                 </th>
@@ -175,17 +180,17 @@
                   <AppAvatar :name="'User '+(i+1)" :size="22"/>
                 </span>
               </span>
-              <span style="font-size:11.5px;color:var(--muted);">{{ g.members }} a'zo</span>
+              <span style="font-size:11.5px;color:var(--muted);">{{ g.members }} {{ tt('team.roleMembers') }}</span>
             </div>
           </div>
           <div style="padding:10px 14px;border-top:1px solid var(--border-2);background:var(--panel-2);display:flex;justify-content:space-between;border-radius:0 0 var(--r-lg) var(--r-lg);">
-            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Edit" :size="11"/></template>Tahrirlash</AppButton>
-            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Users" :size="11"/></template>A'zolar</AppButton>
+            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Edit" :size="11"/></template>{{ tt('team.groups.edit') }}</AppButton>
+            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Users" :size="11"/></template>{{ tt('team.groups.members') }}</AppButton>
           </div>
         </AppPanel>
         <button style="background:transparent;border:1.5px dashed var(--border);border-radius:var(--r-lg);padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);cursor:pointer;min-height:180px;">
           <span style="width:36px;height:36px;border-radius:999px;background:var(--panel-2);border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;"><AppIcon name="Plus" :size="16"/></span>
-          <span style="font-size:12.5px;font-weight:500;">Yangi guruh</span>
+          <span style="font-size:12.5px;font-weight:500;">{{ tt('team.groups.new') }}</span>
         </button>
       </div>
     </template>
@@ -195,8 +200,8 @@
       <div @click.stop style="width:480px;background:var(--panel);border-left:1px solid var(--border);height:100vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);">
         <header style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <div style="font-size:14px;font-weight:600;">A'zo qo'shish</div>
-            <div style="font-size:12px;color:var(--muted);">Email orqali taklif yuboriladi</div>
+            <div style="font-size:14px;font-weight:600;">{{ tt('team.invite.title') }}</div>
+            <div style="font-size:12px;color:var(--muted);">{{ tt('team.invite.sub') }}</div>
           </div>
           <button @click="inviteOpen = false" style="width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
             <AppIcon name="Close" :size="14"/>
@@ -204,11 +209,11 @@
         </header>
         <div style="flex:1;padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;">
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <label style="font-size:11px;color:var(--muted);font-weight:500;">Email manzillari</label>
-            <textarea rows="4" placeholder="dilshod@kompaniya.uz" style="padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--panel);font-family:var(--font-mono);resize:vertical;outline:none;color:var(--text);"/>
+            <label style="font-size:11px;color:var(--muted);font-weight:500;">{{ tt('team.invite.emailLabel') }}</label>
+            <textarea rows="4" :placeholder="tt('team.invite.emailPh')" style="padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--panel);font-family:var(--font-mono);resize:vertical;outline:none;color:var(--text);"/>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;">
-            <label style="font-size:11px;color:var(--muted);font-weight:500;">Rol</label>
+            <label style="font-size:11px;color:var(--muted);font-weight:500;">{{ tt('team.invite.roleLabel') }}</label>
             <label v-for="r in ROLES" :key="r.id"
               :style="{ display:'flex',alignItems:'flex-start',gap:'10px',padding:'10px 12px',background: inviteRole===r.id ? 'var(--accent-bg)' : 'var(--panel-2)',border:`1px solid ${inviteRole===r.id?'color-mix(in oklab, var(--accent) 30%, transparent)':'var(--border)'}`,borderRadius:'8px',cursor:'pointer' }">
               <input type="radio" :checked="inviteRole === r.id" @change="inviteRole = r.id" style="accent-color:var(--accent);margin-top:2px;"/>
@@ -220,10 +225,10 @@
           </div>
         </div>
         <footer style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);">
-          <span style="font-size:11.5px;color:var(--muted);">Taklif 7 kun davomida amal qiladi</span>
+          <span style="font-size:11.5px;color:var(--muted);">{{ tt('team.invite.validity') }}</span>
           <div style="display:flex;gap:8px;">
-            <AppButton variant="secondary" size="md" @click="inviteOpen = false">Bekor qilish</AppButton>
-            <AppButton variant="primary" size="md"><template #icon><AppIcon name="Send" :size="13"/></template>Taklif yuborish</AppButton>
+            <AppButton variant="secondary" size="md" @click="inviteOpen = false">{{ tt('team.invite.cancel') }}</AppButton>
+            <AppButton variant="primary" size="md"><template #icon><AppIcon name="Send" :size="13"/></template>{{ tt('team.invite.send') }}</AppButton>
           </div>
         </footer>
       </div>
@@ -246,6 +251,11 @@ import AppProgress from '@/components/ui/AppProgress.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import MoreMenu from '@/components/layout/MoreMenu.vue'
 import { TEAM, ROLES, ALL_PERMS, PERMISSION_GROUPS, hasGrant } from '@/data/index.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const view = ref('members')
 const query = ref('')
@@ -253,12 +263,12 @@ const inviteOpen = ref(false)
 const inviteRole = ref('editor')
 const editingRole = ref(null)
 
-const viewTabs = [
-  { value: 'members', label: 'A\'zolar',        count: TEAM.length },
-  { value: 'roles',   label: 'Rollar' },
-  { value: 'matrix',  label: 'Permissionlar' },
-  { value: 'groups',  label: 'Kanal guruhlari', count: 3 },
-]
+const viewTabs = computed(() => [
+  { value: 'members', label: tt('team.tab.members'), count: TEAM.length },
+  { value: 'roles',   label: tt('team.tab.roles') },
+  { value: 'matrix',  label: tt('team.tab.matrix') },
+  { value: 'groups',  label: tt('team.tab.groups'), count: 3 },
+])
 
 const activeToday = computed(() => TEAM.filter(t =>
   t.status === 'active' && (t.last.includes('Hozir') || t.last.includes('daq.') || t.last.includes('soat'))
@@ -279,9 +289,9 @@ function getGrantCount(role) {
   return role.grants === '*' ? ALL_PERMS.length : role.grants.size
 }
 
-const channelGroups = [
-  { name: 'Yangiliklar guruhi',   channels: ['@olcha_daily', '@huduud'],          members: 3, color: 'var(--accent)' },
-  { name: 'Bozor va analitika',   channels: ['@bozor_sharhi'],                    members: 2, color: 'var(--violet)' },
-  { name: 'Texnika va aksiyalar', channels: ['@olcha_promo', '@texno_olcha'],     members: 2, color: 'var(--success)' },
-]
+const channelGroups = computed(() => [
+  { name: tt('team.groups.news'),   channels: ['@olcha_daily', '@huduud'],      members: 3, color: 'var(--accent)' },
+  { name: tt('team.groups.market'), channels: ['@bozor_sharhi'],                members: 2, color: 'var(--violet)' },
+  { name: tt('team.groups.tech'),   channels: ['@olcha_promo', '@texno_olcha'], members: 2, color: 'var(--success)' },
+])
 </script>

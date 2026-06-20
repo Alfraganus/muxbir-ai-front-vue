@@ -3,10 +3,10 @@
     <PageHeader :title="headerTitle" :subtitle="headerSub">
       <template #right>
         <AppButton variant="secondary" size="md" @click="load" :loading="loading">
-          <template #icon><AppIcon name="Chart" :size="13"/></template>Yangilash
+          <template #icon><AppIcon name="Chart" :size="13"/></template>{{ tt('ov.refresh') }}
         </AppButton>
         <AppButton variant="primary" size="md" @click="$router.push('/client/analytics')">
-          <template #icon><AppIcon name="Chart" :size="13"/></template>To'liq analitika
+          <template #icon><AppIcon name="Chart" :size="13"/></template>{{ tt('ov.analytics') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -23,62 +23,62 @@
       @refresh="refreshSetup"
     />
 
-    <div v-if="loading" class="ov-state"><span class="ov-spin"/> Yuklanmoqda…</div>
+    <div v-if="loading" class="ov-state"><span class="ov-spin"/> {{ tt('ov.loading') }}</div>
     <div v-else-if="error" class="ov-state" style="color:var(--danger);">{{ error }}</div>
 
     <template v-else-if="d">
       <!-- Momentum KPIs (analitikada yo'q kesim) -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-        <AppKPI label="So'nggi 24 soat" :value="String(d.momentum.d1)" sub="chop etilgan post">
+        <AppKPI :label="tt('ov.kpi.d1.label')" :value="String(d.momentum.d1)" :sub="tt('ov.kpi.d1.sub')">
           <template #icon><AppIcon name="Bolt" :size="14" :style="{color:'var(--muted)'}"/></template>
         </AppKPI>
-        <AppKPI label="So'nggi 7 kun" :value="String(d.momentum.d7)"
+        <AppKPI :label="tt('ov.kpi.d7.label')" :value="String(d.momentum.d7)"
           :delta="`${d.momentum.wow_delta >= 0 ? '+' : ''}${d.momentum.wow_delta}%`"
           :delta-tone="d.momentum.wow_delta >= 0 ? 'success' : 'danger'"
-          :sub="`o'tgan hafta: ${d.momentum.prev7}`">
+          :sub="tt('ov.kpi.d7.prevSub', { n: d.momentum.prev7 })">
           <template #icon><AppIcon name="Send" :size="14" :style="{color:'var(--muted)'}"/></template>
         </AppKPI>
-        <AppKPI label="So'nggi 30 kun" :value="String(d.momentum.d30)" sub="oylik hajm">
+        <AppKPI :label="tt('ov.kpi.d30.label')" :value="String(d.momentum.d30)" :sub="tt('ov.kpi.d30.sub')">
           <template #icon><AppIcon name="Calendar" :size="14" :style="{color:'var(--muted)'}"/></template>
         </AppKPI>
-        <AppKPI label="Faollik seriyasi" :value="`${d.momentum.streak} kun`"
-          :sub="d.momentum.streak > 0 ? 'ketma-ket post' : 'bugun post yo\'q'">
+        <AppKPI :label="tt('ov.kpi.streak.label')" :value="tt('ov.kpi.streak.sub', { n: d.momentum.streak })"
+          :sub="d.momentum.streak > 0 ? tt('ov.kpi.streak.subActive') : tt('ov.kpi.streak.subNone')">
           <template #icon><AppIcon name="Sparkle" :size="14" :style="{color:'var(--muted)'}"/></template>
         </AppKPI>
       </div>
 
       <!-- Heatmap (hafta kuni × soat) -->
-      <AppPanel title="Eng faol vaqtlar" subtitle="Postlar qaysi kun/soatda chiqgan (Toshkent vaqti)">
+      <AppPanel :title="tt('ov.heatmap.title')" :subtitle="tt('ov.heatmap.subtitle')">
         <HeatmapChart v-if="heatHasData" :data="d.heatmap" :width="720"/>
-        <div v-else class="ov-empty">Hali post chiqmagan</div>
+        <div v-else class="ov-empty">{{ tt('ov.heatmap.empty') }}</div>
         <div v-if="d.peak_hour !== null" class="ov-peak">
           <AppIcon name="Sparkle" :size="12"/>
-          Eng faol vaqt: <strong>{{ d.peak_weekday }}, {{ String(d.peak_hour).padStart(2,'0') }}:00</strong> atrofida
+          {{ tt('ov.heatmap.peak', { day: d.peak_weekday, hour: String(d.peak_hour).padStart(2,'0') }) }}
         </div>
       </AppPanel>
 
       <!-- Hafta kuni bar + Til donut -->
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
-        <AppPanel title="Hafta kunlari bo'yicha" subtitle="Qaysi kunlar faolroq">
-          <BarChart v-if="weekdayHasData" :data="d.by_weekday" :labels="WEEKDAY_LABELS" :width="680" :height="180" color="var(--violet)"/>
-          <div v-else class="ov-empty">Ma'lumot yo'q</div>
+        <AppPanel :title="tt('ov.weekday.title')" :subtitle="tt('ov.weekday.subtitle')">
+          <BarChart v-if="weekdayHasData" :data="d.by_weekday" :labels="weekdayLabels" :width="680" :height="180" color="var(--violet)"/>
+          <div v-else class="ov-empty">{{ tt('ov.weekday.empty') }}</div>
         </AppPanel>
-        <AppPanel title="Til taqsimoti" subtitle="Postlar tili">
+        <AppPanel :title="tt('ov.lang.title')" :subtitle="tt('ov.lang.subtitle')">
           <div v-if="langSegs.length" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
             <DonutChart :segments="langSegs" :size="132" :thickness="18">
-              <template #center><div class="ov-dn-c">{{ langSegs.length }}</div><div class="ov-dn-cap">til</div></template>
+              <template #center><div class="ov-dn-c">{{ langSegs.length }}</div><div class="ov-dn-cap">{{ tt('ov.lang.cap') }}</div></template>
             </DonutChart>
             <ul class="ov-legend">
               <li v-for="s in langSegs" :key="s.label"><span class="ov-dot" :style="{background:s.color}"/>{{ s.label }}<b>{{ s.value }}</b></li>
             </ul>
           </div>
-          <div v-else class="ov-empty">Ma'lumot yo'q</div>
+          <div v-else class="ov-empty">{{ tt('ov.lang.empty') }}</div>
         </AppPanel>
       </div>
 
       <!-- Auto-post funnel + Manba samaradorligi -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <AppPanel title="Auto-post natijalari" subtitle="Dispatcher har urinish holati">
+        <AppPanel :title="tt('ov.funnel.title')" :subtitle="tt('ov.funnel.subtitle')">
           <div v-if="funnelRows.length" class="ov-funnel">
             <div v-for="f in funnelRows" :key="f.status" class="ov-funnel-row">
               <span class="ov-funnel-ic" :style="{ '--c': f.color }"><AppIcon :name="f.icon" :size="13"/></span>
@@ -87,11 +87,11 @@
               <span class="ov-funnel-val">{{ f.count }}</span>
             </div>
           </div>
-          <div v-else class="ov-empty">Hali auto-post yuborilmagan</div>
+          <div v-else class="ov-empty">{{ tt('ov.funnel.empty') }}</div>
         </AppPanel>
-        <AppPanel title="Manba samaradorligi" subtitle="1 postga o'rtacha ko'rish">
+        <AppPanel :title="tt('ov.efficiency.title')" :subtitle="tt('ov.efficiency.subtitle')">
           <table v-if="d.source_efficiency.length" class="ov-table">
-            <thead><tr><th>Manba</th><th style="text-align:right;">Post</th><th style="text-align:right;">O'rt. ko'rish</th></tr></thead>
+            <thead><tr><th>{{ tt('ov.efficiency.col.source') }}</th><th style="text-align:right;">{{ tt('ov.efficiency.col.posts') }}</th><th style="text-align:right;">{{ tt('ov.efficiency.col.views') }}</th></tr></thead>
             <tbody>
               <tr v-for="r in d.source_efficiency" :key="r.source">
                 <td class="ov-td-src">{{ r.source }}</td>
@@ -100,36 +100,36 @@
               </tr>
             </tbody>
           </table>
-          <div v-else class="ov-empty">Ma'lumot yo'q</div>
+          <div v-else class="ov-empty">{{ tt('ov.efficiency.empty') }}</div>
         </AppPanel>
       </div>
 
       <!-- Kategoriya + Best this week + coverage -->
       <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px;">
-        <AppPanel title="Kategoriyalar" subtitle="Post mavzulari taqsimoti">
-          <BarList :items="categoryBars" empty="Kategoriya yo'q"/>
+        <AppPanel :title="tt('ov.cats.title')" :subtitle="tt('ov.cats.subtitle')">
+          <BarList :items="categoryBars" :empty="tt('ov.cats.empty')"/>
         </AppPanel>
         <div style="display:flex;flex-direction:column;gap:16px;">
-          <AppPanel title="Shu haftaning posti" subtitle="Oxirgi 7 kun · eng ko'p ko'rilgan">
+          <AppPanel :title="tt('ov.best.title')" :subtitle="tt('ov.best.subtitle')">
             <div v-if="d.best_this_week" class="ov-best">
-              <div class="ov-best-title">{{ d.best_this_week.title || '(matnsiz)' }}</div>
+              <div class="ov-best-title">{{ d.best_this_week.title || tt('ov.best.noText') }}</div>
               <div class="ov-best-meta">
                 <span class="ov-views"><AppIcon name="Eye" :size="11"/>{{ fmt(d.best_this_week.view_count) }}</span>
                 <span style="color:var(--muted);">· {{ d.best_this_week.channel }}</span>
               </div>
             </div>
-            <div v-else class="ov-empty">Bu hafta ko'rilgan post yo'q</div>
+            <div v-else class="ov-empty">{{ tt('ov.best.empty') }}</div>
           </AppPanel>
-          <AppPanel title="Qamrov" subtitle="Kontent sifati">
+          <AppPanel :title="tt('ov.coverage.title')" :subtitle="tt('ov.coverage.subtitle')">
             <div class="ov-cov">
               <div class="ov-cov-item">
                 <div class="ov-cov-ring" :style="ringStyle(d.coverage.cover_pct, '#22C55E')"><span>{{ d.coverage.cover_pct }}%</span></div>
-                <span class="ov-cov-lbl">Muqovali post</span>
+                <span class="ov-cov-lbl">{{ tt('ov.coverage.covered') }}</span>
               </div>
               <div class="ov-cov-stats">
-                <div><b>{{ d.coverage.distinct_sources }}</b><small>aktiv manba</small></div>
-                <div><b>{{ d.coverage.used_channels }}</b><small>kanal</small></div>
-                <div><b>{{ fmt(d.coverage.published) }}</b><small>chop etilgan</small></div>
+                <div><b>{{ d.coverage.distinct_sources }}</b><small>{{ tt('ov.coverage.sources') }}</small></div>
+                <div><b>{{ d.coverage.used_channels }}</b><small>{{ tt('ov.coverage.channels') }}</small></div>
+                <div><b>{{ fmt(d.coverage.published) }}</b><small>{{ tt('ov.coverage.published') }}</small></div>
               </div>
             </div>
           </AppPanel>
@@ -141,6 +141,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAppStore } from '@/stores/app.js'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
@@ -154,6 +155,10 @@ import SetupChecklistCard from '@/components/setup/SetupChecklistCard.vue'
 import { companiesApi } from '@/api/companies.js'
 import { analyticsApi } from '@/api/analytics.js'
 import { useSetupStatus } from '@/composables/useSetupStatus.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const loading = ref(true)
 const error = ref('')
@@ -173,15 +178,21 @@ const {
   startPolling: startSetupPolling,
 } = useSetupStatus(() => company.value?.id, { pollMs: 60000 })
 
-const WEEKDAY_LABELS = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
-const LANG_LABELS = { uz: "O'zbek (lotin)", uz_cyr: "O'zbek (kirill)", ru: 'Rus', en: 'Ingliz' }
 const LANG_COLORS = { uz: '#6366F1', uz_cyr: '#8B5CF6', ru: '#F59E0B', en: '#06B6D4' }
-const FUNNEL_META = {
-  sent:        { label: 'Yuborilgan',   color: '#22C55E', icon: 'Send' },
-  skipped:     { label: 'O\'tkazilgan', color: '#94A3B8', icon: 'ChevronR' },
-  ai_rejected: { label: 'AI rad etgan', color: '#F59E0B', icon: 'Sparkle' },
-  failed:      { label: 'Xato',         color: '#EF4444', icon: 'Close' },
-}
+
+const weekdayLabels = computed(() => [
+  tt('ov.wd.mon'), tt('ov.wd.tue'), tt('ov.wd.wed'),
+  tt('ov.wd.thu'), tt('ov.wd.fri'), tt('ov.wd.sat'), tt('ov.wd.sun'),
+])
+const langLabels = computed(() => ({
+  uz: tt('ov.lang.uz'), uz_cyr: tt('ov.lang.uz_cyr'), ru: tt('ov.lang.ru'), en: tt('ov.lang.en'),
+}))
+const funnelMeta = computed(() => ({
+  sent:        { label: tt('ov.funnel.sent'),     color: '#22C55E', icon: 'Send' },
+  skipped:     { label: tt('ov.funnel.skipped'),  color: '#94A3B8', icon: 'ChevronR' },
+  ai_rejected: { label: tt('ov.funnel.rejected'), color: '#F59E0B', icon: 'Sparkle' },
+  failed:      { label: tt('ov.funnel.failed'),   color: '#EF4444', icon: 'Close' },
+}))
 
 function fmt(n) {
   const v = Number(n) || 0
@@ -190,17 +201,17 @@ function fmt(n) {
   return (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M'
 }
 
-const headerTitle = computed(() => `Salom${company.value?.name ? ', ' + company.value.name : ''} 👋`)
+const headerTitle = computed(() => `${tt('ov.hello')}${company.value?.name ? ', ' + company.value.name : ''} 👋`)
 const headerSub = computed(() => {
   if (!d.value) return ''
-  return `So'nggi 7 kunda ${d.value.momentum.d7} post · ${d.value.momentum.streak} kunlik faollik seriyasi`
+  return tt('ov.headerSub', { n: d.value.momentum.d7, streak: d.value.momentum.streak })
 })
 
 const heatHasData = computed(() => (d.value?.heatmap || []).some(row => row.some(v => v > 0)))
 const weekdayHasData = computed(() => (d.value?.by_weekday || []).some(v => v > 0))
 
 const langSegs = computed(() => (d.value?.by_language || []).map(r => ({
-  label: LANG_LABELS[r.lang] || r.lang, value: Number(r.count), color: LANG_COLORS[r.lang] || '#94A3B8',
+  label: langLabels.value[r.lang] || r.lang, value: Number(r.count), color: LANG_COLORS[r.lang] || '#94A3B8',
 })))
 const categoryBars = computed(() => (d.value?.by_category || []).map(r => ({ label: r.category, value: Number(r.count) })))
 
@@ -208,7 +219,7 @@ const funnelRows = computed(() => {
   const rows = d.value?.autopost_funnel || []
   const max = Math.max(1, ...rows.map(r => Number(r.count)))
   return rows.map(r => {
-    const m = FUNNEL_META[r.status] || { label: r.status, color: '#94A3B8', icon: 'ChevronR' }
+    const m = funnelMeta.value[r.status] || { label: r.status, color: '#94A3B8', icon: 'ChevronR' }
     return { status: r.status, count: Number(r.count), pct: Math.max(3, Math.round(Number(r.count) / max * 100)), ...m }
   })
 })
@@ -226,13 +237,13 @@ async function load() {
       const list = Array.isArray(cs) ? cs : [cs].filter(Boolean)
       company.value = list[0] || null
     }
-    if (!company.value) { error.value = 'Kompaniya topilmadi'; return }
+    if (!company.value) { error.value = tt('ov.err.noCompany'); return }
     // Setup tekshiruvi analitikadan mustaqil — parallel ishga tushiramiz
     refreshSetup()
     startSetupPolling()
     d.value = await analyticsApi.dashboard(company.value.id)
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Ma\'lumotni yuklab bo\'lmadi'
+    error.value = e?.response?.data?.message || tt('ov.err.load')
   } finally {
     loading.value = false
   }

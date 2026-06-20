@@ -1,13 +1,13 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
     <PageHeader
-      :title="`Kompaniyalar`"
+      :title="tt('adminCompanies.title')"
       :subtitle="subtitleText"
     >
       <template #right>
         <AppButton variant="secondary" size="md" @click="load">
           <template #icon><AppIcon name="Sort" :size="13"/></template>
-          Yangilash
+          {{ tt('adminCompanies.refresh') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -15,15 +15,15 @@
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <AppTabs v-model="filter" :items="filterTabs" />
       <div style="flex:1;" />
-      <AppInput v-model="query" placeholder="Nom yoki egasi..." :style="{ width:'240px' }">
+      <AppInput v-model="query" :placeholder="tt('adminCompanies.searchPlaceholder')" :style="{ width:'240px' }">
         <template #icon><AppIcon name="Search" :size="13" :style="{color:'var(--muted)'}" /></template>
       </AppInput>
     </div>
 
     <AppPanel :padding="0">
-      <div v-if="loading" style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">Yuklanmoqda...</div>
+      <div v-if="loading" style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">{{ tt('adminCompanies.loading') }}</div>
       <div v-else-if="error" style="padding:40px;text-align:center;color:var(--danger);font-size:13px;">{{ error }}</div>
-      <div v-else-if="!filtered.length" style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">Kompaniya topilmadi</div>
+      <div v-else-if="!filtered.length" style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">{{ tt('adminCompanies.notFound') }}</div>
       <table v-else style="width:100%;border-collapse:collapse;font-size:12.5px;">
         <thead>
           <tr style="border-bottom:1px solid var(--border);">
@@ -50,7 +50,7 @@
             </td>
             <td style="padding:10px 12px;vertical-align:middle;">
               <PlanPill v-if="c.subscription?.tariff" :plan="planLabel(c.subscription.tariff)"/>
-              <span v-else style="font-size:11px;color:var(--muted);">— tarif yo'q —</span>
+              <span v-else style="font-size:11px;color:var(--muted);">{{ tt('adminCompanies.noTariff') }}</span>
             </td>
             <td style="padding:10px 12px;vertical-align:middle;font-size:11.5px;color:var(--muted);">
               <span v-if="c.subscription">{{ billingLabel(c.subscription.billing_cycle) }}</span>
@@ -74,12 +74,12 @@
             <td style="padding:10px 12px;vertical-align:middle;text-align:right;white-space:nowrap;">
               <AppButton variant="ghost" size="sm" @click="openEditModal(c)">
                 <template #icon><AppIcon name="Edit" :size="11"/></template>
-                Tahrirlash
+                {{ tt('adminCompanies.edit') }}
               </AppButton>
               <AppButton variant="secondary" size="sm" @click="openTariffModal(c)">
-                Tarif
+                {{ tt('adminCompanies.tariff') }}
               </AppButton>
-              <AppButton variant="ghost" size="sm" @click="onDelete(c)" title="Kompaniyani o'chirish">
+              <AppButton variant="ghost" size="sm" @click="onDelete(c)" :title="tt('adminCompanies.deleteCompany')">
                 <template #icon><AppIcon name="Trash" :size="11"/></template>
               </AppButton>
             </td>
@@ -87,48 +87,48 @@
         </tbody>
       </table>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">
-        <span>{{ filtered.length }} / {{ companies.length }} ko'rsatildi</span>
+        <span>{{ tt('adminCompanies.shownCount', { shown: filtered.length, total: companies.length }) }}</span>
       </div>
     </AppPanel>
 
     <AppModal
       v-model="modalOpen"
-      :title="`Tarifni o'zgartirish`"
+      :title="tt('adminCompanies.changeTariffTitle')"
       :subtitle="selected ? selected.name : ''"
       width="480px"
     >
       <div v-if="selected" style="display:flex;flex-direction:column;gap:14px;">
         <div>
-          <label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500;">Tarif</label>
+          <label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500;">{{ tt('adminCompanies.tariff') }}</label>
           <select v-model="form.tariff_id" :style="selectStyle">
             <option v-for="t in tariffs" :key="t.id" :value="t.id">
-              {{ planLabel(t) }} — {{ formatNum(t.price_monthly) }} so'm/oy
+              {{ planLabel(t) }} — {{ formatNum(t.price_monthly) }} {{ tt('adminCompanies.somPerMonth') }}
             </option>
           </select>
         </div>
         <div>
-          <label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500;">To'lov davri</label>
+          <label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500;">{{ tt('adminCompanies.billingPeriod') }}</label>
           <select v-model="form.billing_cycle" :style="selectStyle">
-            <option value="monthly">Oylik</option>
-            <option value="yearly">Yillik</option>
+            <option value="monthly">{{ tt('adminCompanies.monthly') }}</option>
+            <option value="yearly">{{ tt('adminCompanies.yearly') }}</option>
           </select>
         </div>
         <div>
-          <label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500;">Holat</label>
+          <label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500;">{{ tt('adminCompanies.statusLabel') }}</label>
           <select v-model="form.status" :style="selectStyle">
-            <option value="trial">Sinov (trial)</option>
-            <option value="active">Faol</option>
-            <option value="past_due">Qarz</option>
-            <option value="canceled">Bekor qilingan</option>
-            <option value="expired">Muddati o'tgan</option>
+            <option value="trial">{{ tt('adminCompanies.subStatusTrial') }}</option>
+            <option value="active">{{ tt('adminCompanies.subStatusActive') }}</option>
+            <option value="past_due">{{ tt('adminCompanies.subStatusPastDue') }}</option>
+            <option value="canceled">{{ tt('adminCompanies.subStatusCanceled') }}</option>
+            <option value="expired">{{ tt('adminCompanies.subStatusExpired') }}</option>
           </select>
         </div>
         <div v-if="submitError" style="color:var(--danger);font-size:12px;">{{ submitError }}</div>
       </div>
       <template #footer>
-        <AppButton variant="ghost" size="md" @click="modalOpen = false">Bekor qilish</AppButton>
+        <AppButton variant="ghost" size="md" @click="modalOpen = false">{{ tt('adminCompanies.cancel') }}</AppButton>
         <AppButton variant="primary" size="md" :disabled="submitting || !form.tariff_id" @click="submit">
-          {{ submitting ? 'Saqlanmoqda...' : "Saqlash" }}
+          {{ submitting ? tt('adminCompanies.saving') : tt('adminCompanies.save') }}
         </AppButton>
       </template>
     </AppModal>
@@ -136,7 +136,7 @@
     <!-- ─── Edit company + owner + reset password ─── -->
     <AppModal
       v-model="editOpen"
-      :title="`Kompaniyani tahrirlash`"
+      :title="tt('adminCompanies.editCompanyTitle')"
       :subtitle="editSelected ? editSelected.name : ''"
       width="560px"
     >
@@ -146,32 +146,32 @@
           <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
                       text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">
             <AppIcon name="Settings" :size="12"/>
-            Kompaniya ma'lumotlari
+            {{ tt('adminCompanies.companyInfo') }}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div>
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Nomi</label>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">{{ tt('adminCompanies.fieldName') }}</label>
               <input v-model="editForm.name" :style="inputStyle"/>
             </div>
             <div>
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Slug</label>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">{{ tt('adminCompanies.fieldSlug') }}</label>
               <input v-model="editForm.slug" :style="inputStyle" class="mono"/>
             </div>
             <div>
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Davlat</label>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">{{ tt('adminCompanies.fieldCountry') }}</label>
               <input v-model="editForm.country" :style="inputStyle" placeholder="UZ"/>
             </div>
             <div>
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Manzil</label>
-              <input v-model="editForm.location" :style="inputStyle" placeholder="Toshkent"/>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">{{ tt('adminCompanies.fieldLocation') }}</label>
+              <input v-model="editForm.location" :style="inputStyle" :placeholder="tt('adminCompanies.locationPlaceholder')"/>
             </div>
             <div style="grid-column:1/-1;">
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Status</label>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">{{ tt('adminCompanies.fieldStatus') }}</label>
               <select v-model="editForm.status" :style="selectStyle">
-                <option value="active">Faol (active)</option>
-                <option value="trial">Sinov (trial)</option>
-                <option value="suspended">To'xtatilgan (suspended)</option>
-                <option value="inactive">Nofaol (inactive)</option>
+                <option value="active">{{ tt('adminCompanies.companyStatusActive') }}</option>
+                <option value="trial">{{ tt('adminCompanies.companyStatusTrial') }}</option>
+                <option value="suspended">{{ tt('adminCompanies.companyStatusSuspended') }}</option>
+                <option value="inactive">{{ tt('adminCompanies.companyStatusInactive') }}</option>
               </select>
             </div>
           </div>
@@ -183,15 +183,15 @@
           <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
                       text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">
             <AppIcon name="Users" :size="12"/>
-            Kompaniya egasi
+            {{ tt('adminCompanies.companyOwner') }}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div>
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Ism familiya</label>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">{{ tt('adminCompanies.fieldFullName') }}</label>
               <input v-model="editForm.owner_full_name" :style="inputStyle"/>
             </div>
             <div>
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Email</label>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">{{ tt('adminCompanies.fieldEmail') }}</label>
               <input v-model="editForm.owner_email" :style="inputStyle" class="mono"/>
             </div>
           </div>
@@ -205,26 +205,26 @@
           <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
                       text-transform:uppercase;letter-spacing:0.05em;color:var(--danger);">
             <AppIcon name="Bolt" :size="12"/>
-            Parolni qayta o'rnatish
+            {{ tt('adminCompanies.passwordReset') }}
           </div>
           <div style="font-size:11.5px;color:var(--text-2);line-height:1.5;">
-            Yangi parol — kamida 6 ta belgi. Saqlangach kompaniya egasi yangi parol bilan kiradi.
+            {{ tt('adminCompanies.passwordResetHint') }}
           </div>
           <div style="display:flex;gap:8px;align-items:stretch;">
             <input v-model="editForm.new_password" type="text"
-                   placeholder="Yangi parol (bo'sh qoldirsangiz parol o'zgartirilmaydi)"
+                   :placeholder="tt('adminCompanies.newPasswordPlaceholder')"
                    :style="{ ...inputStyle, flex: 1 }"/>
             <button type="button" @click="generatePassword"
                     style="padding:0 12px;background:var(--panel-2);border:1px solid var(--border);
                            border-radius:7px;cursor:pointer;font-size:11.5px;color:var(--text-2);
                            white-space:nowrap;">
-              ✨ Tasodifiy
+              ✨ {{ tt('adminCompanies.random') }}
             </button>
           </div>
           <div v-if="editForm.new_password" style="display:flex;align-items:center;gap:6px;
                       font-size:11px;color:var(--text-2);">
             <AppIcon name="Check" :size="10" :style="{color:'var(--success, #10b981)'}"/>
-            Saqlanganda parol <span class="mono" style="background:var(--panel-2);padding:1px 6px;border-radius:4px;">{{ editForm.new_password }}</span> ga o'zgaradi
+            {{ tt('adminCompanies.passwordWillChangePrefix') }} <span class="mono" style="background:var(--panel-2);padding:1px 6px;border-radius:4px;">{{ editForm.new_password }}</span> {{ tt('adminCompanies.passwordWillChangeSuffix') }}
           </div>
         </div>
 
@@ -235,9 +235,9 @@
         </div>
       </div>
       <template #footer>
-        <AppButton variant="ghost" size="md" @click="editOpen = false">Bekor qilish</AppButton>
+        <AppButton variant="ghost" size="md" @click="editOpen = false">{{ tt('adminCompanies.cancel') }}</AppButton>
         <AppButton variant="primary" size="md" :disabled="editSubmitting" @click="submitEdit">
-          {{ editSubmitting ? 'Saqlanmoqda...' : "Saqlash" }}
+          {{ editSubmitting ? tt('adminCompanies.saving') : tt('adminCompanies.save') }}
         </AppButton>
       </template>
     </AppModal>
@@ -258,6 +258,11 @@ import PlanPill from '@/components/ui/PlanPill.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { adminApi } from '@/api/admin.js'
 import { tariffsApi } from '@/api/tariffs.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const companies = ref([])
 const tariffs = ref([])
@@ -309,15 +314,15 @@ const selectStyle = {
 const subtitleText = computed(() => {
   const total = companies.value.length
   const active = companies.value.filter(c => c.status === 'active').length
-  return `${total} ta kompaniya · ${active} ta faol`
+  return tt('adminCompanies.subtitle', { total, active })
 })
 
 const filterTabs = computed(() => [
-  { value: 'all',       label: 'Hammasi',  count: companies.value.length },
-  { value: 'active',    label: 'Faol',     count: companies.value.filter(c => c.status === 'active').length },
-  { value: 'trial',     label: 'Sinov',    count: companies.value.filter(c => c.status === 'trial').length },
-  { value: 'suspended', label: "To'xtatilgan", count: companies.value.filter(c => c.status === 'suspended').length },
-  { value: 'inactive',  label: 'Nofaol',   count: companies.value.filter(c => c.status === 'inactive').length },
+  { value: 'all',       label: tt('adminCompanies.tabAll'),       count: companies.value.length },
+  { value: 'active',    label: tt('adminCompanies.tabActive'),    count: companies.value.filter(c => c.status === 'active').length },
+  { value: 'trial',     label: tt('adminCompanies.tabTrial'),     count: companies.value.filter(c => c.status === 'trial').length },
+  { value: 'suspended', label: tt('adminCompanies.tabSuspended'), count: companies.value.filter(c => c.status === 'suspended').length },
+  { value: 'inactive',  label: tt('adminCompanies.tabInactive'),  count: companies.value.filter(c => c.status === 'inactive').length },
 ])
 
 const filtered = computed(() => companies.value.filter(c => {
@@ -330,33 +335,33 @@ const filtered = computed(() => companies.value.filter(c => {
   return fOk && qOk
 }))
 
-const colHeaders = [
-  { label: 'Kompaniya' },
-  { label: 'Tarif' },
-  { label: "To'lov" },
-  { label: 'Kanal limit', right: true },
-  { label: 'Postlar/oy', right: true },
-  { label: 'Narx', right: true },
-  { label: 'Status' },
-  { label: "Qo'shilgan" },
+const colHeaders = computed(() => [
+  { label: tt('adminCompanies.colCompany') },
+  { label: tt('adminCompanies.colTariff') },
+  { label: tt('adminCompanies.colBilling') },
+  { label: tt('adminCompanies.colChannelLimit'), right: true },
+  { label: tt('adminCompanies.colPostsPerMonth'), right: true },
+  { label: tt('adminCompanies.colPrice'), right: true },
+  { label: tt('adminCompanies.colStatus') },
+  { label: tt('adminCompanies.colCreated') },
   { label: '' },
-]
+])
 
 function planLabel(t) {
   if (!t) return ''
   const lang = localStorage.getItem('lang') || 'uz'
-  return t.name_i18n?.[lang] || t.name_i18n?.uz || t.slug || 'Tarif'
+  return t.name_i18n?.[lang] || t.name_i18n?.uz || t.slug || tt('adminCompanies.tariff')
 }
 
 function billingLabel(c) {
-  return c === 'yearly' ? 'Yillik' : 'Oylik'
+  return c === 'yearly' ? tt('adminCompanies.yearly') : tt('adminCompanies.monthly')
 }
 
 function priceLabel(sub) {
   if (!sub?.tariff) return '—'
   const price = sub.billing_cycle === 'yearly' ? sub.tariff.price_yearly : sub.tariff.price_monthly
-  if (!price) return 'Bepul'
-  return formatNum(price) + " so'm"
+  if (!price) return tt('adminCompanies.free')
+  return formatNum(price) + ' ' + tt('adminCompanies.som')
 }
 
 function formatNum(n) {
@@ -387,7 +392,7 @@ async function load() {
     companies.value = Array.isArray(cs) ? cs : []
     tariffs.value = Array.isArray(ts) ? ts : []
   } catch (e) {
-    error.value = e.response?.data?.message || 'Maʼlumotlarni yuklab boʻlmadi'
+    error.value = e.response?.data?.message || tt('adminCompanies.loadError')
   } finally {
     loading.value = false
   }
@@ -416,7 +421,7 @@ async function submit() {
     if (idx !== -1) companies.value.splice(idx, 1, updated)
     modalOpen.value = false
   } catch (e) {
-    submitError.value = e.response?.data?.message || 'Saqlashda xatolik'
+    submitError.value = e.response?.data?.message || tt('adminCompanies.saveError')
   } finally {
     submitting.value = false
   }
@@ -466,11 +471,11 @@ async function submitEdit() {
     const idx = companies.value.findIndex(x => x.id === updated.id)
     if (idx !== -1) companies.value.splice(idx, 1, updated)
     editSuccess.value = editForm.new_password
-      ? "Saqlandi · yangi parol o'rnatildi"
-      : "Saqlandi"
+      ? tt('adminCompanies.savedWithPassword')
+      : tt('adminCompanies.saved')
     setTimeout(() => { editOpen.value = false }, 800)
   } catch (e) {
-    editError.value = e.response?.data?.message || 'Saqlashda xato'
+    editError.value = e.response?.data?.message || tt('adminCompanies.saveError')
   } finally {
     editSubmitting.value = false
   }
@@ -478,12 +483,12 @@ async function submitEdit() {
 
 async function onDelete(c) {
   if (!c) return
-  if (!confirm(`"${c.name}" kompaniyasini butunlay o'chirishni xohlaysizmi?\n\nBu amalni qaytarib bo'lmaydi.`)) return
+  if (!confirm(tt('adminCompanies.deleteConfirm', { name: c.name }))) return
   try {
     await adminApi.deleteCompany(c.id)
     companies.value = companies.value.filter(x => x.id !== c.id)
   } catch (e) {
-    alert(e.response?.data?.message || "O'chirishda xato")
+    alert(e.response?.data?.message || tt('adminCompanies.deleteError'))
   }
 }
 

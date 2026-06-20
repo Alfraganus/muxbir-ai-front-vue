@@ -1,14 +1,14 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:18px;">
-    <PageHeader title="Tariflar" :subtitle="subtitleText">
+    <PageHeader :title="tt('adminTariffs.title')" :subtitle="subtitleText">
       <template #right>
         <AppButton variant="secondary" size="md" @click="load">
           <template #icon><AppIcon name="Sort" :size="13"/></template>
-          Yangilash
+          {{ tt('adminTariffs.refresh') }}
         </AppButton>
         <AppButton variant="primary" size="md" @click="goCreate">
           <template #icon><AppIcon name="Plus" :size="13"/></template>
-          Yangi tarif
+          {{ tt('adminTariffs.newTariff') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -27,13 +27,13 @@
         </button>
       </div>
       <div style="flex:1;"/>
-      <AppInput v-model="query" placeholder="Tarif nomi..." :style="{ width:'220px' }">
+      <AppInput v-model="query" :placeholder="tt('adminTariffs.searchPlaceholder')" :style="{ width:'220px' }">
         <template #icon><AppIcon name="Search" :size="13" :style="{color:'var(--muted)'}" /></template>
       </AppInput>
     </div>
 
     <!-- States -->
-    <div v-if="loading" style="padding:60px;text-align:center;color:var(--muted);font-size:13px;">Yuklanmoqda...</div>
+    <div v-if="loading" style="padding:60px;text-align:center;color:var(--muted);font-size:13px;">{{ tt('adminTariffs.loading') }}</div>
     <div v-else-if="error" style="padding:60px;text-align:center;color:var(--danger);font-size:13px;">{{ error }}</div>
 
     <!-- Empty -->
@@ -42,13 +42,13 @@
         <div style="width:56px;height:56px;border-radius:14px;background:var(--accent-bg);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;">
           <AppIcon name="Sparkle" :size="22"/>
         </div>
-        <div style="font-size:15px;font-weight:600;">Hozircha tarif yo'q</div>
+        <div style="font-size:15px;font-weight:600;">{{ tt('adminTariffs.emptyTitle') }}</div>
         <div style="font-size:12.5px;color:var(--muted);max-width:360px;">
-          Tarif konstruktori orqali birinchi tarifingizni yarating — resurslar, modullar va narx avtomatik hisoblanadi.
+          {{ tt('adminTariffs.emptyHint') }}
         </div>
         <AppButton variant="primary" size="md" @click="goCreate">
           <template #icon><AppIcon name="Plus" :size="13"/></template>
-          Birinchi tarifni yaratish
+          {{ tt('adminTariffs.createFirst') }}
         </AppButton>
       </div>
     </AppPanel>
@@ -80,7 +80,7 @@
               </div>
             </div>
             <AppBadge :tone="t.is_active ? 'success' : 'muted'" :dot="true">
-              {{ t.is_active ? 'Faol' : 'Nofaol' }}
+              {{ t.is_active ? tt('adminTariffs.active') : tt('adminTariffs.inactive') }}
             </AppBadge>
           </div>
           <!-- Price -->
@@ -89,29 +89,29 @@
               fontSize:'28px',fontWeight:700,letterSpacing:'-0.02em',
               color: priceFor(t) === 0 ? 'var(--muted)' : 'var(--text)',
             }">
-              {{ priceFor(t) === 0 ? 'Bepul' : fmtSom(priceFor(t)) }}
+              {{ priceFor(t) === 0 ? tt('adminTariffs.free') : fmtSom(priceFor(t)) }}
             </span>
             <span v-if="priceFor(t) !== 0" style="font-size:11.5px;color:var(--muted);">
-              so'm / {{ billingPreview === 'monthly' ? 'oy' : 'yil' }}
+              {{ tt('adminTariffs.som') }} / {{ billingPreview === 'monthly' ? tt('adminTariffs.perMonthShort') : tt('adminTariffs.perYearShort') }}
             </span>
           </div>
           <div v-if="billingPreview === 'yearly' && t.price_monthly > 0" style="font-size:11px;color:var(--muted);margin-top:2px;">
-            ≈ {{ fmtSom(Math.round(t.price_yearly / 12)) }} so'm/oy
+            ≈ {{ fmtSom(Math.round(t.price_yearly / 12)) }} {{ tt('adminTariffs.somPerMonth') }}
           </div>
         </div>
 
         <!-- Limits -->
         <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px;">
-          <LimitLine icon="Bolt" :label="'Kuniga xabar'" :value="t.posts_daily_limit > 0 ? fmtNum(t.posts_daily_limit) : 'cheksiz'" />
-          <LimitLine icon="Pen" :label="'Oyiga xabar'" :value="fmtNum(t.posts_monthly_limit)" />
-          <LimitLine icon="Sparkle" :label="'Bepul kredit / oy'" :value="fmtNum(t.free_credits_monthly)" />
-          <LimitLine icon="Hash" :label="'Qo\'shimcha kredit'" :value="t.credit_price_per_message > 0 ? fmtSom(t.credit_price_per_message) + ' so\'m' : '—'" />
+          <LimitLine icon="Bolt" :label="tt('adminTariffs.dailyPosts')" :value="t.posts_daily_limit > 0 ? fmtNum(t.posts_daily_limit) : tt('adminTariffs.unlimited')" />
+          <LimitLine icon="Pen" :label="tt('adminTariffs.monthlyPosts')" :value="fmtNum(t.posts_monthly_limit)" />
+          <LimitLine icon="Sparkle" :label="tt('adminTariffs.freeCreditsMonthly')" :value="fmtNum(t.free_credits_monthly)" />
+          <LimitLine icon="Hash" :label="tt('adminTariffs.extraCredit')" :value="t.credit_price_per_message > 0 ? fmtSom(t.credit_price_per_message) + ' ' + tt('adminTariffs.som') : '—'" />
         </div>
 
         <!-- Features -->
         <div v-if="t.features?.length"
           style="padding:12px 18px;border-top:1px solid var(--border-2);display:flex;flex-direction:column;gap:7px;">
-          <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:500;">Modullar</div>
+          <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-weight:500;">{{ tt('adminTariffs.modules') }}</div>
           <div v-for="f in t.features.slice(0, 5)" :key="f.id || f.key"
             style="display:flex;align-items:center;gap:8px;font-size:12px;">
             <span :style="{
@@ -126,7 +126,7 @@
             <span style="color:var(--text-2);">{{ featureLabel(f) }}</span>
           </div>
           <span v-if="t.features.length > 5" style="font-size:11px;color:var(--muted);padding-left:24px;">
-            +{{ t.features.length - 5 }} boshqa modul
+            {{ tt('adminTariffs.moreModules', { n: t.features.length - 5 }) }}
           </span>
         </div>
 
@@ -134,15 +134,15 @@
         <div style="padding:12px 14px;border-top:1px solid var(--border-2);display:flex;align-items:center;gap:8px;background:var(--panel-2);">
           <AppButton variant="ghost" size="sm" @click="confirmRemove(t)">
             <template #icon><AppIcon name="Trash" :size="12"/></template>
-            O'chirish
+            {{ tt('adminTariffs.delete') }}
           </AppButton>
           <div style="flex:1;"/>
           <AppButton variant="secondary" size="sm" @click="goEdit(t)">
             <template #icon><AppIcon name="Pen" :size="12"/></template>
-            Tahrir
+            {{ tt('adminTariffs.edit') }}
           </AppButton>
           <AppButton variant="secondary" size="sm" @click="toggleActive(t)">
-            {{ t.is_active ? 'Yashirish' : 'Faollashtirish' }}
+            {{ t.is_active ? tt('adminTariffs.hide') : tt('adminTariffs.activate') }}
           </AppButton>
         </div>
       </div>
@@ -178,10 +178,10 @@
             <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtNum(t.free_credits_monthly) }}</td>
             <td style="padding:12px;vertical-align:middle;text-align:right;" class="tabular">{{ t.credit_price_per_message > 0 ? fmtSom(t.credit_price_per_message) : '—' }}</td>
             <td style="padding:12px;vertical-align:middle;text-align:right;font-weight:500;" class="tabular">
-              {{ priceFor(t) === 0 ? 'Bepul' : fmtSom(priceFor(t)) + " so'm" }}
+              {{ priceFor(t) === 0 ? tt('adminTariffs.free') : fmtSom(priceFor(t)) + ' ' + tt('adminTariffs.som') }}
             </td>
             <td style="padding:12px;vertical-align:middle;">
-              <AppBadge :tone="t.is_active ? 'success' : 'muted'" :dot="true">{{ t.is_active ? 'Faol' : 'Nofaol' }}</AppBadge>
+              <AppBadge :tone="t.is_active ? 'success' : 'muted'" :dot="true">{{ t.is_active ? tt('adminTariffs.active') : tt('adminTariffs.inactive') }}</AppBadge>
             </td>
             <td style="padding:12px;vertical-align:middle;text-align:right;">
               <div style="display:inline-flex;gap:6px;">
@@ -189,7 +189,7 @@
                   <template #icon><AppIcon name="Pen" :size="12"/></template>
                 </AppButton>
                 <AppButton variant="secondary" size="sm" @click="toggleActive(t)">
-                  {{ t.is_active ? 'Yashirish' : 'Yoqish' }}
+                  {{ t.is_active ? tt('adminTariffs.hide') : tt('adminTariffs.enable') }}
                 </AppButton>
                 <AppButton variant="ghost" size="sm" @click="confirmRemove(t)">
                   <template #icon><AppIcon name="Trash" :size="12"/></template>
@@ -214,6 +214,11 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { tariffsApi } from '@/api/tariffs.js'
 import { fmtSom } from '@/i18n/index.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const router = useRouter()
 
@@ -224,14 +229,14 @@ const view = ref('cards')
 const billingPreview = ref('monthly')
 const query = ref('')
 
-const viewOptions = [
-  { id: 'cards', label: 'Kartalar', icon: 'Hash' },
-  { id: 'table', label: 'Jadval',   icon: 'Sort' },
-]
-const billingOptions = [
-  { id: 'monthly', label: 'Oylik' },
-  { id: 'yearly',  label: 'Yillik' },
-]
+const viewOptions = computed(() => [
+  { id: 'cards', label: tt('adminTariffs.viewCards'), icon: 'Hash' },
+  { id: 'table', label: tt('adminTariffs.viewTable'), icon: 'Sort' },
+])
+const billingOptions = computed(() => [
+  { id: 'monthly', label: tt('adminTariffs.monthly') },
+  { id: 'yearly',  label: tt('adminTariffs.yearly') },
+])
 
 const COLORS = ['#5b8def', '#7b61ff', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#ef4444']
 const ICONS  = ['Hash', 'Sparkle', 'Bolt', 'Pen', 'Cloud', 'UserPlus']
@@ -242,7 +247,7 @@ const tariffIcon  = (i) => ICONS[i % ICONS.length]
 const subtitleText = computed(() => {
   const total = tariffs.value.length
   const active = tariffs.value.filter(t => t.is_active).length
-  return `${total} ta tarif · ${active} ta faol`
+  return tt('adminTariffs.subtitle', { total, active })
 })
 
 const filtered = computed(() => {
@@ -254,17 +259,17 @@ const filtered = computed(() => {
   )
 })
 
-const colHeaders = [
-  { label: 'Tarif' },
-  { label: 'Kategoriya' },
-  { label: 'Kuniga',     right: true },
-  { label: 'Oyiga',      right: true },
-  { label: 'Bepul kredit',right: true },
-  { label: 'Kredit narxi',right: true },
-  { label: 'Narx',       right: true },
-  { label: 'Holat' },
+const colHeaders = computed(() => [
+  { label: tt('adminTariffs.colTariff') },
+  { label: tt('adminTariffs.colCategory') },
+  { label: tt('adminTariffs.colDaily'),       right: true },
+  { label: tt('adminTariffs.colMonthly'),     right: true },
+  { label: tt('adminTariffs.colFreeCredit'),  right: true },
+  { label: tt('adminTariffs.colCreditPrice'), right: true },
+  { label: tt('adminTariffs.colPrice'),       right: true },
+  { label: tt('adminTariffs.colStatus') },
   { label: '' },
-]
+])
 
 function tariffName(t) {
   const lang = localStorage.getItem('lang') || 'uz'
@@ -327,7 +332,7 @@ async function load() {
     const data = await tariffsApi.listAll()
     tariffs.value = Array.isArray(data) ? data : []
   } catch (e) {
-    error.value = e.response?.data?.message || 'Tariflarni yuklab boʻlmadi'
+    error.value = e.response?.data?.message || tt('adminTariffs.loadError')
   } finally {
     loading.value = false
   }
@@ -347,17 +352,17 @@ async function toggleActive(t) {
     const idx = tariffs.value.findIndex(x => x.id === t.id)
     if (idx !== -1) tariffs.value.splice(idx, 1, { ...t, ...updated })
   } catch (e) {
-    alert(e.response?.data?.message || 'Holatni o\'zgartirib bo\'lmadi')
+    alert(e.response?.data?.message || tt('adminTariffs.toggleError'))
   }
 }
 
 async function confirmRemove(t) {
-  if (!confirm(`"${tariffName(t)}" tarifini o'chirilsinmi?`)) return
+  if (!confirm(tt('adminTariffs.confirmRemove', { name: tariffName(t) }))) return
   try {
     await tariffsApi.remove(t.id)
     tariffs.value = tariffs.value.filter(x => x.id !== t.id)
   } catch (e) {
-    alert(e.response?.data?.message || "Tarifni o'chirib bo'lmadi")
+    alert(e.response?.data?.message || tt('adminTariffs.removeError'))
   }
 }
 

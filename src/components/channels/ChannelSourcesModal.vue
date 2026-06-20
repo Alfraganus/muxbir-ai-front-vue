@@ -4,13 +4,13 @@
       <!-- Header -->
       <div class="csm-head">
         <div style="min-width:0;">
-          <div class="csm-title">Manbalar</div>
+          <div class="csm-title">{{ tt('channelSourcesModal.title') }}</div>
           <div class="csm-sub">
-            <strong>{{ channel.display_name || channel.username || 'Kanal' }}</strong>
-            uchun postlar ovlanadigan Telegram kanallari
+            <strong>{{ channel.display_name || channel.username || tt('channelSourcesModal.channelFallback') }}</strong>
+            {{ tt('channelSourcesModal.subtitle') }}
           </div>
         </div>
-        <button class="csm-x" @click="$emit('close')" aria-label="Yopish">✕</button>
+        <button class="csm-x" @click="$emit('close')" :aria-label="tt('channelSourcesModal.close')">✕</button>
       </div>
 
       <div class="csm-body">
@@ -18,21 +18,21 @@
         <div class="csm-types">
           <button type="button" class="csm-type" :class="{ active: newType === 'telegram' }" @click="newType = 'telegram'">
             <AppIcon name="Telegram" :size="15"/>
-            <span>Telegram kanal</span>
+            <span>{{ tt('channelSourcesModal.typeTelegram') }}</span>
           </button>
           <button type="button" class="csm-type" :class="{ active: newType === 'website' }" @click="newType = 'website'">
             <AppIcon name="Globe" :size="15"/>
-            <span>Website</span>
+            <span>{{ tt('channelSourcesModal.typeWebsite') }}</span>
           </button>
-          <button type="button" class="csm-type csm-type-soon" disabled title="Tez orada">
+          <button type="button" class="csm-type csm-type-soon" disabled :title="tt('channelSourcesModal.comingSoon')">
             <AppIcon name="Facebook" :size="15"/>
             <span>Facebook</span>
-            <span class="csm-soon">tez orada</span>
+            <span class="csm-soon">{{ tt('channelSourcesModal.comingSoonBadge') }}</span>
           </button>
-          <button type="button" class="csm-type csm-type-soon" disabled title="Tez orada">
+          <button type="button" class="csm-type csm-type-soon" disabled :title="tt('channelSourcesModal.comingSoon')">
             <AppIcon name="Instagram" :size="15"/>
             <span>Instagram</span>
-            <span class="csm-soon">tez orada</span>
+            <span class="csm-soon">{{ tt('channelSourcesModal.comingSoonBadge') }}</span>
           </button>
         </div>
 
@@ -40,9 +40,9 @@
         <div v-if="newType === 'telegram' && tgApi.loaded && !tgApi.is_saved" class="csm-warn">
           <span style="font-size:16px;">⚠️</span>
           <span style="flex:1;">
-            Telegram manba uchun avval <strong>Telegram API</strong> credentials'ingizni kiriting.
+            {{ tt('channelSourcesModal.tgApiWarnPre') }} <strong>Telegram API</strong> {{ tt('channelSourcesModal.tgApiWarnPost') }}
           </span>
-          <button class="csm-btn-accent" @click="goToTgApi">Telegram API →</button>
+          <button class="csm-btn-accent" @click="goToTgApi">{{ tt('channelSourcesModal.tgApiBtn') }}</button>
         </div>
 
         <!-- Yangi manba qo'shish -->
@@ -50,12 +50,12 @@
           <input
             v-model="newValue"
             type="text"
-            :placeholder="newType === 'website' ? 'https://muxbir.ai (news portal manzili)' : '@kunuz yoki t.me/kunuz'"
+            :placeholder="newType === 'website' ? tt('channelSourcesModal.websitePlaceholder') : tt('channelSourcesModal.telegramPlaceholder')"
             :disabled="adding"
             class="csm-input"
           />
           <button type="submit" :disabled="adding || !newValue.trim() || telegramLocked" class="csm-btn-accent">
-            {{ adding ? 'Qo\'shilmoqda…' : '+ Qo\'shish' }}
+            {{ adding ? tt('channelSourcesModal.adding') : tt('channelSourcesModal.addBtn') }}
           </button>
         </form>
 
@@ -64,38 +64,38 @@
           <input
             v-model="newFeedUrl"
             type="text"
-            placeholder="RSS feed URL (ixtiyoriy) — masalan https://feeds.bbci.co.uk/news/rss.xml"
+            :placeholder="tt('channelSourcesModal.feedUrlPlaceholder')"
             :disabled="adding"
             class="csm-input"
           />
           <label class="csm-check">
             <input type="checkbox" v-model="newAllowUndated" :disabled="adding" />
-            <span>Sanasiz postlarga ham ruxsat (o‘quv/resurs saytlari uchun)</span>
+            <span>{{ tt('channelSourcesModal.allowUndatedAdd') }}</span>
           </label>
         </div>
 
         <div class="csm-hint">
           {{ newType === 'website'
-            ? 'Sayt URL’ini kiriting — RSS feed avtomatik topiladi, bo‘lmasa sahifadan o‘qiladi. Topilmasa, RSS feed URL’ini qo‘lda kiriting.'
-            : 'Public Telegram kanal @username yoki t.me linki.' }}
+            ? tt('channelSourcesModal.websiteHint')
+            : tt('channelSourcesModal.telegramHint') }}
         </div>
         <div v-if="addError" class="csm-err">{{ addError }}</div>
 
         <!-- Ro'yxat (tanlangan tur bo'yicha filtrlangan) -->
-        <div v-if="loading" class="csm-muted">Yuklanmoqda…</div>
+        <div v-if="loading" class="csm-muted">{{ tt('channelSourcesModal.loading') }}</div>
         <div v-else-if="!sources.length" class="csm-empty">
-          Bu kanal uchun hali manba yo'q. Yuqorida birinchi manbani qo'shing.
+          {{ tt('channelSourcesModal.emptyAll') }}
         </div>
         <div v-else-if="!filteredSources.length" class="csm-empty">
-          {{ newType === 'website' ? 'Website manba yo\'q.' : 'Telegram manba yo\'q.' }}
-          Yuqoridagi maydondan qo'shing yoki boshqa turni tanlang.
+          {{ newType === 'website' ? tt('channelSourcesModal.emptyWebsite') : tt('channelSourcesModal.emptyTelegram') }}
+          {{ tt('channelSourcesModal.emptyFilteredHint') }}
         </div>
         <div v-else class="csm-list">
           <div v-for="s in filteredSources" :key="s.id" class="csm-row">
             <label class="csm-toggle">
               <input type="checkbox" :checked="s.is_active" @change="toggleActive(s)" />
               <span :style="{ color: s.is_active ? '#16a34a' : 'var(--muted)' }">
-                {{ s.is_active ? 'Yoqilgan' : 'O\'chirilgan' }}
+                {{ s.is_active ? tt('channelSourcesModal.enabled') : tt('channelSourcesModal.disabled') }}
               </span>
             </label>
 
@@ -113,24 +113,24 @@
                 </a>
                 <span v-if="s.title && s.title !== s.username_normalized" style="font-size:12px;color:var(--text);">— {{ s.title }}</span>
                 <span v-if="s.subscriber_count > 0" class="csm-badge">
-                  {{ formatNumber(s.subscriber_count) }} obunachi
+                  {{ tt('channelSourcesModal.subscribers', { n: formatNumber(s.subscriber_count) }) }}
                 </span>
               </div>
               <div style="font-size:11px;color:var(--muted);">
-                <span v-if="s.last_scanned_at">Oxirgi scan: {{ formatDate(s.last_scanned_at) }}</span>
-                <span v-else>Hali scan qilinmagan</span>
+                <span v-if="s.last_scanned_at">{{ tt('channelSourcesModal.lastScan', { date: formatDate(s.last_scanned_at) }) }}</span>
+                <span v-else>{{ tt('channelSourcesModal.notScanned') }}</span>
                 <span v-if="s.last_error" style="color:#ef4444;margin-left:6px;">· ⚠ {{ s.last_error }}</span>
               </div>
               <label v-if="s.source_type === 'website'" class="csm-check csm-check-sm">
                 <input type="checkbox" :checked="s.allow_undated" @change="toggleUndated(s)" />
-                <span>Sanasiz postlarga ruxsat</span>
+                <span>{{ tt('channelSourcesModal.allowUndated') }}</span>
               </label>
             </div>
 
-            <button @click="scanOne(s)" :disabled="scanningId === s.id" class="csm-btn-ghost" title="Hozir scan qil">
-              {{ scanningId === s.id ? '…' : 'Scan' }}
+            <button @click="scanOne(s)" :disabled="scanningId === s.id" class="csm-btn-ghost" :title="tt('channelSourcesModal.scanNow')">
+              {{ scanningId === s.id ? '…' : tt('channelSourcesModal.scanBtn') }}
             </button>
-            <button @click="remove(s)" class="csm-btn-danger" title="O'chirish">O'chirish</button>
+            <button @click="remove(s)" class="csm-btn-danger" :title="tt('channelSourcesModal.removeBtn')">{{ tt('channelSourcesModal.removeBtn') }}</button>
           </div>
         </div>
       </div>
@@ -144,6 +144,11 @@ import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { channelsApi } from '@/api/channels.js'
 import { companiesApi } from '@/api/companies.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
   companyId: { type: [String, Number], required: true },
@@ -248,7 +253,7 @@ async function scanOne(s) {
   scanningId.value = s.id
   try {
     await channelsApi.scanSource(props.companyId, props.channel.id, s.id)
-    alert('Scan navbatga qo\'shildi. Bir necha soniyadan keyin postlar paydo bo\'ladi.')
+    alert(tt('channelSourcesModal.scanQueued'))
     setTimeout(reload, 3000)
   } catch (e) {
     alert(e?.response?.data?.message ?? e.message)
@@ -258,7 +263,7 @@ async function scanOne(s) {
 }
 
 async function remove(s) {
-  if (!confirm(`@${s.username_normalized} manbasini o'chirmoqchimisiz?`)) return
+  if (!confirm(tt('channelSourcesModal.removeConfirm', { name: s.username_normalized }))) return
   try {
     await channelsApi.removeSource(props.companyId, props.channel.id, s.id)
     await reload()

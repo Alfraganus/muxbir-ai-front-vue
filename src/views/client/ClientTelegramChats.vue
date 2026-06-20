@@ -1,36 +1,34 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;max-width:760px;">
     <PageHeader
-      title="Telegram chatlar"
-      subtitle="Muxbir AI bot tasdiqlash so'rovlarini shu chatlarga yuboradi. Bir kompaniyaga bir nechta chat qo'shsangiz bo'ladi."
+      :title="tt('clientTelegramChats.title')"
+      :subtitle="tt('clientTelegramChats.subtitle')"
     />
 
     <!-- Yo'riqnoma -->
     <div style="padding:10px 12px;border-radius:8px;background:rgba(99,102,241,.08);
-                border:1px solid rgba(99,102,241,.2);font-size:12px;line-height:1.6;color:var(--text);">
-      ℹ️ Chat ID ni bilish uchun <strong>Muxbir AI bot</strong>ga (yoki bot a'zo bo'lgan guruhga)
-      <code>/start</code> yuboring — bot javobida shu chatning ID raqamini qaytaradi. Shaxsiy chat ID
-      musbat, guruh/kanal ID odatda <code>-100</code> bilan boshlanadi.
+                border:1px solid rgba(99,102,241,.2);font-size:12px;line-height:1.6;color:var(--text);"
+         v-html="tt('clientTelegramChats.instruction')">
     </div>
 
     <!-- Qo'shish formasi -->
     <AppPanel :padding="16">
       <div style="display:flex;flex-direction:column;gap:12px;">
-        <div style="font-size:13px;font-weight:600;">Yangi chat qo'shish</div>
+        <div style="font-size:13px;font-weight:600;">{{ tt('clientTelegramChats.addNewChat') }}</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">
           <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
-            <span style="font-size:11px;color:var(--muted);">Chat ID</span>
+            <span style="font-size:11px;color:var(--muted);">{{ tt('clientTelegramChats.chatIdLabel') }}</span>
             <AppInput v-model="form.chat_id" placeholder="-1001234567890" mono />
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px;">
-            <span style="font-size:11px;color:var(--muted);">Nom (ixtiyoriy)</span>
-            <AppInput v-model="form.title" placeholder="Masalan: Asosiy admin" />
+            <span style="font-size:11px;color:var(--muted);">{{ tt('clientTelegramChats.nameLabel') }}</span>
+            <AppInput v-model="form.title" :placeholder="tt('clientTelegramChats.namePlaceholder')" />
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
             <span style="font-size:11px;color:transparent;">.</span>
             <AppButton variant="primary" size="md" :loading="adding" @click="add">
               <template #icon><AppIcon name="Check" :size="13"/></template>
-              Qo'shish
+              {{ tt('clientTelegramChats.addBtn') }}
             </AppButton>
           </div>
         </div>
@@ -40,7 +38,7 @@
     <!-- Loading -->
     <div v-if="loading" style="display:flex;align-items:center;justify-content:center;padding:40px 0;color:var(--muted);font-size:13px;gap:10px;">
       <span class="ctc-spinner"/>
-      Yuklanmoqda...
+      {{ tt('clientTelegramChats.loading') }}
     </div>
 
     <!-- Empty -->
@@ -50,8 +48,8 @@
           <AppIcon name="Telegram" :size="24"/>
         </span>
         <div>
-          <div style="font-size:14px;font-weight:600;margin-bottom:3px;">Hali chat qo'shilmagan</div>
-          <div style="font-size:12.5px;color:var(--muted);">Yuqoridagi forma orqali birinchi Telegram chat ID ni qo'shing.</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:3px;">{{ tt('clientTelegramChats.emptyTitle') }}</div>
+          <div style="font-size:12.5px;color:var(--muted);">{{ tt('clientTelegramChats.emptyHint') }}</div>
         </div>
       </div>
     </AppPanel>
@@ -70,16 +68,16 @@
           </span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              {{ c.title || 'Nomsiz chat' }}
+              {{ c.title || tt('clientTelegramChats.untitledChat') }}
             </div>
             <div style="font-size:12px;color:var(--muted);font-family:var(--font-mono);">{{ c.chat_id }}</div>
           </div>
           <div style="display:flex;align-items:center;gap:14px;">
             <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);cursor:pointer;">
               <AppToggle :model-value="c.is_active" size="sm" @update:model-value="toggle(c)" />
-              {{ c.is_active ? 'Faol' : 'O\'chiq' }}
+              {{ c.is_active ? tt('clientTelegramChats.active') : tt('clientTelegramChats.inactive') }}
             </label>
-            <button class="ctc-del" :disabled="c._busy" @click="remove(c)" title="O'chirish">
+            <button class="ctc-del" :disabled="c._busy" @click="remove(c)" :title="tt('clientTelegramChats.delete')">
               <AppIcon name="Close" :size="14"/>
             </button>
           </div>
@@ -90,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useAppStore } from '@/stores/app.js'
 import { companiesApi } from '@/api/companies.js'
 import { useToast } from '@/composables/useToast.js'
@@ -103,6 +101,8 @@ import AppToggle from '@/components/ui/AppToggle.vue'
 
 const store = useAppStore()
 const toast = useToast()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const companyId = ref(store.companyId)
 const chats = ref([])
@@ -127,7 +127,7 @@ async function load() {
   try {
     chats.value = await companiesApi.listTelegramChats(cid)
   } catch (e) {
-    toast.error(e?.response?.data?.message ?? 'Yuklab bo\'lmadi')
+    toast.error(e?.response?.data?.message ?? tt('clientTelegramChats.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -138,7 +138,7 @@ async function add() {
   if (!cid) return
   const chat_id = form.chat_id.trim()
   if (!/^-?\d{4,20}$/.test(chat_id)) {
-    toast.error('Chat ID raqam bo\'lishi kerak (masalan -1001234567890)')
+    toast.error(tt('clientTelegramChats.invalidChatId'))
     return
   }
   adding.value = true
@@ -146,10 +146,10 @@ async function add() {
     await companiesApi.addTelegramChat(cid, { chat_id, title: form.title.trim() || undefined })
     form.chat_id = ''
     form.title = ''
-    toast.success('Chat qo\'shildi')
+    toast.success(tt('clientTelegramChats.chatAdded'))
     await load()
   } catch (e) {
-    toast.error(e?.response?.data?.message ?? 'Qo\'shib bo\'lmadi')
+    toast.error(e?.response?.data?.message ?? tt('clientTelegramChats.addFailed'))
   } finally {
     adding.value = false
   }
@@ -162,19 +162,19 @@ async function toggle(c) {
     await companiesApi.updateTelegramChat(companyId.value, c.id, { is_active: next })
   } catch (e) {
     c.is_active = !next // qaytarish
-    toast.error(e?.response?.data?.message ?? 'O\'zgartirib bo\'lmadi')
+    toast.error(e?.response?.data?.message ?? tt('clientTelegramChats.updateFailed'))
   }
 }
 
 async function remove(c) {
-  if (!confirm(`"${c.title || c.chat_id}" chatini o'chirmoqchimisiz?`)) return
+  if (!confirm(tt('clientTelegramChats.confirmDelete', { name: c.title || c.chat_id }))) return
   c._busy = true
   try {
     await companiesApi.removeTelegramChat(companyId.value, c.id)
     chats.value = chats.value.filter(x => x.id !== c.id)
   } catch (e) {
     c._busy = false
-    toast.error(e?.response?.data?.message ?? 'O\'chirib bo\'lmadi')
+    toast.error(e?.response?.data?.message ?? tt('clientTelegramChats.deleteFailed'))
   }
 }
 

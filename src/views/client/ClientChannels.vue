@@ -73,7 +73,7 @@
                 <span class="ccx-dot"/>
                 <button type="button" class="ccx-mode ccx-mode-btn" :class="modeOf(c)"
                   @click.stop="togglePostingMode(c)"
-                  :title="modeOf(c) === 'auto' ? 'Manual rejimga oʻtkazish uchun bosing' : 'Avto rejimga oʻtkazish uchun bosing'">
+                  :title="modeOf(c) === 'auto' ? tt('cc.mode.toManual') : tt('cc.mode.toAuto')">
                   <AppIcon :name="modeOf(c) === 'auto' ? 'Bolt' : 'Edit'" :size="9"/>
                   {{ modeOf(c) === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }}
                   <AppIcon name="ArrowDown" :size="8" style="opacity:.6;"/>
@@ -113,20 +113,20 @@
           <!-- Stats -->
           <div class="ccx-stats">
             <div class="ccx-stat">
-              <span class="ccx-stat-lbl">Obunachilar</span>
+              <span class="ccx-stat-lbl">{{ tt('cc.stat.subscribers') }}</span>
               <span class="ccx-stat-val tabular">{{ fmtCompact(c.subscriber_count || 0) }}</span>
             </div>
             <div class="ccx-stat">
-              <span class="ccx-stat-lbl">Post (7 kun)</span>
+              <span class="ccx-stat-lbl">{{ tt('cc.stat.posts7d') }}</span>
               <span class="ccx-stat-val tabular">{{ c.posts_7d ?? 0 }}</span>
             </div>
             <div class="ccx-stat">
-              <span class="ccx-stat-lbl">Manbalar ({{ c.sources_count ?? 0 }})</span>
+              <span class="ccx-stat-lbl">{{ tt('cc.stat.sources', { n: c.sources_count ?? 0 }) }}</span>
               <span class="ccx-src-breakdown">
-                <span class="ccx-src-chip tg" :title="`${c.sources_telegram ?? 0} ta Telegram manba`">
+                <span class="ccx-src-chip tg" :title="tt('cc.src.telegramTitle', { n: c.sources_telegram ?? 0 })">
                   <AppIcon name="Telegram" :size="11"/>{{ c.sources_telegram ?? 0 }}
                 </span>
-                <span class="ccx-src-chip web" :title="`${c.sources_website ?? 0} ta Website manba`">
+                <span class="ccx-src-chip web" :title="tt('cc.src.websiteTitle', { n: c.sources_website ?? 0 })">
                   <AppIcon name="Globe2" :size="11"/>{{ c.sources_website ?? 0 }}
                 </span>
               </span>
@@ -136,7 +136,7 @@
           <!-- Sparkline -->
           <div class="ccx-spark">
             <div class="ccx-spark-head">
-              <span class="ccx-spark-lbl">Post faolligi · 8 hafta</span>
+              <span class="ccx-spark-lbl">{{ tt('cc.spark.lbl') }}</span>
               <span v-if="hasActivity(c)" class="ccx-trend" :style="{ color: trendDelta(c) >= 0 ? 'var(--success)' : 'var(--danger)' }">
                 <AppIcon :name="trendDelta(c) >= 0 ? 'ArrowUp' : 'ArrowDown'" :size="10"/>
                 {{ Math.abs(trendDelta(c)).toFixed(0) }}%
@@ -149,26 +149,26 @@
           <div class="ccx-foot">
             <span class="ccx-foot-last">
               <AppIcon name="Send" :size="11" style="flex-shrink:0;"/>
-              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">So'nggi: {{ lastPostRelative(c) }}</span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ tt('cc.foot.last', { time: lastPostRelative(c) }) }}</span>
             </span>
             <template v-if="!isActive(c)">
-              <AppButton variant="primary" size="md" @click="openReactivateModal(c)" title="Botni kanalga qayta admin qilish">
+              <AppButton variant="primary" size="md" @click="openReactivateModal(c)" :title="tt('cc.foot.reactivateTitle')">
                 <template #icon><AppIcon name="Sparkle" :size="14"/></template>
-                Faollashtirish
+                {{ tt('cc.foot.reactivate') }}
               </AppButton>
             </template>
             <template v-else>
-              <AppButton variant="ghost" size="md" @click="openRecent(c)" title="Oxirgi 3 kunlik postlar va ko'rishlar">
+              <AppButton variant="ghost" size="md" @click="openRecent(c)" :title="tt('cc.foot.recentTitle')">
                 <template #icon><AppIcon name="Eye" :size="14"/></template>
-                So'nggi postlar
+                {{ tt('cc.foot.recent') }}
               </AppButton>
               <AppButton variant="secondary" size="md" @click="openSources(c)">
                 <template #icon><AppIcon name="Layers" :size="14"/></template>
-                Manbalar
+                {{ tt('cc.foot.sources') }}
               </AppButton>
               <AppButton variant="primary" size="md" @click="openAutoSettings(c)">
                 <template #icon><AppIcon name="Settings" :size="14"/></template>
-                Sozlash
+                {{ tt('cc.foot.settings') }}
               </AppButton>
             </template>
           </div>
@@ -182,10 +182,10 @@
         <thead>
           <tr style="border-bottom:1px solid var(--border);">
             <th class="ccx-th" style="padding-left:14px;">{{ tt('cc.col.channel') }}</th>
-            <th class="ccx-th">Manba</th>
-            <th class="ccx-th" style="text-align:right;">Obunachi</th>
-            <th class="ccx-th" style="text-align:right;">Post (7k)</th>
-            <th class="ccx-th">So'nggi post</th>
+            <th class="ccx-th">{{ tt('cc.col.source') }}</th>
+            <th class="ccx-th" style="text-align:right;">{{ tt('cc.col.subscriber') }}</th>
+            <th class="ccx-th" style="text-align:right;">{{ tt('cc.col.posts7d') }}</th>
+            <th class="ccx-th">{{ tt('cc.col.lastPost') }}</th>
             <th class="ccx-th">{{ tt('cc.col.mode') }}</th>
             <th class="ccx-th">{{ tt('cc.col.status') }}</th>
             <th class="ccx-th" style="width:44px;"></th>
@@ -206,8 +206,8 @@
             </td>
             <td style="padding:10px;vertical-align:middle;">
               <span class="ccx-src-breakdown">
-                <span class="ccx-src-chip tg" :title="`${c.sources_telegram ?? 0} ta Telegram manba`"><AppIcon name="Telegram" :size="11"/>{{ c.sources_telegram ?? 0 }}</span>
-                <span class="ccx-src-chip web" :title="`${c.sources_website ?? 0} ta Website manba`"><AppIcon name="Globe2" :size="11"/>{{ c.sources_website ?? 0 }}</span>
+                <span class="ccx-src-chip tg" :title="tt('cc.src.telegramTitle', { n: c.sources_telegram ?? 0 })"><AppIcon name="Telegram" :size="11"/>{{ c.sources_telegram ?? 0 }}</span>
+                <span class="ccx-src-chip web" :title="tt('cc.src.websiteTitle', { n: c.sources_website ?? 0 })"><AppIcon name="Globe2" :size="11"/>{{ c.sources_website ?? 0 }}</span>
               </span>
             </td>
             <td style="padding:10px;vertical-align:middle;text-align:right;" class="tabular">{{ fmtCompact(c.subscriber_count || 0) }}</td>
@@ -216,7 +216,7 @@
             <td style="padding:10px;vertical-align:middle;">
               <button type="button" class="cc-mode-pill cc-mode-pill-btn" :class="modeOf(c)"
                 @click.stop="togglePostingMode(c)"
-                :title="modeOf(c) === 'auto' ? 'Manual rejimga oʻtkazish uchun bosing' : 'Avto rejimga oʻtkazish uchun bosing'">
+                :title="modeOf(c) === 'auto' ? tt('cc.mode.toManual') : tt('cc.mode.toAuto')">
                 {{ modeOf(c) === 'auto' ? tt('cc.mode.auto') : tt('cc.mode.manual') }} ⇅
               </button>
             </td>
@@ -237,7 +237,7 @@
       <Transition name="cc-modal">
         <div v-if="addModalOpen" class="cc-modal-backdrop" @click.self="closeAddModal">
           <div class="cc-modal" role="dialog" aria-modal="true">
-            <button class="cc-modal-close" @click="closeAddModal" aria-label="Yopish">
+            <button class="cc-modal-close" @click="closeAddModal" :aria-label="tt('cc.close')">
               <AppIcon name="Close" :size="14"/>
             </button>
 
@@ -276,11 +276,11 @@
                   <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:12px 0 8px;">
                     <div style="text-align:center;">
                       <div style="font-size:14px;font-weight:600;margin-bottom:6px;">
-                        {{ addPlatformSlug === 'facebook' ? 'Facebook sahifangizni ulang' : 'Instagram akkauntingizni ulang' }}
+                        {{ addPlatformSlug === 'facebook' ? tt('cc.meta.connectFb') : tt('cc.meta.connectIg') }}
                       </div>
                       <div style="font-size:12.5px;color:var(--muted);max-width:320px;line-height:1.5;">
-                        Facebook hisobingizga kirib, qaysi sahifani/akkauntni ulashni tanlaysiz.
-                        <br>Instagram ulash uchun akkaunt Facebook sahifasiga bog'langan bo'lishi kerak.
+                        {{ tt('cc.meta.connectHint1') }}
+                        <br>{{ tt('cc.meta.connectHint2') }}
                       </div>
                     </div>
                     <div v-if="addError" class="cc-modal-error">
@@ -288,12 +288,12 @@
                       {{ addError }}
                     </div>
                     <div class="cc-modal-actions" style="width:100%;justify-content:center;">
-                      <AppButton variant="secondary" size="md" @click="closeAddModal">Bekor qilish</AppButton>
+                      <AppButton variant="secondary" size="md" @click="closeAddModal">{{ tt('cc.modal.cancel') }}</AppButton>
                       <AppButton variant="primary" size="md" @click="startMetaOAuth" style="background:#1877F2;border-color:#1877F2;">
                         <template #icon>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         </template>
-                        Facebook orqali ulash
+                        {{ tt('cc.meta.connectViaFb') }}
                         <template #icon-right><AppIcon name="Arrow" :size="13"/></template>
                       </AppButton>
                     </div>
@@ -344,8 +344,8 @@
                   <div class="cc-auto-head">
                     <span class="cc-auto-head-icon"><AppIcon name="Sparkle" :size="13"/></span>
                     <div>
-                      <div class="cc-auto-head-title">Avto-post sozlamalari</div>
-                      <div class="cc-auto-head-sub">Tizim shu kanal uchun postlarni qanday tanlashini sozlang</div>
+                      <div class="cc-auto-head-title">{{ tt('cc.auto.headTitle') }}</div>
+                      <div class="cc-auto-head-sub">{{ tt('cc.auto.headSub') }}</div>
                     </div>
                   </div>
 
@@ -353,7 +353,7 @@
                   <div class="cc-field">
                     <label class="cc-field-label">
                       <AppIcon name="Shield" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                      Tasdiqlash usuli
+                      {{ tt('cc.auto.deliveryLabel') }}
                     </label>
                     <div class="cc-delivery-grid">
                       <button type="button" class="cc-delivery-card"
@@ -363,8 +363,8 @@
                           <AppIcon name="Telegram" :size="15"/>
                         </span>
                         <div style="flex:1;min-width:0;">
-                          <div class="cc-delivery-title">Bot orqali 2 bosqich</div>
-                          <div class="cc-delivery-sub">Muxbir AI bot taklif yuboradi → tasdiqlasangiz pro yozadi → kanalga chiqadi</div>
+                          <div class="cc-delivery-title">{{ tt('cc.delivery.twoStage.title') }}</div>
+                          <div class="cc-delivery-sub">{{ tt('cc.delivery.twoStage.subShort') }}</div>
                         </div>
                         <span v-if="autoDeliveryMode === 'two_stage'" class="cc-mode-card-check">
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -377,8 +377,8 @@
                           <AppIcon name="Bolt" :size="15"/>
                         </span>
                         <div style="flex:1;min-width:0;">
-                          <div class="cc-delivery-title">To'g'ridan-to'g'ri</div>
-                          <div class="cc-delivery-sub">AI postlar avtomatik Telegramga yuboriladi</div>
+                          <div class="cc-delivery-title">{{ tt('cc.delivery.direct.title') }}</div>
+                          <div class="cc-delivery-sub">{{ tt('cc.delivery.direct.subShort') }}</div>
                         </div>
                         <span v-if="autoDeliveryMode === 'direct'" class="cc-mode-card-check">
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -387,11 +387,11 @@
                     </div>
                     <div v-if="autoDeliveryMode === 'direct'"
                       style="margin-top:8px;padding:9px 11px;border-radius:7px;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);color:#854d0e;font-size:11.5px;line-height:1.5;">
-                      ⚡ <b>Diqqat:</b> AI xatosi bo'lsa — to'g'ridan-to'g'ri kanalga chiqadi, tasdiq yo'q.
+                      ⚡ <span v-html="tt('cc.delivery.direct.warnShort')"></span>
                     </div>
                     <div v-else-if="autoDeliveryMode === 'two_stage'"
                       style="margin-top:8px;padding:9px 11px;border-radius:7px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);color:var(--text);font-size:11.5px;line-height:1.5;">
-                      🤖 Avval <b>Telegram chatlar</b> bo'limida chat ID qo'shing — taklif o'sha chatlarga keladi.
+                      🤖 <span v-html="tt('cc.delivery.twoStage.infoShort')"></span>
                     </div>
                   </div>
 
@@ -399,17 +399,17 @@
                   <div class="cc-field">
                     <label class="cc-field-label">
                       <AppIcon name="Bolt" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                      Yuborish rejimi
+                      {{ tt('cc.auto.sendModeLabel') }}
                     </label>
                     <div class="cc-chip-row">
                       <button type="button" class="cc-chip" :class="{ active: autoMode === 'interval' }"
-                        @click="autoMode = 'interval'">Interval</button>
+                        @click="autoMode = 'interval'">{{ tt('cc.auto.interval') }}</button>
                       <button type="button" class="cc-chip" :class="{ active: autoMode === 'scheduled' }"
-                        @click="autoMode = 'scheduled'">Belgilangan vaqt</button>
+                        @click="autoMode = 'scheduled'">{{ tt('cc.auto.scheduled') }}</button>
                     </div>
                     <div class="cc-field-hint">
-                      {{ autoDeliveryMode === 'approval' ? "Topilgan postlar mobil ilovada tasdiqlangach yuboriladi." : "Postlar avtomatik yuboriladi." }}
-                      Interval — har N daqiqada; Belgilangan vaqt — kuniga tanlangan soatlarda to'plam.
+                      {{ autoDeliveryMode === 'approval' ? tt('cc.auto.sendModeHintApproval') : tt('cc.auto.sendModeHintAuto') }}
+                      {{ tt('cc.auto.sendModeHintCommon') }}
                     </div>
                   </div>
 
@@ -417,7 +417,7 @@
                   <div v-if="autoMode === 'interval'" class="cc-field">
                     <label class="cc-field-label">
                       <AppIcon name="Bolt" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                      Yuborish intervali
+                      {{ tt('cc.auto.intervalLabel') }}
                     </label>
                     <div class="cc-chip-row">
                       <button v-for="o in INTERVAL_PRESETS" :key="o.value" type="button"
@@ -425,16 +425,16 @@
                         @click="autoInterval = o.value">{{ o.label }}</button>
                     </div>
                     <div class="cc-field-hint">
-                      Boshqa qiymat:
+                      {{ tt('cc.auto.customValue') }}
                       <input type="number" min="1" max="10080" v-model.number="autoInterval"
                         class="cc-inline-num"/>
-                      daqiqa
+                      {{ tt('cc.auto.minutes') }}
                     </div>
                     <div class="cc-field-hint" style="margin-top:6px;">
-                      Tayyor turadigan post (buffer):
+                      {{ tt('cc.auto.bufferLabel') }}
                       <input type="number" min="1" max="20" v-model.number="autoIntervalBatchCount"
                         class="cc-inline-num"/>
-                      ta
+                      {{ tt('cc.auto.unitCount') }}
                     </div>
                   </div>
 
@@ -442,7 +442,7 @@
                   <div v-if="autoMode === 'scheduled'" class="cc-field">
                     <label class="cc-field-label">
                       <AppIcon name="Calendar" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                      Yuborish vaqtlari
+                      {{ tt('cc.auto.scheduleTimesLabel') }}
                     </label>
                     <div v-if="autoScheduleTimes.length" class="cc-chip-row">
                       <span v-for="t in autoScheduleTimes" :key="t" class="cc-chip active"
@@ -454,11 +454,11 @@
                     </div>
                     <div class="cc-window-row">
                       <input type="time" v-model="newScheduleTime" class="cc-window-select"/>
-                      <button type="button" class="cc-chip" @click="addScheduleTime">+ Qo'shish</button>
+                      <button type="button" class="cc-chip" @click="addScheduleTime">{{ tt('cc.auto.addBtn') }}</button>
                     </div>
                     <div class="cc-auto-row" style="margin-top:8px;">
                       <div class="cc-field" style="flex:1;min-width:140px;">
-                        <label class="cc-field-label">Har vaqt uchun nechta post</label>
+                        <label class="cc-field-label">{{ tt('cc.auto.perTimeCount') }}</label>
                         <div class="cc-num-input">
                           <button type="button" @click="autoBatchCount = Math.max(1, autoBatchCount - 1)">−</button>
                           <input type="number" min="1" max="100" v-model.number="autoBatchCount"/>
@@ -466,14 +466,13 @@
                         </div>
                       </div>
                       <div class="cc-field" style="flex:1;min-width:140px;">
-                        <label class="cc-field-label">Necha daqiqa oldin yig'ilsin</label>
+                        <label class="cc-field-label">{{ tt('cc.auto.collectLeadLabel') }}</label>
                         <input type="number" min="0" max="1440" v-model.number="autoCollectLeadMinutes"
                           class="cc-inline-num"/>
                       </div>
                     </div>
                     <div class="cc-field-hint">
-                      Tanlangan vaqtlarda (Toshkent) shuncha post tayyorlanadi. Yig'ish belgilangan
-                      vaqtdan {{ autoCollectLeadMinutes }} daqiqa oldin boshlanadi.
+                      {{ tt('cc.auto.scheduledHint', { tz: tzLabel, lead: autoCollectLeadMinutes }) }}
                     </div>
                   </div>
 
@@ -481,24 +480,24 @@
                   <div class="cc-field">
                     <label class="cc-field-label">
                       <AppIcon name="Calendar" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                      Faol vaqt oynasi
+                      {{ tt('cc.auto.windowLabel') }}
                     </label>
                     <label class="cc-window-toggle">
                       <input type="checkbox" v-model="autoWindowEnabled"/>
-                      <span>Faqat belgilangan soatlar oralig'ida yuborilsin</span>
+                      <span>{{ tt('cc.auto.windowToggle') }}</span>
                     </label>
                     <div v-if="autoWindowEnabled" class="cc-window-row">
                       <select v-model.number="autoActiveFromHour" class="cc-window-select">
                         <option v-for="h in HOUR_OPTIONS" :key="'f'+h.value" :value="h.value">{{ h.label }}</option>
                       </select>
-                      <span class="cc-window-sep">dan</span>
+                      <span class="cc-window-sep">{{ tt('cc.auto.from') }}</span>
                       <select v-model.number="autoActiveToHour" class="cc-window-select">
                         <option v-for="h in HOUR_OPTIONS" :key="'t'+h.value" :value="h.value">{{ h.label }}</option>
                       </select>
-                      <span class="cc-window-sep">gacha</span>
+                      <span class="cc-window-sep">{{ tt('cc.auto.to') }}</span>
                     </div>
                     <div class="cc-field-hint">
-                      Autopost faqat shu soatlar oralig'ida ishlaydi (Toshkent vaqti). Masalan 08:00 dan 22:00 gacha.
+                      {{ tt('cc.auto.windowHint', { tz: tzLabel }) }}
                     </div>
                   </div>
 
@@ -506,12 +505,12 @@
                   <div class="cc-field">
                     <label class="cc-field-label">
                       <AppIcon name="Hash" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
-                      Mavzular (kategoriyalar)
+                      {{ tt('cc.auto.categoriesLabel') }}
                     </label>
                     <div v-if="!categories.length" class="cc-field-hint" style="padding:6px 0;">
-                      Hali kategoriya yo'q —
+                      {{ tt('cc.auto.noCategories') }}
                       <a href="#/client/categories" class="cc-modal-link" style="display:inline;padding:0;">
-                        kategoriyalar bo'limidan qo'shing
+                        {{ tt('cc.auto.addCategoriesLink') }}
                       </a>
                     </div>
                     <div v-else class="cc-chip-row">
@@ -526,26 +525,26 @@
                       </button>
                     </div>
                     <div v-if="categories.length" class="cc-field-hint">
-                      Bo'sh qoldirilsa — hamma mavzulardan post tanlanadi
+                      {{ tt('cc.auto.categoriesHint') }}
                     </div>
                   </div>
 
                   <!-- Manba turi -->
                   <div class="cc-field">
-                    <label class="cc-field-label">Manba turi</label>
+                    <label class="cc-field-label">{{ tt('cc.filter.sourceType') }}</label>
                     <div class="cc-chip-row">
                       <button v-for="o in SOURCE_TYPE_OPTIONS" :key="o.value" type="button"
                         class="cc-chip"
                         :class="{ active: autoFilters.source_type === o.value }"
                         @click="autoFilters.source_type = o.value">{{ o.label }}</button>
                     </div>
-                    <div class="cc-field-hint">Autopost qaysi turdagi manbalardan post tanlasin</div>
+                    <div class="cc-field-hint">{{ tt('cc.filter.sourceTypeHint') }}</div>
                   </div>
 
                   <!-- Filtrlar -->
                   <div class="cc-auto-row">
                     <div class="cc-field" style="flex:1;min-width:160px;">
-                      <label class="cc-field-label">Qancha vaqt oralig'idagi ma'lumotlar izlansin</label>
+                      <label class="cc-field-label">{{ tt('cc.filter.timeRangeLabel') }}</label>
                       <div class="cc-chip-row">
                         <button v-for="o in TIME_RANGE_OPTIONS" :key="o.value" type="button"
                           class="cc-chip"
@@ -553,11 +552,11 @@
                           @click="setTimeRange(o.value)">{{ o.label }}</button>
                       </div>
                       <div v-if="autoFilters.time_range === 'unlimited'" class="cc-field-hint">
-                        Vaqt cheklanmaydi — eng <strong>qiziqarli</strong> (ballli) postlar tanlanadi, eng oxirgisi emas.
+                        <span v-html="tt('cc.filter.unlimitedHint')"></span>
                       </div>
                     </div>
                     <div class="cc-field" style="flex:0 0 150px;">
-                      <label class="cc-field-label">Har kanaldan</label>
+                      <label class="cc-field-label">{{ tt('cc.filter.perChannelShort') }}</label>
                       <div class="cc-num-input">
                         <button type="button" @click="autoFilters.per_channel = Math.max(1, autoFilters.per_channel - 1)">−</button>
                         <input type="number" min="1" max="30" v-model.number="autoFilters.per_channel"/>
@@ -567,65 +566,64 @@
                   </div>
 
                   <div class="cc-field">
-                    <label class="cc-field-label">Takrorlanishga sezgirlik</label>
+                    <label class="cc-field-label">{{ tt('cc.filter.similarityLabel') }}</label>
                     <div class="cc-chip-row">
-                      <button v-for="th in [{v:0.3,l:'Past (ko\'p tanlash)'},{v:0.5,l:'O\'rta'},{v:0.7,l:'Yuqori (kam tanlash)'}]"
+                      <button v-for="th in [{v:0.3,l:tt('cc.filter.simLowVerbose')},{v:0.5,l:tt('cc.filter.simMid')},{v:0.7,l:tt('cc.filter.simHighVerbose')}]"
                         :key="th.v" type="button" class="cc-chip"
                         :class="{ active: autoFilters.similarity_threshold === th.v }"
                         @click="autoFilters.similarity_threshold = th.v">{{ th.l }}</button>
                     </div>
-                    <div class="cc-field-hint">Yangi post o'zimizning eski post bilan o'xshashlik darajasi</div>
+                    <div class="cc-field-hint">{{ tt('cc.filter.similarityHint') }}</div>
                   </div>
 
                   <div class="cc-field">
-                    <label class="cc-field-label">Saralash usuli</label>
+                    <label class="cc-field-label">{{ tt('cc.filter.sortLabel') }}</label>
                     <div class="cc-chip-row">
                       <button v-for="o in SORT_MODE_OPTIONS" :key="o.value" type="button"
                         class="cc-chip" :class="{ active: autoFilters.sort_mode === o.value }"
                         @click="autoFilters.sort_mode = o.value">{{ o.label }}</button>
                     </div>
                     <div class="cc-field-hint">
-                      "Eng oxirgi" — eng yangi maqolalar (sana bo'yicha) birinchi post qilinadi.
-                      "Yuqori ballli" — ko'rish/ulashish/reaksiyaga ko'ra eng yaxshi postlar.
+                      {{ tt('cc.filter.sortHintFull') }}
                     </div>
                   </div>
 
                   <div class="cc-field">
-                    <label class="cc-field-label">Til</label>
+                    <label class="cc-field-label">{{ tt('cc.filter.langLabel') }}</label>
                     <div class="cc-chip-row">
                       <button v-for="l in LANG_OPTIONS" :key="l.value" type="button"
                         class="cc-chip" :class="{ active: autoOutputLanguage === l.value }"
                         @click="autoOutputLanguage = l.value">{{ l.label }}</button>
                     </div>
                     <div class="cc-field-hint">
-                      AI postni shu tilda chiqaradi. Manba qaysi tilda bo'lishidan qat'i nazar — tanlangan tilga tarjima qilinadi.
+                      {{ tt('cc.filter.langHint') }}
                     </div>
                   </div>
 
                   <div class="cc-auto-row">
                     <label class="cc-toggle-row">
                       <input type="checkbox" v-model="autoFilters.include_videos"/>
-                      <span>Video postlarni qo'shish</span>
+                      <span>{{ tt('cc.filter.includeVideos') }}</span>
                     </label>
                     <label class="cc-toggle-row">
                       <input type="checkbox" v-model="autoFilters.require_media"/>
-                      <span>Faqat media bilan</span>
+                      <span>{{ tt('cc.filter.requireMedia') }}</span>
                     </label>
                   </div>
 
                   <div class="cc-auto-row">
                     <div class="cc-field" style="flex:0 0 140px;">
-                      <label class="cc-field-label">Min. uzunlik</label>
+                      <label class="cc-field-label">{{ tt('cc.filter.minLengthShort') }}</label>
                       <div class="cc-num-input">
                         <input type="number" min="0" v-model.number="autoFilters.min_length"/>
-                        <span style="padding:0 8px;font-size:11px;color:var(--muted);">belgi</span>
+                        <span style="padding:0 8px;font-size:11px;color:var(--muted);">{{ tt('cc.filter.chars') }}</span>
                       </div>
                     </div>
                     <div class="cc-field" style="flex:1;min-width:200px;">
-                      <label class="cc-field-label">Kalit so'zlar</label>
+                      <label class="cc-field-label">{{ tt('cc.filter.keywordsShort') }}</label>
                       <input type="text" class="cc-text-input" v-model="autoFilters.keywords"
-                        placeholder="iqtisod, valyuta, banki..."/>
-                      <div class="cc-field-hint">Vergul bilan ajrating — kamida bittasi matnda bo'lsa o'tadi</div>
+                        :placeholder="tt('cc.filter.keywordsPlaceholder')"/>
+                      <div class="cc-field-hint">{{ tt('cc.filter.keywordsHintShort') }}</div>
                     </div>
                   </div>
                 </div>
@@ -713,7 +711,7 @@
       <Transition name="cc-modal">
         <div v-if="metaNotify" class="cc-modal-backdrop" @click.self="metaNotify = ''">
           <div class="cc-modal" style="max-width:440px;" role="dialog">
-            <button class="cc-modal-close" @click="metaNotify = ''" aria-label="Yopish">
+            <button class="cc-modal-close" @click="metaNotify = ''" :aria-label="tt('cc.close')">
               <AppIcon name="Close" :size="14"/>
             </button>
             <div class="cc-modal-hero" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">
@@ -721,7 +719,7 @@
               <div class="cc-modal-hero-inner">
                 <span class="cc-modal-hero-icon"><AppIcon name="Close" :size="22"/></span>
                 <div>
-                  <div class="cc-modal-hero-title">Meta ulashda xato</div>
+                  <div class="cc-modal-hero-title">{{ tt('cc.meta.errTitle') }}</div>
                   <div class="cc-modal-hero-sub">{{ metaNotify }}</div>
                 </div>
               </div>
@@ -741,7 +739,7 @@
       <Transition name="cc-modal">
         <div v-if="metaModalOpen" class="cc-modal-backdrop" @click.self="metaModalOpen = false">
           <div class="cc-modal" style="max-width:500px;" role="dialog">
-            <button class="cc-modal-close" @click="metaModalOpen = false" aria-label="Yopish">
+            <button class="cc-modal-close" @click="metaModalOpen = false" :aria-label="tt('cc.close')">
               <AppIcon name="Close" :size="14"/>
             </button>
             <div class="cc-modal-hero" style="background:linear-gradient(135deg,#1877F2,#0C52A3)">
@@ -751,8 +749,8 @@
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                 </span>
                 <div>
-                  <div class="cc-modal-hero-title">Facebook / Instagram kanallar</div>
-                  <div class="cc-modal-hero-sub">Ulashni xohlagan sahifa va akkauntlarni tanlang</div>
+                  <div class="cc-modal-hero-title">{{ tt('cc.meta.pagesTitle') }}</div>
+                  <div class="cc-modal-hero-sub">{{ tt('cc.meta.pagesSub') }}</div>
                 </div>
               </div>
             </div>
@@ -769,7 +767,7 @@
                     </div>
                     <div style="flex:1;min-width:0;">
                       <div style="font-size:13px;font-weight:600;">{{ pg.page_name }}</div>
-                      <div style="font-size:11.5px;color:var(--muted);">Facebook sahifasi</div>
+                      <div style="font-size:11.5px;color:var(--muted);">{{ tt('cc.meta.fbPage') }}</div>
                     </div>
                   </label>
                   <!-- IG akkaunt (agar bog'langan bo'lsa) -->
@@ -782,25 +780,25 @@
                     </div>
                     <div style="flex:1;min-width:0;">
                       <div style="font-size:13px;font-weight:600;">@{{ pg.ig_username || pg.ig_user_id }}</div>
-                      <div style="font-size:11.5px;color:var(--muted);">Instagram Business akkaunt</div>
+                      <div style="font-size:11.5px;color:var(--muted);">{{ tt('cc.meta.igAccount') }}</div>
                     </div>
                   </label>
                 </div>
               </div>
               <div v-else style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0;">
-                Hech qanday Facebook sahifa topilmadi
+                {{ tt('cc.meta.noPages') }}
               </div>
               <div v-if="metaConnectError" class="cc-modal-error" style="margin-top:10px;">
                 <AppIcon name="Close" :size="12"/>
                 {{ metaConnectError }}
               </div>
               <div class="cc-modal-actions" style="margin-top:16px;">
-                <AppButton variant="secondary" size="md" @click="metaModalOpen = false">Bekor qilish</AppButton>
+                <AppButton variant="secondary" size="md" @click="metaModalOpen = false">{{ tt('cc.modal.cancel') }}</AppButton>
                 <AppButton variant="primary" size="md"
                   :disabled="!metaSelected.length"
                   :loading="metaConnecting"
                   @click="connectMetaPages">
-                  Ulash ({{ metaSelected.length }} ta tanlandi)
+                  {{ tt('cc.meta.connectBtn', { n: metaSelected.length }) }}
                 </AppButton>
               </div>
             </div>
@@ -814,7 +812,7 @@
       <Transition name="cc-modal">
         <div v-if="autoModalOpen" class="cc-modal-backdrop" @click.self="closeAutoModal">
           <div class="cc-modal" role="dialog" aria-modal="true">
-            <button class="cc-modal-close" @click="closeAutoModal" aria-label="Yopish">
+            <button class="cc-modal-close" @click="closeAutoModal" :aria-label="tt('cc.close')">
               <AppIcon name="Close" :size="14"/>
             </button>
 
@@ -823,10 +821,10 @@
               <div class="cc-modal-hero-inner">
                 <span class="cc-modal-hero-icon"><AppIcon name="Sparkle" :size="22"/></span>
                 <div>
-                  <div class="cc-modal-hero-title">Avto-post sozlamalari</div>
+                  <div class="cc-modal-hero-title">{{ tt('cc.auto.headTitle') }}</div>
                   <div class="cc-modal-hero-sub">
                     <b>{{ autoModalChannel?.display_name || autoModalChannel?.username }}</b>
-                    — bot qanday postlarni qachon tanlashini sozlang
+                    {{ tt('cc.settings.heroSub') }}
                   </div>
                 </div>
               </div>
@@ -842,8 +840,8 @@
                       <AppIcon name="Send" :size="14"/>
                     </span>
                     <div>
-                      <div class="cc-section-title">Yetkazish usuli</div>
-                      <div class="cc-section-sub">Tayyor post Telegramga qanday chiqadi</div>
+                      <div class="cc-section-title">{{ tt('cc.settings.deliveryTitle') }}</div>
+                      <div class="cc-section-sub">{{ tt('cc.settings.deliverySub') }}</div>
                     </div>
                   </div>
 
@@ -851,8 +849,8 @@
                     <button type="button" class="cc-delivery-card" :class="{ active: autoDeliveryMode === 'direct' }" @click="autoDeliveryMode = 'direct'">
                       <span class="cc-delivery-icon direct"><AppIcon name="Bolt" :size="15"/></span>
                       <div style="flex:1;min-width:0;">
-                        <div class="cc-delivery-title">To'g'ridan-to'g'ri</div>
-                        <div class="cc-delivery-sub">AI tayyor qilgan post darhol kanalga chiqadi, tasdiq kutmaydi</div>
+                        <div class="cc-delivery-title">{{ tt('cc.delivery.direct.title') }}</div>
+                        <div class="cc-delivery-sub">{{ tt('cc.delivery.direct.subFull') }}</div>
                       </div>
                       <span v-if="autoDeliveryMode === 'direct'" class="cc-mode-card-check">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -861,8 +859,8 @@
                     <button type="button" class="cc-delivery-card" :class="{ active: autoDeliveryMode === 'two_stage' }" @click="autoDeliveryMode = 'two_stage'">
                       <span class="cc-delivery-icon"><AppIcon name="Telegram" :size="15"/></span>
                       <div style="flex:1;min-width:0;">
-                        <div class="cc-delivery-title">Bot orqali 2 bosqich</div>
-                        <div class="cc-delivery-sub">Muxbir AI bot taklif yuboradi → tasdiqlasangiz pro yozadi → yana tasdiq → kanalga chiqadi</div>
+                        <div class="cc-delivery-title">{{ tt('cc.delivery.twoStage.title') }}</div>
+                        <div class="cc-delivery-sub">{{ tt('cc.delivery.twoStage.subFull') }}</div>
                       </div>
                       <span v-if="autoDeliveryMode === 'two_stage'" class="cc-mode-card-check">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -871,22 +869,13 @@
                   </div>
                   <div class="cc-info-box" :class="autoDeliveryMode === 'direct' ? 'warn' : 'info'">
                     <template v-if="autoDeliveryMode === 'approval'">
-                      💡 <b>Tavsiya etiladi.</b> AI topgan post mobil ilovada <b>Navbat</b> tabida ko'rinadi.
-                      Siz matnni tahrirlash, qisqartirish yoki rad etish imkoniga egasiz.
-                      Tasdiqlagan post belgilangan vaqtda kanalga yuboriladi.
+                      💡 <span v-html="tt('cc.delivery.approval.infoFull')"></span>
                     </template>
                     <template v-else-if="autoDeliveryMode === 'two_stage'">
-                      🤖 <b>2 bosqichli oqim.</b> AI arzon model bilan post topadi va <b>Muxbir AI bot</b> orqali
-                      kompaniyangizning Telegram chatlariga taklif yuboradi (rasm + sarlavha + qisqacha).
-                      «Muxbirda yozish» tugmasini bossangiz — kuchli <b>gemini-3.1-pro</b> to'liq yozadi va yana
-                      tasdiq so'raydi. Kanalga chiqarsangiz oylik limitdan 1 kamayadi; chiqarmasangiz 50 kredit yechiladi.
-                      Xuddi shu amallar <b>Navbat</b> tabida ham bor.
-                      <br><b>Eslatma:</b> avval <b>Telegram chatlar</b> bo'limida chat ID qo'shing.
+                      🤖 <span v-html="tt('cc.delivery.twoStage.infoFull')"></span>
                     </template>
                     <template v-else>
-                      ⚡ <b>Diqqat:</b> postlar mobil ilovada ko'rinmaydi va tasdiqsiz kanalga chiqadi.
-                      AI xatosi yoki noto'g'ri matn bo'lsa ham to'g'ridan-to'g'ri abonentlarga boradi.
-                      Faqat ishonchli prompt bo'lganda yoqing.
+                      ⚡ <span v-html="tt('cc.delivery.direct.warnFull')"></span>
                     </template>
                   </div>
                 </div>
@@ -898,20 +887,20 @@
                       <AppIcon name="Calendar" :size="14"/>
                     </span>
                     <div>
-                      <div class="cc-section-title">Rejalashtirish</div>
-                      <div class="cc-section-sub">Postlar qachon va qancha chiqadi</div>
+                      <div class="cc-section-title">{{ tt('cc.settings.scheduleTitle') }}</div>
+                      <div class="cc-section-sub">{{ tt('cc.settings.scheduleSub') }}</div>
                     </div>
                   </div>
 
                   <!-- Rejim tanlash -->
                   <div class="cc-field">
-                    <label class="cc-field-label">Yuborish rejimi</label>
+                    <label class="cc-field-label">{{ tt('cc.auto.sendModeLabel') }}</label>
                     <div class="cc-mode-grid">
                       <button type="button" class="cc-mode-card" :class="{ active: autoMode === 'interval' }" @click="autoMode = 'interval'">
                         <span class="cc-mode-card-icon"><AppIcon name="Bolt" :size="14"/></span>
                         <div style="flex:1;min-width:0;">
-                          <div class="cc-mode-card-title">Interval</div>
-                          <div class="cc-mode-card-sub">Har N soatda bir marta</div>
+                          <div class="cc-mode-card-title">{{ tt('cc.auto.interval') }}</div>
+                          <div class="cc-mode-card-sub">{{ tt('cc.settings.intervalCardSub') }}</div>
                         </div>
                         <span v-if="autoMode === 'interval'" class="cc-mode-card-check">
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -920,8 +909,8 @@
                       <button type="button" class="cc-mode-card" :class="{ active: autoMode === 'scheduled' }" @click="autoMode = 'scheduled'">
                         <span class="cc-mode-card-icon"><AppIcon name="Calendar" :size="14"/></span>
                         <div style="flex:1;min-width:0;">
-                          <div class="cc-mode-card-title">Belgilangan vaqt</div>
-                          <div class="cc-mode-card-sub">Kuniga aniq soatlarda to'plam</div>
+                          <div class="cc-mode-card-title">{{ tt('cc.auto.scheduled') }}</div>
+                          <div class="cc-mode-card-sub">{{ tt('cc.settings.scheduledCardSub') }}</div>
                         </div>
                         <span v-if="autoMode === 'scheduled'" class="cc-mode-card-check">
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -933,54 +922,49 @@
                   <!-- INTERVAL sozlamalari -->
                   <template v-if="autoMode === 'interval'">
                     <div class="cc-field">
-                      <label class="cc-field-label">Yuborish intervali</label>
+                      <label class="cc-field-label">{{ tt('cc.auto.intervalLabel') }}</label>
                       <div class="cc-chip-row">
                         <button v-for="o in INTERVAL_PRESETS" :key="o.value" type="button"
                           class="cc-chip" :class="{ active: autoInterval === o.value }"
                           @click="autoInterval = o.value">{{ o.label }}</button>
                       </div>
                       <div class="cc-field-hint">
-                        Boshqa qiymat: <input type="number" min="1" max="10080" v-model.number="autoInterval" class="cc-inline-num"/> daqiqa
+                        {{ tt('cc.auto.customValue') }} <input type="number" min="1" max="10080" v-model.number="autoInterval" class="cc-inline-num"/> {{ tt('cc.auto.minutes') }}
                       </div>
                       <div class="cc-info-box info" style="margin-top:8px;">
-                        💡 Har <b>{{ intervalPreviewText }}</b> bir post Telegramga yuboriladi.
-                        <template v-if="autoDeliveryMode === 'approval'"> Foydalanuvchi tasdiqlagan birinchi post ketadi.</template>
-                        <template v-else> Post tasdiqsiz avtomatik chiqadi.</template>
+                        💡 {{ tt('cc.settings.intervalPreview', { every: intervalPreviewText }) }}
+                        <template v-if="autoDeliveryMode === 'approval'"> {{ tt('cc.settings.intervalPreviewApproval') }}</template>
+                        <template v-else> {{ tt('cc.settings.intervalPreviewAuto') }}</template>
                       </div>
                     </div>
 
                     <div v-if="autoDeliveryMode === 'approval'" class="cc-field">
-                      <label class="cc-field-label">Navbatdagi postlar (buffer)</label>
+                      <label class="cc-field-label">{{ tt('cc.settings.bufferLabel') }}</label>
                       <div style="display:flex;align-items:center;gap:12px;">
                         <div class="cc-num-input" style="width:auto;">
                           <button type="button" @click="autoIntervalBatchCount = Math.max(1, autoIntervalBatchCount - 1)">−</button>
                           <input type="number" min="1" max="20" v-model.number="autoIntervalBatchCount" style="width:44px;"/>
                           <button type="button" @click="autoIntervalBatchCount = Math.min(20, autoIntervalBatchCount + 1)">+</button>
                         </div>
-                        <span style="font-size:12.5px;color:var(--text-2);">ta post doim tayyor turadi</span>
+                        <span style="font-size:12.5px;color:var(--text-2);">{{ tt('cc.settings.bufferUnit') }}</span>
                       </div>
                       <div class="cc-info-box info" style="margin-top:8px;">
-                        💡 <b>Buffer nima?</b> Bot oldindan <b>{{ autoIntervalBatchCount }} ta</b> post yig'ib qo'yadi va mobil ilovaga yuboradi.
-                        Siz ularni ko'rib chiqasiz. Har intervalda bitta tasdiqlangan post kanalga ketadi.
-                        <br><br>
-                        <b>Misol:</b> buffer = 5, interval = 3 soat → ilovada 5 ta post navbatda turadi → har 3 soatda 1 tasi Telegramga chiqadi.
-                        Buferni oshirsa — keyin tasdiqlash uchun ko'proq vaqtingiz bo'ladi.
+                        💡 <span v-html="tt('cc.settings.bufferInfo', { n: autoIntervalBatchCount })"></span>
                       </div>
                     </div>
 
                     <div v-if="autoDeliveryMode === 'two_stage'" class="cc-field">
-                      <label class="cc-field-label">Post taklifi qancha daqiqa oldin kelsin</label>
+                      <label class="cc-field-label">{{ tt('cc.settings.collectBeforeLabel') }}</label>
                       <div style="display:flex;align-items:center;gap:12px;">
                         <div class="cc-num-input" style="width:auto;">
                           <button type="button" @click="autoIntervalCollectBefore = Math.max(0, autoIntervalCollectBefore - 5)">−</button>
                           <input type="number" min="0" max="1440" v-model.number="autoIntervalCollectBefore" style="width:52px;"/>
                           <button type="button" @click="autoIntervalCollectBefore = Math.min(1440, autoIntervalCollectBefore + 5)">+</button>
                         </div>
-                        <span style="font-size:12.5px;color:var(--text-2);">daqiqa oldin</span>
+                        <span style="font-size:12.5px;color:var(--text-2);">{{ tt('cc.settings.minutesBefore') }}</span>
                       </div>
                       <div class="cc-field-hint" style="margin-top:6px;">
-                        Masalan: interval 60 daqiqa, bu qiymat 10 bo'lsa — taklif 50-daqiqada Telegram botga keladi.
-                        0 = har doim yig'adi.
+                        {{ tt('cc.settings.collectBeforeHint') }}
                       </div>
                     </div>
                   </template>
@@ -988,7 +972,7 @@
                   <!-- SCHEDULED sozlamalari -->
                   <template v-if="autoMode === 'scheduled'">
                     <div class="cc-field">
-                      <label class="cc-field-label">Yuborish vaqtlari <span style="color:var(--muted);font-weight:400;">(Toshkent vaqti)</span></label>
+                      <label class="cc-field-label">{{ tt('cc.auto.scheduleTimesLabel') }} <span style="color:var(--muted);font-weight:400;">({{ tzLabel }})</span></label>
                       <div v-if="autoScheduleTimes.length" class="cc-chip-row" style="margin-bottom:8px;">
                         <span v-for="t in autoScheduleTimes" :key="t" class="cc-chip active" style="cursor:default;gap:6px;">
                           {{ t }}
@@ -996,65 +980,65 @@
                         </span>
                       </div>
                       <div v-else class="cc-info-box warn" style="margin-bottom:8px;">
-                        ⏰ Hali vaqt qo'shilmagan. Quyida vaqt tanlang.
+                        ⏰ {{ tt('cc.settings.noTimes') }}
                       </div>
                       <div class="cc-window-row">
                         <input type="time" v-model="newScheduleTime" class="cc-window-select"/>
-                        <button type="button" class="cc-chip" style="font-weight:600;" @click="addScheduleTime">+ Qo'shish</button>
+                        <button type="button" class="cc-chip" style="font-weight:600;" @click="addScheduleTime">{{ tt('cc.auto.addBtn') }}</button>
                       </div>
-                      <div class="cc-field-hint">Bir necha vaqt qo'shsa bo'ladi, masalan 08:00, 13:00, 19:00</div>
+                      <div class="cc-field-hint">{{ tt('cc.settings.timesHint') }}</div>
                     </div>
 
                     <div class="cc-auto-row" style="align-items:flex-start;">
                       <div class="cc-field" style="flex:1;min-width:140px;">
-                        <label class="cc-field-label">Har vaqtda nechta post</label>
+                        <label class="cc-field-label">{{ tt('cc.settings.perTimeCount') }}</label>
                         <div class="cc-num-input">
                           <button type="button" @click="autoBatchCount = Math.max(1, autoBatchCount - 1)">−</button>
                           <input type="number" min="1" max="100" v-model.number="autoBatchCount"/>
                           <button type="button" @click="autoBatchCount = Math.min(100, autoBatchCount + 1)">+</button>
                         </div>
-                        <div class="cc-field-hint">Belgilangan har bir soatda shuncha post chiqadi</div>
+                        <div class="cc-field-hint">{{ tt('cc.settings.perTimeHint') }}</div>
                       </div>
                       <div class="cc-field" style="flex:1;min-width:140px;">
-                        <label class="cc-field-label">Oldindan yig'ish (daqiqa)</label>
+                        <label class="cc-field-label">{{ tt('cc.settings.collectLeadLabel') }}</label>
                         <input type="number" min="0" max="1440" v-model.number="autoCollectLeadMinutes" class="cc-inline-num" style="width:80px;"/>
-                        <div class="cc-field-hint">Bot bu vaqt oldin postlarni yig'a boshlaydi</div>
+                        <div class="cc-field-hint">{{ tt('cc.settings.collectLeadHint') }}</div>
                       </div>
                     </div>
 
                     <div v-if="scheduledPreviewText" class="cc-info-box info">
-                      📅 <b>Natija:</b> {{ scheduledPreviewText.timesStr }}. <br>
-                      ⏳ Har safar {{ scheduledPreviewText.leadStr }}.
-                      <template v-if="autoDeliveryMode === 'approval'"> Postlar mobil ilovada tasdiqlanadi.</template>
+                      📅 <b>{{ tt('cc.settings.resultLabel') }}</b> {{ scheduledPreviewText.timesStr }}. <br>
+                      ⏳ {{ tt('cc.settings.eachTime', { lead: scheduledPreviewText.leadStr }) }}
+                      <template v-if="autoDeliveryMode === 'approval'"> {{ tt('cc.settings.resultApproval') }}</template>
                     </div>
                     <div v-else class="cc-info-box info">
-                      💡 <b>Misol:</b> vaqtlar = 08:00 va 18:00, har vaqt = 5 ta → 08:00 da 5 ta, 18:00 da 5 ta post chiqadi. Bot 07:00 dan yig'a boshlaydi (60 daqiqa oldin).
+                      💡 <span v-html="tt('cc.settings.scheduledExample')"></span>
                     </div>
                   </template>
 
                   <!-- Faol soatlar -->
                   <div class="cc-field">
-                    <label class="cc-field-label">Faol soatlar oynasi</label>
+                    <label class="cc-field-label">{{ tt('cc.settings.windowLabel') }}</label>
                     <label class="cc-window-toggle">
                       <input type="checkbox" v-model="autoWindowEnabled"/>
-                      <span>Faqat belgilangan soatlar ichida ishlaydi</span>
+                      <span>{{ tt('cc.settings.windowToggle') }}</span>
                     </label>
                     <div v-if="autoWindowEnabled" class="cc-window-row" style="margin-top:8px;">
                       <select v-model.number="autoActiveFromHour" class="cc-window-select">
                         <option v-for="h in HOUR_OPTIONS" :key="'f'+h.value" :value="h.value">{{ h.label }}</option>
                       </select>
-                      <span class="cc-window-sep">dan</span>
+                      <span class="cc-window-sep">{{ tt('cc.auto.from') }}</span>
                       <select v-model.number="autoActiveToHour" class="cc-window-select">
                         <option v-for="h in HOUR_OPTIONS" :key="'t'+h.value" :value="h.value">{{ h.label }}</option>
                       </select>
-                      <span class="cc-window-sep">gacha</span>
+                      <span class="cc-window-sep">{{ tt('cc.auto.to') }}</span>
                     </div>
                     <div class="cc-field-hint">
                       <template v-if="autoWindowEnabled">
-                        Bot faqat {{ String(autoActiveFromHour).padStart(2,'0') }}:00 – {{ String(autoActiveToHour).padStart(2,'0') }}:00 orasida post yuboradi (Toshkent vaqti). Bu oraliqdan tashqarida yig'ilsa ham yuborilmaydi.
+                        {{ tt('cc.settings.windowHintOn', { from: String(autoActiveFromHour).padStart(2,'0'), to: String(autoActiveToHour).padStart(2,'0'), tz: tzLabel }) }}
                       </template>
                       <template v-else>
-                        Yoqilmagan — bot kun bo'yi ishlaydi. Kechasi chiqishini xohlamasangiz yoqing.
+                        {{ tt('cc.settings.windowHintOff') }}
                       </template>
                     </div>
                   </div>
@@ -1066,23 +1050,23 @@
                   <span class="cc-section-icon sm" style="background:color-mix(in oklab,var(--accent) 10%,transparent);color:var(--accent);">
                     <AppIcon name="Layers" :size="12"/>
                   </span>
-                  <span>Qaysi postlar tanlansin</span>
+                  <span>{{ tt('cc.adv.whichPosts') }}</span>
                   <span class="cc-advanced-badge">
                     {{ [
                       autoFilters.source_type !== 'all' ? autoFilters.source_type : null,
-                      autoCategoryIds.length ? autoCategoryIds.length + ' mavzu' : null,
-                      autoFilters.keywords ? 'kalit so\'z' : null,
-                    ].filter(Boolean).join(' · ') || 'barcha postlar' }}
+                      autoCategoryIds.length ? tt('cc.adv.topicsCount', { n: autoCategoryIds.length }) : null,
+                      autoFilters.keywords ? tt('cc.adv.keyword') : null,
+                    ].filter(Boolean).join(' · ') || tt('cc.adv.allPosts') }}
                   </span>
                 </button>
 
                 <div v-if="advancedFiltersOpen" class="cc-advanced-body">
                   <!-- Mavzular -->
                   <div class="cc-field">
-                    <label class="cc-field-label"><AppIcon name="Hash" :size="11" style="vertical-align:middle;margin-right:4px;"/>Mavzular (kategoriyalar)</label>
+                    <label class="cc-field-label"><AppIcon name="Hash" :size="11" style="vertical-align:middle;margin-right:4px;"/>{{ tt('cc.auto.categoriesLabel') }}</label>
                     <div v-if="!categories.length" class="cc-field-hint" style="padding:4px 0;">
-                      Hali kategoriya yo'q —
-                      <a href="#/client/categories" class="cc-modal-link" style="display:inline;padding:0;">qo'shing</a>
+                      {{ tt('cc.auto.noCategories') }}
+                      <a href="#/client/categories" class="cc-modal-link" style="display:inline;padding:0;">{{ tt('cc.adv.addLink') }}</a>
                     </div>
                     <div v-else class="cc-chip-row">
                       <button v-for="cat in categories" :key="cat.id" type="button"
@@ -1093,13 +1077,13 @@
                         {{ cat.name }}
                       </button>
                     </div>
-                    <div class="cc-field-hint">Bo'sh — hamma mavzulardan tanlanadi. Tanlansa — faqat shu kategoriyalarga mos postlar o'tadi.</div>
+                    <div class="cc-field-hint">{{ tt('cc.adv.topicsHint') }}</div>
                   </div>
 
                   <!-- Vaqt oralig'i + har kanaldan -->
                   <div class="cc-auto-row" style="align-items:flex-start;">
                     <div class="cc-field" style="flex:1;min-width:160px;">
-                      <label class="cc-field-label">Qaysi vaqt doirasidagi postlar izlansin</label>
+                      <label class="cc-field-label">{{ tt('cc.adv.timeRangeLabel') }}</label>
                       <div class="cc-chip-row">
                         <button v-for="o in TIME_RANGE_OPTIONS" :key="o.value" type="button"
                           class="cc-chip" :class="{ active: autoFilters.time_range === o.value }"
@@ -1107,96 +1091,94 @@
                       </div>
                       <div class="cc-field-hint">
                         <template v-if="autoFilters.time_range === 'unlimited'">
-                          ♾️ Cheklanmagan — barcha saqlangan postlardan eng <b>qiziqarlisi</b> (reyting bo'yicha) tanlanadi.
+                          ♾️ <span v-html="tt('cc.adv.unlimitedHint')"></span>
                         </template>
                         <template v-else>
-                          Manbalarda so'nggi <b>{{ {'3h':'3 soat','6h':'6 soat','12h':'12 soat','24h':'24 soat'}[autoFilters.time_range] || autoFilters.time_range }}</b> ichida chiqgan postlar ko'rib chiqiladi.
+                          <span v-html="tt('cc.adv.rangeHint', { range: {'3h':tt('cc.dur.3h'),'6h':tt('cc.dur.6h'),'12h':tt('cc.dur.12h'),'24h':tt('cc.dur.24h')}[autoFilters.time_range] || autoFilters.time_range })"></span>
                         </template>
                       </div>
                     </div>
                     <div class="cc-field" style="flex:0 0 140px;">
-                      <label class="cc-field-label">Har bir manbadan</label>
+                      <label class="cc-field-label">{{ tt('cc.adv.perSourceLabel') }}</label>
                       <div class="cc-num-input">
                         <button type="button" @click="autoFilters.per_channel = Math.max(1, autoFilters.per_channel - 1)">−</button>
                         <input type="number" min="1" max="30" v-model.number="autoFilters.per_channel"/>
                         <button type="button" @click="autoFilters.per_channel = Math.min(30, autoFilters.per_channel + 1)">+</button>
                       </div>
-                      <div class="cc-field-hint">Ko'p manba bo'lsa bitta manbaga e'tibor qilmaydi</div>
+                      <div class="cc-field-hint">{{ tt('cc.adv.perSourceHint') }}</div>
                     </div>
                   </div>
 
                   <!-- Saralash + Takrorlanish -->
                   <div class="cc-auto-row" style="align-items:flex-start;">
                     <div class="cc-field" style="flex:1;">
-                      <label class="cc-field-label">Saralash</label>
+                      <label class="cc-field-label">{{ tt('cc.adv.sortLabel') }}</label>
                       <div class="cc-chip-row">
                         <button v-for="o in SORT_MODE_OPTIONS" :key="o.value" type="button"
                           class="cc-chip" :class="{ active: autoFilters.sort_mode === o.value }"
                           @click="autoFilters.sort_mode = o.value">{{ o.label }}</button>
                       </div>
                       <div class="cc-field-hint">
-                        <b>⭐ Yuqori ballli</b> — ko'rish/like/ulashish soni yuqori postlar.
-                        <b>🕒 Eng oxirgi</b> — yangi chiqgan postlar (breaking news uchun yaxshi).
+                        <span v-html="tt('cc.adv.sortHint')"></span>
                       </div>
                     </div>
                     <div class="cc-field" style="flex:1;">
-                      <label class="cc-field-label">Takrorlanishga sezgirlik</label>
+                      <label class="cc-field-label">{{ tt('cc.filter.similarityLabel') }}</label>
                       <div class="cc-chip-row">
-                        <button v-for="th in [{v:0.3,l:'Past'},{v:0.5,l:'O\'rta'},{v:0.7,l:'Yuqori'}]"
+                        <button v-for="th in [{v:0.3,l:tt('cc.filter.simLow')},{v:0.5,l:tt('cc.filter.simMid')},{v:0.7,l:tt('cc.filter.simHigh')}]"
                           :key="th.v" type="button" class="cc-chip"
                           :class="{ active: autoFilters.similarity_threshold === th.v }"
                           @click="autoFilters.similarity_threshold = th.v">{{ th.l }}</button>
                       </div>
                       <div class="cc-field-hint">
-                        <b>Past</b> — o'xshash postlar ham o'tadi (ko'proq tanlash).
-                        <b>Yuqori</b> — kanalda mavjud postga o'xshasa rad etadi (kam tanlash).
+                        <span v-html="tt('cc.adv.similarityHint')"></span>
                       </div>
                     </div>
                   </div>
 
                   <!-- Manba turi -->
                   <div class="cc-field">
-                    <label class="cc-field-label">Manba turi</label>
+                    <label class="cc-field-label">{{ tt('cc.filter.sourceType') }}</label>
                     <div class="cc-chip-row">
                       <button v-for="o in SOURCE_TYPE_OPTIONS" :key="o.value" type="button"
                         class="cc-chip" :class="{ active: autoFilters.source_type === o.value }"
                         @click="autoFilters.source_type = o.value">{{ o.label }}</button>
                     </div>
-                    <div class="cc-field-hint">Faqat Telegram, faqat website yoki ikkalasidan birdan tanlasin</div>
+                    <div class="cc-field-hint">{{ tt('cc.adv.sourceTypeHint') }}</div>
                   </div>
 
                   <!-- Til + media -->
                   <div class="cc-auto-row" style="align-items:flex-start;">
                     <div class="cc-field" style="flex:1;">
-                      <label class="cc-field-label">AI chiqish tili</label>
+                      <label class="cc-field-label">{{ tt('cc.adv.aiLangLabel') }}</label>
                       <div class="cc-chip-row">
                         <button v-for="l in LANG_OPTIONS" :key="l.value" type="button"
                           class="cc-chip" :class="{ active: autoOutputLanguage === l.value }"
                           @click="autoOutputLanguage = l.value">{{ l.label }}</button>
                       </div>
-                      <div class="cc-field-hint">Manba qaysi tilda bo'lishidan qat'i nazar — post shu tilda chiqadi</div>
+                      <div class="cc-field-hint">{{ tt('cc.adv.aiLangHint') }}</div>
                     </div>
                     <div class="cc-field" style="flex:0 0 160px;">
-                      <label class="cc-field-label">Media</label>
-                      <label class="cc-toggle-row"><input type="checkbox" v-model="autoFilters.include_videos"/><span>Video postlar</span></label>
-                      <label class="cc-toggle-row" style="margin-top:5px;"><input type="checkbox" v-model="autoFilters.require_media"/><span>Faqat media bilan</span></label>
+                      <label class="cc-field-label">{{ tt('cc.adv.mediaLabel') }}</label>
+                      <label class="cc-toggle-row"><input type="checkbox" v-model="autoFilters.include_videos"/><span>{{ tt('cc.adv.videoPosts') }}</span></label>
+                      <label class="cc-toggle-row" style="margin-top:5px;"><input type="checkbox" v-model="autoFilters.require_media"/><span>{{ tt('cc.filter.requireMedia') }}</span></label>
                     </div>
                   </div>
 
                   <!-- Min uzunlik + kalit so'zlar -->
                   <div class="cc-auto-row" style="align-items:flex-start;">
                     <div class="cc-field" style="flex:0 0 140px;">
-                      <label class="cc-field-label">Min. matn uzunligi</label>
+                      <label class="cc-field-label">{{ tt('cc.adv.minLengthLabel') }}</label>
                       <div class="cc-num-input">
                         <input type="number" min="0" v-model.number="autoFilters.min_length"/>
-                        <span style="padding:0 8px;font-size:11px;color:var(--muted);">belgi</span>
+                        <span style="padding:0 8px;font-size:11px;color:var(--muted);">{{ tt('cc.filter.chars') }}</span>
                       </div>
-                      <div class="cc-field-hint">Qisqaroq postlar o'tkazilmaydi</div>
+                      <div class="cc-field-hint">{{ tt('cc.adv.minLengthHint') }}</div>
                     </div>
                     <div class="cc-field" style="flex:1;min-width:200px;">
-                      <label class="cc-field-label">Kalit so'zlar filtri</label>
-                      <input type="text" class="cc-text-input" v-model="autoFilters.keywords" placeholder="iqtisod, valyuta, bank..."/>
-                      <div class="cc-field-hint">Vergul bilan ajrating. Matnda kamida bitta kalit so'z bo'lsa o'tadi. Bo'sh — filtr yo'q.</div>
+                      <label class="cc-field-label">{{ tt('cc.adv.keywordsLabel') }}</label>
+                      <input type="text" class="cc-text-input" v-model="autoFilters.keywords" :placeholder="tt('cc.adv.keywordsPlaceholder')"/>
+                      <div class="cc-field-hint">{{ tt('cc.adv.keywordsHint') }}</div>
                     </div>
                   </div>
                 </div>
@@ -1207,7 +1189,7 @@
                   <span class="cc-section-icon sm" style="background:color-mix(in oklab,var(--accent) 10%,transparent);color:var(--accent);">
                     <AppIcon name="Sparkle" :size="12"/>
                   </span>
-                  <span>AI sozlamalari</span>
+                  <span>{{ tt('cc.ai.sectionTitle') }}</span>
                   <span class="cc-advanced-badge">Gemini · Pro 3.1</span>
                 </button>
 
@@ -1217,30 +1199,30 @@
                     <input type="checkbox" v-model="autoUseRecommended"/>
                     <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
                       <span style="font-size:13px;font-weight:600;color:var(--text);">
-                        ✨ Tavsiya etilgan promptdan foydalanish
+                        ✨ {{ tt('cc.ai.useRecommended') }}
                         <span v-if="autoRecommended.name" style="color:var(--muted);font-weight:400;">— {{ autoRecommended.name }}</span>
                       </span>
-                      <span style="font-size:11px;color:var(--muted);">Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi.</span>
+                      <span style="font-size:11px;color:var(--muted);">{{ tt('cc.ai.useRecommendedHint') }}</span>
                     </div>
                   </label>
                   <div v-else-if="autoRecommended.loaded" class="cc-info-box warn">
-                    ⚠️ Admin hali autopost uchun tavsiya etilgan prompt yaratmagan.
+                    ⚠️ {{ tt('cc.ai.noRecommended') }}
                   </div>
 
                   <!-- Prompt to'plami -->
                   <div class="cc-field">
-                    <label class="cc-field-label">Prompt to'plami</label>
+                    <label class="cc-field-label">{{ tt('cc.ai.promptGroupLabel') }}</label>
                     <div v-if="!aiPromptGroups.length && !autoUseRecommended" class="cc-info-box info">
-                      Hali prompt to'plami yo'q.
-                      <a href="#/client/ai-prompt" class="cc-modal-link" style="display:inline;padding:0;margin-left:4px;">AI prompt sahifasida yarating</a>
+                      {{ tt('cc.ai.noPromptGroup') }}
+                      <a href="#/client/ai-prompt" class="cc-modal-link" style="display:inline;padding:0;margin-left:4px;">{{ tt('cc.ai.createPromptLink') }}</a>
                     </div>
                     <select v-else v-model="autoPromptGroupId" :disabled="autoUseRecommended" class="cc-select" :style="{ opacity: autoUseRecommended ? 0.5 : 1, cursor: autoUseRecommended ? 'not-allowed' : 'pointer' }">
-                      <option value="">— tanlanmagan (default AI) —</option>
+                      <option value="">{{ tt('cc.ai.promptNone') }}</option>
                       <option v-for="g in aiPromptGroups" :key="g.id" :value="g.id">
-                        {{ g.name }} · {{ g.prompts.length }} bo'lim{{ anyApplyBaseInGroup(g) ? ' · BASE' : '' }}
+                        {{ g.name }} · {{ tt('cc.ai.sectionsCount', { n: g.prompts.length }) }}{{ anyApplyBaseInGroup(g) ? ' · BASE' : '' }}
                       </option>
                     </select>
-                    <div class="cc-field-hint">Kanal uchun maxsus uslub/mazmun ko'rsatmasi. Bo'sh — faqat admin prompt ishlatiladi.</div>
+                    <div class="cc-field-hint">{{ tt('cc.ai.promptGroupHint') }}</div>
                   </div>
 
                   <!-- Provider + Model — YASHIRILGAN.
@@ -1273,12 +1255,12 @@
                   <div class="cc-field" style="border-top:1px dashed var(--border);padding-top:12px;margin-top:4px;">
                     <label class="cc-toggle-row">
                       <input type="checkbox" v-model="autoTestShowOriginal"/>
-                      <span><b>Test rejim</b> — manba (ORIGINAL) postni ham yuborish</span>
+                      <span v-html="tt('cc.ai.testModeLabel')"></span>
                     </label>
                     <div class="cc-info-box info" style="margin-top:8px;">
-                      🔬 Yoqilsa: har AI postdan avval manba post ham kanalga chiqadi
+                      🔬 {{ tt('cc.ai.testModeHintPre') }}
                       (<span style="color:#d97706;">🟡 ORIGINAL</span> → <span style="color:#16a34a;">🟢 AI VERSION</span>).
-                      AI sifatini asl matn bilan qiyoslash uchun. O'chirilsa — faqat AI versiyasi.
+                      {{ tt('cc.ai.testModeHintPost') }}
                     </div>
                   </div>
 
@@ -1286,7 +1268,7 @@
                   <div class="cc-field" style="border-top:1px dashed var(--border);padding-top:12px;margin-top:4px;">
                     <label class="cc-toggle-row">
                       <input type="checkbox" v-model="compareEnabled"/>
-                      <span><b>AI Solishtirish rejimi</b> — bir necha AI versiyasini Navbatda ko'rsatish</span>
+                      <span v-html="tt('cc.ai.compareModeLabel')"></span>
                     </label>
                     <div v-if="compareEnabled" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
                       <div v-for="(pair, idx) in comparePairsList" :key="idx"
@@ -1309,12 +1291,11 @@
                       <button v-if="comparePairsList.length < 5" type="button"
                         @click="comparePairsList.push({ provider: 'openai', model: 'gpt-4o-mini' })"
                         style="align-self:flex-start;padding:5px 10px;border:1px dashed var(--border);border-radius:7px;background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px;">
-                        + Provayder qo'shish
+                        {{ tt('cc.ai.addProvider') }}
                       </button>
                     </div>
                     <div v-if="compareEnabled" class="cc-info-box info" style="margin-top:8px;">
-                      🔀 Yoqilsa: Navbatdagi postda har AI versiyasi ko'rinadi — siz eng yaxshisini tanlaysiz.
-                      Tasdiqdan avval kerakli versiyani bosing.
+                      🔀 {{ tt('cc.ai.compareHint') }}
                     </div>
                   </div>
                 </div>
@@ -1326,10 +1307,10 @@
               </div>
 
               <div class="cc-modal-actions">
-                <AppButton variant="secondary" size="md" @click="closeAutoModal">Bekor qilish</AppButton>
+                <AppButton variant="secondary" size="md" @click="closeAutoModal">{{ tt('cc.modal.cancel') }}</AppButton>
                 <AppButton variant="primary" size="md" :loading="autoSaving" @click="saveAutoSettings">
                   <template #icon><AppIcon name="Check" :size="13"/></template>
-                  {{ autoModalSwitching ? "Auto'ga o'tkazish va saqlash" : 'Saqlash' }}
+                  {{ autoModalSwitching ? tt('cc.settings.saveSwitch') : tt('cc.settings.save') }}
                 </AppButton>
               </div>
             </div>
@@ -1343,7 +1324,7 @@
       <Transition name="cc-modal">
         <div v-if="reactivateModalOpen" class="cc-modal-backdrop" @click.self="closeReactivateModal">
           <div class="cc-modal" role="dialog" aria-modal="true">
-            <button class="cc-modal-close" @click="closeReactivateModal" aria-label="Yopish">
+            <button class="cc-modal-close" @click="closeReactivateModal" :aria-label="tt('cc.close')">
               <AppIcon name="Close" :size="14"/>
             </button>
 
@@ -1352,10 +1333,10 @@
               <div class="cc-modal-hero-inner">
                 <span class="cc-modal-hero-icon"><AppIcon name="Sparkle" :size="22"/></span>
                 <div>
-                  <div class="cc-modal-hero-title">Kanalni qayta faollashtirish</div>
+                  <div class="cc-modal-hero-title">{{ tt('cc.reactivate.title') }}</div>
                   <div class="cc-modal-hero-sub">
                     <b>{{ reactivateChannelData?.display_name || reactivateChannelData?.username }}</b>
-                    — botni kanalga admin qilib qayta qo'shing
+                    {{ tt('cc.reactivate.heroSub') }}
                   </div>
                 </div>
               </div>
@@ -1364,21 +1345,21 @@
             <div class="cc-modal-body">
               <div v-if="reactivateLoading" style="display:flex;align-items:center;justify-content:center;padding:40px 0;gap:10px;color:var(--muted);font-size:13px;">
                 <span class="cc-spinner"/>
-                Tayyorlanmoqda...
+                {{ tt('cc.reactivate.preparing') }}
               </div>
 
               <template v-else-if="reactivateChannelData && reactivateChannelData.status === 'connected' && (reactivateChannelData.bot_status === 'administrator' || reactivateChannelData.bot_status === 'creator')">
                 <div class="cc-success">
                   <div class="cc-success-icon"><AppIcon name="Check" :size="28"/></div>
                   <div style="text-align:center">
-                    <div class="cc-success-title">Kanal qayta faollashtirildi!</div>
+                    <div class="cc-success-title">{{ tt('cc.reactivate.successTitle') }}</div>
                     <div class="cc-success-sub">
                       <b>{{ reactivateChannelData?.display_name || reactivateChannelData?.username }}</b>
-                      — bot endi admin sifatida ulangan
+                      {{ tt('cc.reactivate.successSub') }}
                     </div>
                   </div>
                   <div class="cc-modal-actions">
-                    <AppButton variant="primary" size="md" @click="closeReactivateModal">Yopish</AppButton>
+                    <AppButton variant="primary" size="md" @click="closeReactivateModal">{{ tt('cc.modal.close') }}</AppButton>
                   </div>
                 </div>
               </template>
@@ -1393,36 +1374,36 @@
                     </span>
                   </div>
                   <div style="text-align:center;">
-                    <div class="cc-pending-title">Botni qayta admin qiling</div>
+                    <div class="cc-pending-title">{{ tt('cc.reactivate.pendingTitle') }}</div>
                     <div class="cc-pending-sub">
                       <span class="mono" style="color:var(--text-2)">{{ reactivateChannelData?.username }}</span>
-                      kanalida botni admin qilib qaytadan qo'shganingizdan keyin status avtomatik faollashadi.
+                      {{ tt('cc.reactivate.pendingSub') }}
                     </div>
                   </div>
 
                   <a v-if="reactivateDeepLink" :href="reactivateDeepLink" target="_blank" rel="noopener" class="cc-pending-cta">
                     <AppIcon name="Telegram" :size="14"/>
-                    Telegramda ochish
+                    {{ tt('cc.reactivate.openTelegram') }}
                     <AppIcon name="Arrow" :size="13"/>
                   </a>
 
                   <div class="cc-pending-steps">
-                    <div class="cc-step"><span class="cc-step-num">1</span> "Telegramda ochish" tugmasini bosing</div>
-                    <div class="cc-step"><span class="cc-step-num">2</span> Bot profilidan "Add to Group or Channel" → kanalingizni tanlang</div>
-                    <div class="cc-step"><span class="cc-step-num">3</span> Botga admin huquqlari bering — status avtomatik yangilanadi</div>
+                    <div class="cc-step"><span class="cc-step-num">1</span> {{ tt('cc.reactivate.step1') }}</div>
+                    <div class="cc-step"><span class="cc-step-num">2</span> {{ tt('cc.reactivate.step2') }}</div>
+                    <div class="cc-step"><span class="cc-step-num">3</span> {{ tt('cc.reactivate.step3') }}</div>
                   </div>
 
                   <div class="cc-reactivate-live">
                     <span class="cc-live-dot"/>
-                    <span style="flex:1;">Bot kanaliga qo'shilishi avtomatik kuzatilmoqda</span>
+                    <span style="flex:1;">{{ tt('cc.reactivate.watching') }}</span>
                     <button type="button" class="cc-live-check" :disabled="reactivateChecking" @click="checkReactivateNow">
                       <span v-if="reactivateChecking" class="cc-spinner" style="width:11px;height:11px;border-width:1.5px;"/>
                       <AppIcon v-else name="Sparkle" :size="11"/>
-                      Hozir tekshirish
+                      {{ tt('cc.reactivate.checkNow') }}
                     </button>
                   </div>
                   <div v-if="reactivateAttempts > 0" style="font-size:11px;color:var(--muted);text-align:center;margin-top:-4px;">
-                    {{ reactivateAttempts }} marta tekshirildi · bot hali admin emas
+                    {{ tt('cc.reactivate.attempts', { n: reactivateAttempts }) }}
                   </div>
                 </div>
 
@@ -1458,27 +1439,27 @@
       <Transition name="cc-modal">
         <div v-if="recentOpen" class="cc-modal-backdrop" @click.self="closeRecent">
           <div class="cc-modal cc-recent" role="dialog" aria-modal="true">
-            <button class="cc-modal-close" @click="closeRecent" aria-label="Yopish">
+            <button class="cc-modal-close" @click="closeRecent" :aria-label="tt('cc.close')">
               <AppIcon name="Close" :size="14"/>
             </button>
 
             <div class="cc-recent-head">
               <span class="cc-recent-head-icon"><AppIcon name="Eye" :size="16"/></span>
               <div style="min-width:0;">
-                <div class="cc-recent-title">So'nggi postlar · 3 kun</div>
+                <div class="cc-recent-title">{{ tt('cc.recent.title') }}</div>
                 <div class="cc-recent-sub">{{ recentChannel ? displayName(recentChannel) : '' }}</div>
               </div>
             </div>
 
             <div class="cc-recent-body">
               <div v-if="recentLoading" class="cc-recent-state">
-                <span class="cc-spinner"/> Yuklanmoqda…
+                <span class="cc-spinner"/> {{ tt('cc.recent.loading') }}
               </div>
               <div v-else-if="recentError" class="cc-recent-state" style="color:var(--danger);">
                 {{ recentError }}
               </div>
               <div v-else-if="!recentPosts.length" class="cc-recent-state">
-                Oxirgi 3 kunda Telegramga yuborilgan post yo'q.
+                {{ tt('cc.recent.empty') }}
               </div>
               <ul v-else class="cc-recent-list">
                 <li v-for="p in recentPosts" :key="p.id" class="cc-recent-item">
@@ -1489,7 +1470,7 @@
                       <span><AppIcon name="Calendar" :size="10"/> {{ fmtPostTime(p.sent_at) }}</span>
                     </div>
                   </div>
-                  <div class="cc-recent-views" :title="p.views_label ? 'Hozirgi ko\'rishlar' : 'Ko\'rish soni mavjud emas (private kanal?)'">
+                  <div class="cc-recent-views" :title="p.views_label ? tt('cc.recent.viewsTitle') : tt('cc.recent.viewsNa')">
                     <AppIcon name="Eye" :size="12"/>
                     <span class="tabular">{{ p.views_label ?? '—' }}</span>
                   </div>
@@ -1522,12 +1503,15 @@ import { referencesApi } from '@/api/references.js'
 import { categoriesApi } from '@/api/categories.js'
 import { aiApi } from '@/api/ai.js'
 import { useAppStore } from '@/stores/app.js'
+import { useTimezone } from '@/composables/useTimezone.js'
 
 const router = useRouter()
 const route = useRoute()
 const store = useAppStore()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
+// Workspace vaqt mintaqasi yorlig'i — autopost jadvali/oynasi shu offset'da.
+const { label: tzLabel } = useTimezone()
 
 const view = ref('cards')
 const statusFilter = ref('all')        // all | active | inactive
@@ -1559,25 +1543,25 @@ const metaConnectError = ref('')
 const metaNotify = ref('')         // URL'dagi meta_error yoki success xabari
 
 // ── Avto-post sozlamalari (faqat auto rejimda) ─────────────────
-const INTERVAL_PRESETS = [
-  { value: 60,   label: '1 soat' },
-  { value: 180,  label: '3 soat' },
-  { value: 360,  label: '6 soat' },
-  { value: 720,  label: '12 soat' },
-  { value: 1440, label: '24 soat' },
-]
+const INTERVAL_PRESETS = computed(() => [
+  { value: 60,   label: tt('cc.dur.1h') },
+  { value: 180,  label: tt('cc.dur.3h') },
+  { value: 360,  label: tt('cc.dur.6h') },
+  { value: 720,  label: tt('cc.dur.12h') },
+  { value: 1440, label: tt('cc.dur.24h') },
+])
 // Faol vaqt oynasi uchun soatlar (0..23) — "08:00" ko'rinishida
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
   value: h,
   label: String(h).padStart(2, '0') + ':00',
 }))
-const TIME_RANGE_OPTIONS = [
-  { value: '3h',  label: '3 soat' },
-  { value: '6h',  label: '6 soat' },
-  { value: '12h', label: '12 soat' },
-  { value: '24h', label: '24 soat' },
-  { value: 'unlimited', label: '♾️ Cheklanmagan' },
-]
+const TIME_RANGE_OPTIONS = computed(() => [
+  { value: '3h',  label: tt('cc.dur.3h') },
+  { value: '6h',  label: tt('cc.dur.6h') },
+  { value: '12h', label: tt('cc.dur.12h') },
+  { value: '24h', label: tt('cc.dur.24h') },
+  { value: 'unlimited', label: tt('cc.dur.unlimited') },
+])
 
 // Vaqt oralig'ini tanlash. "Cheklanmagan" tanlansa — maqsad eng qiziqarli
 // (ballli) post bo'ladi, shu sababli saralash majburan "best"ga o'tadi.
@@ -1585,19 +1569,19 @@ function setTimeRange(v) {
   autoFilters.value.time_range = v
   if (v === 'unlimited') autoFilters.value.sort_mode = 'best'
 }
-const SOURCE_TYPE_OPTIONS = [
-  { value: 'all',      label: 'Hammasi' },
+const SOURCE_TYPE_OPTIONS = computed(() => [
+  { value: 'all',      label: tt('cc.srcType.all') },
   { value: 'telegram', label: 'Telegram' },
   { value: 'website',  label: 'Website' },
-]
+])
 // Til ro'yxati — ham manba filtri ("Til" chip-row), ham AI chiqish tili
 // ("Chiqish alifbosi") uchun bitta umumiy ro'yxat ishlatiladi.
-const LANG_OPTIONS = [
-  { value: 'uz_lat', label: "O'zbek (lotin)" },
-  { value: 'uz_cyr', label: "O'zbek (kirill)" },
-  { value: 'ru', label: 'Rus tili' },
-  { value: 'en', label: 'Ingliz tili' },
-]
+const LANG_OPTIONS = computed(() => [
+  { value: 'uz_lat', label: tt('cc.lang.uzLat') },
+  { value: 'uz_cyr', label: tt('cc.lang.uzCyr') },
+  { value: 'ru', label: tt('cc.lang.ru') },
+  { value: 'en', label: tt('cc.lang.en') },
+])
 
 const categories = ref([])
 const autoInterval = ref(60)
@@ -1609,7 +1593,7 @@ const autoCategoryIds = ref([])         // []
 const autoTestShowOriginal = ref(false) // test rejim toggle
 // AI chiqish tili: uz_lat | uz_cyr | ru | en (LANG_OPTIONS bilan bir xil set)
 const autoOutputLanguage = ref('uz_lat')
-const OUTPUT_LANG_OPTIONS = LANG_OPTIONS.map((l) => ({ id: l.value, label: l.label }))
+const OUTPUT_LANG_OPTIONS = computed(() => LANG_OPTIONS.value.map((l) => ({ id: l.value, label: l.label })))
 const autoFilters = ref({
   time_range: '24h',
   source_type: 'all',
@@ -1657,10 +1641,10 @@ const advancedAiOpen = ref(false)
 const intervalPreviewText = computed(() => {
   const m = autoInterval.value || 60
   let t
-  if (m < 60) t = `${m} daqiqada`
-  else if (m === 60) t = '1 soatda'
-  else if (m % 60 === 0) t = `${m / 60} soatda`
-  else t = `${Math.floor(m / 60)} soat ${m % 60} daqiqada`
+  if (m < 60) t = tt('cc.prev.minutes', { n: m })
+  else if (m === 60) t = tt('cc.prev.1hour')
+  else if (m % 60 === 0) t = tt('cc.prev.hours', { n: m / 60 })
+  else t = tt('cc.prev.hoursMinutes', { h: Math.floor(m / 60), m: m % 60 })
   return t
 })
 
@@ -1670,16 +1654,16 @@ const scheduledPreviewText = computed(() => {
   const cnt = autoBatchCount.value
   const lead = autoCollectLeadMinutes.value
   if (!times.length) return null
-  const timesStr = times.map(t => `${t} da ${cnt} ta`).join(', ')
-  const leadStr = lead ? `${lead} daqiqa oldin yig'ish boshlanadi` : "yuborish vaqtida yig'iladi"
+  const timesStr = times.map(t => tt('cc.prev.timeCount', { time: t, n: cnt })).join(', ')
+  const leadStr = lead ? tt('cc.prev.leadStart', { n: lead }) : tt('cc.prev.leadAtSend')
   return { timesStr, leadStr }
 })
 
 // Auto-post qaysi postlarni tanlasin: eng oxirgi (sana) yoki eng yuqori ballli
-const SORT_MODE_OPTIONS = [
-  { value: 'latest', label: '🕒 Eng oxirgi maqolalar' },
-  { value: 'best', label: '⭐ Yuqori ballli postlar' },
-]
+const SORT_MODE_OPTIONS = computed(() => [
+  { value: 'latest', label: tt('cc.sort.latest') },
+  { value: 'best', label: tt('cc.sort.best') },
+])
 
 // ── AI sozlamalari (prompt + provider + model + recommended) ──
 // Auto-post qayta yozish uchun faqat Gemini Pro modellari qoldirildi.
@@ -1913,10 +1897,10 @@ function lastPostRelative(c) {
   const dt = parseDate(c.last_post_at)
   if (!dt) return '—'
   const diff = (Date.now() - dt.getTime()) / 1000
-  if (diff < 60) return 'hozirgina'
-  if (diff < 3600) return `${Math.floor(diff / 60)} daq. oldin`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} soat oldin`
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} kun oldin`
+  if (diff < 60) return tt('cc.time.justNow')
+  if (diff < 3600) return tt('cc.time.minAgo', { n: Math.floor(diff / 60) })
+  if (diff < 86400) return tt('cc.time.hourAgo', { n: Math.floor(diff / 3600) })
+  if (diff < 86400 * 7) return tt('cc.time.dayAgo', { n: Math.floor(diff / 86400) })
   return connectedDate({ connected_at: c.last_post_at })
 }
 function gotoPosts(c) {
@@ -1939,7 +1923,7 @@ async function openRecent(c) {
   try {
     recentPosts.value = await channelsApi.recentPosts(company.value.id, c.id)
   } catch (e) {
-    recentError.value = e?.response?.data?.message || 'Postlarni yuklab bo\'lmadi'
+    recentError.value = e?.response?.data?.message || tt('cc.err.loadPosts')
   } finally {
     recentLoading.value = false
   }
@@ -1957,8 +1941,8 @@ function fmtPostTime(iso) {
   const y = new Date(now); y.setDate(now.getDate() - 1)
   const isYesterday = d.toDateString() === y.toDateString()
   const hm = d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })
-  if (sameDay) return `Bugun ${hm}`
-  if (isYesterday) return `Kecha ${hm}`
+  if (sameDay) return tt('cc.time.today', { hm })
+  if (isYesterday) return tt('cc.time.yesterday', { hm })
   return `${d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' })} ${hm}`
 }
 
@@ -2113,7 +2097,7 @@ async function saveSignature(htmlOrNull) {
     sigModalOpen.value = false
   } catch (e) {
     const msg = e?.response?.data?.message
-    alert(Array.isArray(msg) ? msg.join('. ') : (msg || "Imzoni saqlab bo'lmadi"))
+    alert(Array.isArray(msg) ? msg.join('. ') : (msg || tt('cc.err.saveSignature')))
   }
 }
 
@@ -2277,7 +2261,7 @@ async function saveAutoSettings() {
     closeAutoModal()
   } catch (err) {
     const msg = err?.response?.data?.message
-    autoSaveError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Sozlamalarni saqlab boʻlmadi')
+    autoSaveError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('cc.err.saveSettings'))
   } finally {
     autoSaving.value = false
   }
@@ -2464,7 +2448,7 @@ async function startMetaOAuth() {
     const { url } = await channelsApi.getMetaOAuthUrl(company.value.id)
     window.location.href = url
   } catch (e) {
-    addError.value = e?.response?.data?.message || 'Meta OAuth URL olib bo\'lmadi'
+    addError.value = e?.response?.data?.message || tt('cc.err.metaOauthUrl')
   }
 }
 
@@ -2484,10 +2468,10 @@ async function handleMetaSession(sessionToken, companyId) {
       metaConnectError.value = ''
       metaModalOpen.value = true
     } else {
-      metaNotify.value = data.error || 'Facebook sahifalar topilmadi'
+      metaNotify.value = data.error || tt('cc.err.noFbPages')
     }
   } catch {
-    metaNotify.value = 'Meta sessiyani yuklashda xato'
+    metaNotify.value = tt('cc.err.metaSession')
   }
 }
 
@@ -2521,7 +2505,7 @@ async function connectMetaPages() {
     metaModalOpen.value = false
     await loadAll()
   } catch (e) {
-    metaConnectError.value = e?.response?.data?.message || 'Ulashda xato yuz berdi'
+    metaConnectError.value = e?.response?.data?.message || tt('cc.err.connect')
   } finally {
     metaConnecting.value = false
   }

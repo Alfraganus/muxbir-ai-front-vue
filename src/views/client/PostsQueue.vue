@@ -1,9 +1,9 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
-    <PageHeader title="Navbat" subtitle="AI tayyorlagan postlarni tasdiqlang va navbatga qo'shing">
+    <PageHeader :title="tt('queue.title')" :subtitle="tt('queue.subtitle')">
       <template #right>
         <AppButton variant="secondary" size="md" @click="load" :loading="loading">
-          Yangilash
+          {{ tt('queue.refresh') }}
         </AppButton>
         <AppButton
           v-if="activeTab === 'pending' && counts.pending > 0"
@@ -12,7 +12,7 @@
           @click="approveAll"
         >
           <template #icon><AppIcon name="Check" :size="13"/></template>
-          Barchasini tasdiqlash ({{ counts.pending }})
+          {{ tt('queue.approveAll', { n: counts.pending }) }}
         </AppButton>
       </template>
     </PageHeader>
@@ -25,7 +25,7 @@
     <!-- Loading -->
     <div v-if="loading" style="display:flex;align-items:center;justify-content:center;padding:60px 0;color:var(--muted);font-size:13px;gap:10px;">
       <span class="cp-spinner"/>
-      Yuklanmoqda...
+      {{ tt('queue.loading') }}
     </div>
 
     <!-- Empty -->
@@ -67,7 +67,7 @@
       <div v-if="detailPost" class="pq-overlay" @click.self="detailPost = null">
         <div class="pq-modal">
           <div class="pq-modal-header">
-            <div style="font-size:14px;font-weight:600;">Post tafsiloti</div>
+            <div style="font-size:14px;font-weight:600;">{{ tt('queue.detail') }}</div>
             <button class="pq-close-btn" @click="detailPost = null">
               <AppIcon name="Close" :size="15"/>
             </button>
@@ -99,7 +99,7 @@
             <!-- Compare results versiya tanlash -->
             <div v-if="detailPost.compare_results?.length" style="margin-bottom:12px;">
               <label style="font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:8px;">
-                AI versiyalari
+                {{ tt('queue.versions') }}
               </label>
               <div style="display:flex;flex-direction:column;gap:6px;">
                 <button
@@ -123,13 +123,13 @@
             <!-- Editable text -->
             <div style="margin-bottom:10px;">
               <label style="font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px;">
-                AI matni
+                {{ tt('queue.text') }}
               </label>
               <textarea
                 v-model="detailText"
                 class="pq-textarea"
                 rows="8"
-                placeholder="AI tomonidan yozilgan matn..."
+                :placeholder="tt('queue.textPh')"
               />
             </div>
 
@@ -138,12 +138,12 @@
               <button class="pq-ai-chip" :disabled="!!aiLoading" @click="aiRewrite('shorten')">
                 <span v-if="aiLoading === 'shorten'" class="cp-spinner-xs"/>
                 <AppIcon v-else name="Layers" :size="12"/>
-                Qisqartirish
+                {{ tt('queue.shorten') }}
               </button>
               <button class="pq-ai-chip" :disabled="!!aiLoading" @click="aiRewrite('rewrite')">
                 <span v-if="aiLoading === 'rewrite'" class="cp-spinner-xs"/>
                 <AppIcon v-else name="Sparkle" :size="12"/>
-                Qayta yozish
+                {{ tt('queue.rewrite') }}
               </button>
             </div>
           </div>
@@ -152,11 +152,11 @@
           <div v-if="detailPost.status === 'pending_approval'" class="pq-modal-footer">
             <AppButton variant="ghost" size="md" :disabled="modalActing" @click="modalReject">
               <template #icon><AppIcon name="Close" :size="13"/></template>
-              Rad etish
+              {{ tt('queue.reject') }}
             </AppButton>
             <AppButton variant="primary" size="md" :loading="modalActing" @click="modalApprove">
               <template #icon><AppIcon name="Check" :size="13"/></template>
-              Tasdiqlash va navbatga qo'shish
+              {{ tt('queue.approve') }}
             </AppButton>
           </div>
         </div>
@@ -166,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useAppStore } from '@/stores/app.js'
 import { queueApi } from '@/api/queue.js'
 import { useToast } from '@/composables/useToast.js'
@@ -179,6 +179,8 @@ import QueuePostCard from '@/components/queue/QueuePostCard.vue'
 
 const store = useAppStore()
 const toast = useToast()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 const companyId = computed(() => store.companyId)
 
 const activeTab = ref('pending')
@@ -193,9 +195,9 @@ const modalActing = ref(false)
 const compareSelectedIdx = ref(-1)
 
 const tabs = computed(() => [
-  { value: 'pending',  label: `Kutilmoqda${counts.value.pending ? ' · ' + counts.value.pending : ''}` },
-  { value: 'approved', label: `Rejada${counts.value.approved ? ' · ' + counts.value.approved : ''}` },
-  { value: 'sent',     label: 'Yuborilgan' },
+  { value: 'pending',  label: tt('queue.tab.pending') + (counts.value.pending ? ' · ' + counts.value.pending : '') },
+  { value: 'approved', label: tt('queue.tab.approved') + (counts.value.approved ? ' · ' + counts.value.approved : '') },
+  { value: 'sent',     label: tt('queue.tab.sent') },
 ])
 
 const STATUS_MAP = {
@@ -205,15 +207,15 @@ const STATUS_MAP = {
 }
 
 const emptyText = computed(() => ({
-  pending:  'Tasdiqlanmagan postlar yo\'q',
-  approved: 'Navbatda post yo\'q',
-  sent:     'Yuborilgan postlar yo\'q',
+  pending:  tt('queue.empty.pending'),
+  approved: tt('queue.empty.approved'),
+  sent:     tt('queue.empty.sent'),
 }[activeTab.value]))
 
 const emptySubText = computed(() => ({
-  pending:  'AI yangi xabar tayyorlaganda bu yerda ko\'rinadi',
-  approved: 'Tasdiqlangan postlar shu yerda ko\'rinadi',
-  sent:     'Yuborilgan postlar tarixini shu yerda kuzatishingiz mumkin',
+  pending:  tt('queue.sub.pending'),
+  approved: tt('queue.sub.approved'),
+  sent:     tt('queue.sub.sent'),
 }[activeTab.value]))
 
 async function load() {
@@ -274,7 +276,7 @@ async function doApprovePreview(post) {
   post._acting = true
   try {
     await queueApi.approvePreview(companyId.value, post.id) // pro yozadi (uzoq)
-    toast.success('Muxbirda yozildi — endi kanalga chiqarishni tasdiqlang')
+    toast.success(tt('queue.success.preview'))
     await load()
   } catch (e) {
     toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')
@@ -299,7 +301,7 @@ async function doConfirmPublish(post) {
   post._acting = true
   try {
     await queueApi.confirmPublish(companyId.value, post.id)
-    toast.success('Navbatga qo\'shildi — tez orada kanalga chiqariladi')
+    toast.success(tt('queue.success.added'))
     await load()
   } catch (e) {
     toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')
@@ -309,11 +311,11 @@ async function doConfirmPublish(post) {
 }
 
 async function doDeclinePublish(post) {
-  if (!confirm('Yakuniy versiyani kanalga chiqarmaysizmi? Hisobingizdan 50 kredit yechiladi.')) return
+  if (!confirm(tt('queue.confirm.decline'))) return
   post._acting = true
   try {
-    const res = await queueApi.declinePublish(companyId.value, post.id)
-    toast.info(`Chiqarilmadi. ${res?.charged ?? 50} kredit yechildi (balans: ${res?.balance ?? '—'})`)
+    await queueApi.declinePublish(companyId.value, post.id)
+    toast.info(tt('queue.info.declined'))
     await load()
   } catch (e) {
     toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')
@@ -399,7 +401,6 @@ function formatDate(iso) {
 }
 
 // Tab o'zgarganda qayta yuklash
-import { watch } from 'vue'
 watch(activeTab, load)
 
 let pollTimer = null

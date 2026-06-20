@@ -37,8 +37,8 @@
     <header class="oz-header">
       <BrandLogo/>
       <div style="flex:1"/>
-      <span style="font-size:12px;color:var(--muted)">Allaqachon hisobingiz bormi?</span>
-      <AppButton variant="secondary" size="md" @click="$router.push('/admin/overview')">Kirish</AppButton>
+      <span style="font-size:12px;color:var(--muted)">{{ tt('onb.hasAccount') }}</span>
+      <AppButton variant="secondary" size="md" @click="$router.push('/admin/overview')">{{ tt('onb.signin') }}</AppButton>
       <LangSwitcher/>
     </header>
 
@@ -72,20 +72,20 @@
                 <AppIcon name="Shield" :size="22" :stroke-width="1.7" style="color:var(--accent)"/>
               </div>
               <div>
-                <h1 class="oz-h1">Hisob yarating</h1>
-                <p class="oz-sub">Bir necha daqiqada ro'yxatdan o'ting</p>
+                <h1 class="oz-h1">{{ tt('onb.step1.title') }}</h1>
+                <p class="oz-sub">{{ tt('onb.step1.sub') }}</p>
               </div>
             </div>
 
             <AppPanel :padding="28">
               <div class="oz-form">
-                <VField label="To'liq ism" :error="e.full_name" required>
+                <VField :label="tt('onb.field.fullName')" :error="e.full_name" required>
                   <VInput v-model="f1.full_name" placeholder="Sardor Qodirov" :error="!!e.full_name" @input="clearErr('full_name')"/>
                 </VField>
-                <VField label="Ish elektron pochtasi" :error="e.email" required>
-                  <VInput v-model="f1.email" type="email" placeholder="sardor@kompaniya.uz" :error="!!e.email" @input="clearErr('email')"/>
+                <VField :label="tt('onb.field.username')" :error="e.username" required>
+                  <VInput v-model="f1.username" type="text" placeholder="sardor_qodirov" :error="!!e.username" @input="clearErr('username')"/>
                 </VField>
-                <VField label="Parol" :error="e.password" required>
+                <VField :label="tt('onb.field.password')" :error="e.password" required>
                   <VInput v-model="f1.password" :type="showPass ? 'text' : 'password'" placeholder="••••••••••" :error="!!e.password" @input="clearErr('password')">
                     <template #suffix>
                       <button @click="showPass=!showPass" type="button" class="oz-eye-btn">
@@ -98,21 +98,20 @@
                       </button>
                     </template>
                   </VInput>
-                  <StrengthBar :password="f1.password"/>
+                  <StrengthBar :password="f1.password" :labels="strengthLabels"/>
                 </VField>
                 <label class="oz-terms">
                   <input type="checkbox" v-model="f1.accept_terms" style="accent-color:var(--accent);margin-top:2px;flex-shrink:0"/>
                   <span>
-                    <span style="color:var(--accent);font-weight:500">Foydalanish shartlari</span>
-                    va
-                    <span style="color:var(--accent);font-weight:500">maxfiylik siyosati</span>ni
-                    qabul qilaman
+                    <span style="color:var(--accent);font-weight:500">{{ tt('onb.terms.link') }}</span>
+                    {{ tt('onb.terms.and') }}
+                    <span style="color:var(--accent);font-weight:500">{{ tt('onb.terms.privacy') }}</span>{{ tt('onb.terms.accept') }}
                   </span>
                 </label>
                 <p v-if="e.accept_terms" style="margin:0;font-size:11.5px;color:var(--danger)">{{ e.accept_terms }}</p>
                 <ApiError :msg="apiError"/>
                 <AppButton variant="primary" size="lg" :loading="submitting" @click="submitStep1" style="width:100%">
-                  Davom etish
+                  {{ tt('onb.continue') }}
                 </AppButton>
               </div>
             </AppPanel>
@@ -125,20 +124,20 @@
                 <AppIcon name="Building" :size="22" :stroke-width="1.7" style="color:#3b82f6"/>
               </div>
               <div>
-                <h1 class="oz-h1">Kompaniyangizni tanishtiring</h1>
-                <p class="oz-sub">Bu ma'lumot dashboard va fakturalar uchun ishlatiladi</p>
+                <h1 class="oz-h1">{{ tt('onb.step2.title') }}</h1>
+                <p class="oz-sub">{{ tt('onb.step2.sub') }}</p>
               </div>
             </div>
 
             <AppPanel :padding="28">
               <div class="oz-form">
-                <VField label="Kompaniya nomi" :error="e.company_name" required>
+                <VField :label="tt('onb.field.companyName')" :error="e.company_name" required>
                   <VInput v-model="f2.name" placeholder="OOO Olcha Express" :error="!!e.company_name" @input="clearErr('company_name')"/>
                 </VField>
-                <VField label="Joylashuv">
-                  <VInput v-model="f2.location" placeholder="Toshkent, O'zbekiston"/>
+                <VField :label="tt('onb.field.location')">
+                  <VInput v-model="f2.location" :placeholder="tt('onb.field.locationPh')"/>
                 </VField>
-                <VField label="Faoliyat turi">
+                <VField :label="tt('onb.field.businessType')">
                   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
                     <button v-for="bt in businessTypes" :key="bt.id"
                       :style="{
@@ -152,7 +151,7 @@
                     </button>
                   </div>
                 </VField>
-                <VField label="Kompaniya telefon raqamlari">
+                <VField :label="tt('onb.field.phones')">
                   <div style="display:flex;flex-direction:column;gap:8px">
                     <div v-for="(_, i) in f2.phones" :key="i" style="display:flex;gap:8px;align-items:center">
                       <VInput v-model="f2.phones[i]" :mono="true" placeholder="+998 __ ___ __ __" style="flex:1"/>
@@ -162,17 +161,17 @@
                     </div>
                     <button @click="f2.phones.push('')" class="oz-add-btn">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-                      Yana raqam qo'shish
+                      {{ tt('onb.addPhone') }}
                     </button>
                   </div>
                 </VField>
                 <ApiError :msg="apiError"/>
                 <div class="oz-nav">
                   <AppButton variant="secondary" size="lg" @click="step=1">
-                    <template #icon><AppIcon name="ChevronL" :size="14"/></template>Orqaga
+                    <template #icon><AppIcon name="ChevronL" :size="14"/></template>{{ tt('onb.back') }}
                   </AppButton>
                   <AppButton variant="primary" size="lg" :loading="submitting" @click="submitStep2">
-                    Davom etish<template #icon-right><AppIcon name="ChevronR" :size="14"/></template>
+                    {{ tt('onb.continue') }}<template #icon-right><AppIcon name="ChevronR" :size="14"/></template>
                   </AppButton>
                 </div>
               </div>
@@ -186,15 +185,15 @@
                 <AppIcon name="Telegram" :size="22" :stroke-width="1.7" style="color:#2AABEE"/>
               </div>
               <div>
-                <h1 class="oz-h1">Ijtimoiy tarmoqlarni ulang</h1>
-                <p class="oz-sub">Kanallaringizni ulang — tizim kontentni avtomatik tahlil qiladi</p>
+                <h1 class="oz-h1">{{ tt('onb.step3.title') }}</h1>
+                <p class="oz-sub">{{ tt('onb.step3.sub') }}</p>
               </div>
             </div>
 
             <AppPanel :padding="28">
               <div class="oz-form">
                 <div style="display:flex;flex-direction:column;gap:8px">
-                  <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Platforma tanlang</label>
+                  <label style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">{{ tt('onb.platform.select') }}</label>
                   <div v-for="pl in platformsForStep" :key="pl.slug"
                     @click="pl.is_available && togglePlatform(pl.slug)"
                     class="oz-platform-row"
@@ -214,12 +213,11 @@
                     <div style="flex:1">
                       <div style="font-size:13px;font-weight:600;color:var(--text)">{{ pl.name_i18n?.uz || pl.name }}</div>
                       <div style="font-size:11px;color:var(--muted);margin-top:1px">
-                        {{ pl.slug==='telegram' ? 'Kanal va guruhlarni ulash'
-                          : pl.slug==='instagram' ? 'Profil va postlarni kuzatish'
-                          : 'Sayt kontentini kuzatish' }}
+                        {{ pl.slug==='telegram' ? tt('onb.tg.connect')
+                          : tt('onb.tg.soon') }}
                       </div>
                     </div>
-                    <span v-if="!pl.is_available" class="oz-soon-badge">Tez kunda</span>
+                    <span v-if="!pl.is_available" class="oz-soon-badge">{{ tt('onb.tg.soon') }}</span>
                     <span v-else class="oz-check-circle" :class="{ on: selectedPlatforms.includes(pl.slug) }">
                       <svg v-if="selectedPlatforms.includes(pl.slug)" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.8"><polyline points="20 6 9 17 4 12"/></svg>
                     </span>
@@ -232,11 +230,10 @@
                     <div style="width:22px;height:22px;border-radius:6px;background:#2AABEE;display:inline-flex;align-items:center;justify-content:center">
                       <AppIcon name="Telegram" :size="12" :stroke-width="1.8" style="color:white"/>
                     </div>
-                    <span style="font-size:12.5px;font-weight:600">Telegram kanal ulash</span>
+                    <span style="font-size:12.5px;font-weight:600">{{ tt('onb.tg.connect') }}</span>
                   </div>
                   <p style="margin:0 0 12px;font-size:11px;color:var(--muted);line-height:1.5">
-                    Kanal URL'ini kiriting (masalan, <span style="font-family:var(--font-mono)">https://t.me/my_channel</span>).
-                    Keyin bizning botni kanalingizga admin qilib qo'shing — ID avtomatik olinadi.
+                    {{ tt('onb.tg.urlHint') }}
                   </p>
 
                   <!-- Mavjud (ulangan/pending) kanallar ro'yxati -->
@@ -248,24 +245,24 @@
                           <div style="font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px">
                             <span style="overflow:hidden;text-overflow:ellipsis">{{ ch.display_name || ch.username }}</span>
                             <span class="oz-tg-mode-pill" :class="ch.posting_mode || 'auto'">
-                              {{ (ch.posting_mode || 'auto') === 'auto' ? 'Avtomatik' : 'Manual' }}
+                              {{ (ch.posting_mode || 'auto') === 'auto' ? tt('onb.pm.auto.title') : tt('onb.pm.manual.title') }}
                             </span>
                           </div>
                           <div style="font-size:10.5px;color:var(--muted);margin-top:1px">
-                            <template v-if="ch.status === 'connected'">Ulandi · {{ ch.username }}</template>
-                            <template v-else-if="ch.status === 'pending_admin'">Botni admin qilishingizni kutmoqda…</template>
+                            <template v-if="ch.status === 'connected'">{{ tt('onb.tg.connected', { username: ch.username }) }}</template>
+                            <template v-else-if="ch.status === 'pending_admin'">{{ tt('onb.tg.pending') }}</template>
                             <template v-else>{{ ch.username }}</template>
                           </div>
                         </div>
                       </div>
-                      <button @click="toggleChannelMode(ch)" class="oz-tg-mode-btn" :title="(ch.posting_mode||'auto')==='auto' ? 'Manual rejimga o\'tkazish' : 'Avtomatik rejimga o\'tkazish'">
+                      <button @click="toggleChannelMode(ch)" class="oz-tg-mode-btn" :title="(ch.posting_mode||'auto')==='auto' ? tt('onb.pm.manual.title') : tt('onb.pm.auto.title')">
                         <AppIcon :name="(ch.posting_mode||'auto')==='auto' ? 'Sparkle' : 'Edit'" :size="11" :stroke-width="1.8"/>
                       </button>
                       <a v-if="ch.status === 'pending_admin' && tgDeepLink" :href="tgDeepLink" target="_blank" class="oz-tg-admin-btn">
                         <AppIcon name="Telegram" :size="11" :stroke-width="1.8"/>
-                        Botni admin qilish
+                        {{ tt('onb.tg.makeAdmin') }}
                       </a>
-                      <button @click="removeTgChannel(ch.id)" class="oz-rm-btn" title="O'chirish">
+                      <button @click="removeTgChannel(ch.id)" class="oz-rm-btn" :title="tt('onboarding.remove')">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
                       </button>
                     </div>
@@ -273,23 +270,23 @@
 
                   <!-- Posting mode tanlash -->
                   <div class="oz-pm-group" style="margin-bottom:10px">
-                    <label class="oz-pm-label">Post yuborish rejimi</label>
+                    <label class="oz-pm-label">{{ tt('onb.pm.label') }}</label>
                     <div class="oz-pm-options">
                       <button type="button" class="oz-pm-opt" :class="{ active: tgNewMode === 'auto' }" @click="tgNewMode = 'auto'">
                         <div class="oz-pm-opt-head">
                           <span class="oz-pm-opt-icon"><AppIcon name="Sparkle" :size="13" :stroke-width="1.7"/></span>
-                          <span class="oz-pm-opt-title">Avtomatik</span>
+                          <span class="oz-pm-opt-title">{{ tt('onb.pm.auto.title') }}</span>
                           <span v-if="tgNewMode==='auto'" class="oz-pm-opt-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg></span>
                         </div>
-                        <div class="oz-pm-opt-sub">Tizim har bir interval'da o'zi post tanlab yuboradi</div>
+                        <div class="oz-pm-opt-sub">{{ tt('onb.pm.auto.sub') }}</div>
                       </button>
                       <button type="button" class="oz-pm-opt" :class="{ active: tgNewMode === 'manual' }" @click="tgNewMode = 'manual'">
                         <div class="oz-pm-opt-head">
                           <span class="oz-pm-opt-icon"><AppIcon name="Edit" :size="13" :stroke-width="1.7"/></span>
-                          <span class="oz-pm-opt-title">Manual</span>
+                          <span class="oz-pm-opt-title">{{ tt('onb.pm.manual.title') }}</span>
                           <span v-if="tgNewMode==='manual'" class="oz-pm-opt-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg></span>
                         </div>
-                        <div class="oz-pm-opt-sub">Faqat siz yuborganda chiqadi, avtomatik yuborilmaydi</div>
+                        <div class="oz-pm-opt-sub">{{ tt('onb.pm.manual.sub') }}</div>
                       </button>
                     </div>
                   </div>
@@ -302,8 +299,8 @@
                           <AppIcon name="Sparkle" :size="13" :stroke-width="1.8"/>
                         </span>
                         <div style="flex:1">
-                          <div class="oz-ai-title">AI assistent sozlamalari</div>
-                          <div class="oz-ai-sub">Avtomatik rejimda postlar shu qoidalar bilan qayta yoziladi</div>
+                          <div class="oz-ai-title">{{ tt('onb.ai.title') }}</div>
+                          <div class="oz-ai-sub">{{ tt('onb.ai.sub') }}</div>
                         </div>
                       </div>
 
@@ -311,8 +308,8 @@
                       <div class="oz-ai-group">
                         <div class="oz-ai-group-label">
                           <AppIcon name="Globe2" :size="11" :stroke-width="1.9"/>
-                          Mavzu
-                          <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;margin-left:4px">(faqat tanlangan mavzudagi postlar qabul qilinadi)</span>
+                          {{ tt('onb.ai.topicLabel') }}
+                          <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;margin-left:4px">{{ tt('onb.ai.topicHint') }}</span>
                         </div>
                         <div class="oz-topic-chips">
                           <button v-for="t in TOPIC_PRESETS" :key="t.id"
@@ -329,7 +326,7 @@
                       <div class="oz-ai-group">
                         <div class="oz-ai-group-label">
                           <AppIcon name="Globe2" :size="11" :stroke-width="1.9"/>
-                          Kontent turi
+                          {{ tt('onb.ai.contentType') }}
                         </div>
                         <label class="oz-ai-toggle" :class="{ on: ai.onlyNews }">
                           <input type="checkbox" v-model="ai.onlyNews"/>
@@ -337,8 +334,8 @@
                             <svg v-if="ai.onlyNews" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                           </span>
                           <span style="flex:1">
-                            <span class="oz-ai-toggle-title">Faqat "xabar / yangilik" turidagi postlar</span>
-                            <span class="oz-ai-toggle-sub">Reklama, e'lon, intervyu, lichniy gap tashlab yuboriladi</span>
+                            <span class="oz-ai-toggle-title">{{ tt('onb.ai.onlyNews') }}</span>
+                            <span class="oz-ai-toggle-sub">{{ tt('onb.ai.onlyNewsSub') }}</span>
                           </span>
                         </label>
                       </div>
@@ -347,7 +344,7 @@
                       <div class="oz-ai-group">
                         <div class="oz-ai-group-label">
                           <AppIcon name="Edit" :size="11" :stroke-width="1.9"/>
-                          Qayta yozish qoidalari
+                          {{ tt('onb.ai.rewriteRules') }}
                         </div>
                         <label class="oz-ai-toggle" :class="{ on: ai.stripSource }">
                           <input type="checkbox" v-model="ai.stripSource"/>
@@ -355,8 +352,8 @@
                             <svg v-if="ai.stripSource" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                           </span>
                           <span style="flex:1">
-                            <span class="oz-ai-toggle-title">Manba nomini va havolalarini olib tashlash</span>
-                            <span class="oz-ai-toggle-sub">Masalan: "Kun.uz rasmiy kanali", "Manba: @kunuzofficial" — o'chiriladi</span>
+                            <span class="oz-ai-toggle-title">{{ tt('onb.ai.stripSource') }}</span>
+                            <span class="oz-ai-toggle-sub">{{ tt('onb.ai.stripSourceSub') }}</span>
                           </span>
                         </label>
                         <label class="oz-ai-toggle" :class="{ on: ai.paraphrase }">
@@ -365,8 +362,8 @@
                             <svg v-if="ai.paraphrase" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                           </span>
                           <span style="flex:1">
-                            <span class="oz-ai-toggle-title">Matnni paraphrase qilish</span>
-                            <span class="oz-ai-toggle-sub">Asl ma'no saqlanib, so'z va jumlalar qayta yoziladi</span>
+                            <span class="oz-ai-toggle-title">{{ tt('onb.ai.paraphrase') }}</span>
+                            <span class="oz-ai-toggle-sub">{{ tt('onb.ai.paraphraseSub') }}</span>
                           </span>
                         </label>
                         <label class="oz-ai-toggle" :class="{ on: ai.prefixSource }">
@@ -375,8 +372,8 @@
                             <svg v-if="ai.prefixSource" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                           </span>
                           <span style="flex:1">
-                            <span class="oz-ai-toggle-title">Boshiga "&lt;Manba&gt; xabar berishicha" qo'shish</span>
-                            <span class="oz-ai-toggle-sub">Masalan: "Kun.uz xabar berishicha, …"</span>
+                            <span class="oz-ai-toggle-title">{{ tt('onb.ai.prefixSource') }}</span>
+                            <span class="oz-ai-toggle-sub">{{ tt('onb.ai.prefixSourceSub') }}</span>
                           </span>
                         </label>
                       </div>
@@ -385,23 +382,23 @@
                       <div class="oz-ai-group">
                         <div class="oz-ai-group-label danger">
                           <AppIcon name="Shield" :size="11" :stroke-width="1.9"/>
-                          Majburiy cheklovlar
+                          {{ tt('onb.ai.hardRules') }}
                           <span class="oz-ai-lock">
                             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-                            Doim yoqilgan
+                            {{ tt('onb.ai.alwaysOn') }}
                           </span>
                         </div>
                         <div class="oz-ai-locked-item">
                           <span class="oz-ai-locked-dot"/>
-                          Islomiy / diniy kontent — aslo o'tkazilmaydi
+                          {{ tt('onb.ai.lock1') }}
                         </div>
                         <div class="oz-ai-locked-item">
                           <span class="oz-ai-locked-dot"/>
-                          O'zbekiston Respublikasi nomiga tanqid — aslo o'tkazilmaydi
+                          {{ tt('onb.ai.lock2') }}
                         </div>
                         <div class="oz-ai-locked-item">
                           <span class="oz-ai-locked-dot"/>
-                          Prezident va oila a'zolari haqida salbiy kontent — aslo o'tkazilmaydi
+                          {{ tt('onb.ai.lock3') }}
                         </div>
                       </div>
 
@@ -409,37 +406,37 @@
                       <div class="oz-ai-group">
                         <div class="oz-ai-group-label">
                           <AppIcon name="Sparkle" :size="11" :stroke-width="1.9"/>
-                          Qo'shimcha ko'rsatma <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">(ixtiyoriy)</span>
+                          {{ tt('onb.ai.extraLabel') }} <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">{{ tt('onb.ai.extraHint') }}</span>
                         </div>
                         <textarea v-model="ai.extra" class="oz-ai-textarea"
-                          placeholder="Masalan: postlar oxiriga emoji qo'shma, sarlavhani qalin yozma, qisqaroq qil…"/>
+                          :placeholder="tt('onb.ai.extraPh')"/>
                       </div>
 
                       <!-- 5. Avtomatik nashr qoidalari (info) -->
                       <div class="oz-ai-group">
                         <div class="oz-ai-group-label">
                           <AppIcon name="Bolt" :size="11" :stroke-width="1.9"/>
-                          AI yuborgan post bilan nima bo'ladi
+                          {{ tt('onb.ai.publishInfo') }}
                         </div>
                         <div class="oz-ai-info-row">
                           <span class="oz-ai-info-num">1</span>
                           <div class="oz-ai-info-body">
-                            <div class="oz-ai-info-title">Postlar oqimiga qo'shiladi</div>
-                            <div class="oz-ai-info-sub">Har bir avtomatik yuborilgan xabar <strong>"Nashr qilinganlar"</strong> ro'yxatida ko'rinadi — sarlavha, vaqt, manba va kanal bilan</div>
+                            <div class="oz-ai-info-title">{{ tt('onb.ai.info1title') }}</div>
+                            <div class="oz-ai-info-sub" v-html="tt('onb.ai.info1sub')"></div>
                           </div>
                         </div>
                         <div class="oz-ai-info-row">
                           <span class="oz-ai-info-num">2</span>
                           <div class="oz-ai-info-body">
-                            <div class="oz-ai-info-title">Tokenlar ro'yxatga olinadi</div>
-                            <div class="oz-ai-info-sub">Har AI chaqiruvi uchun ishlatilgan token soni post bilan birga saqlanadi (audit va analitika uchun)</div>
+                            <div class="oz-ai-info-title">{{ tt('onb.ai.info2title') }}</div>
+                            <div class="oz-ai-info-sub">{{ tt('onb.ai.info2sub') }}</div>
                           </div>
                         </div>
                         <div class="oz-ai-info-row">
                           <span class="oz-ai-info-num">3</span>
                           <div class="oz-ai-info-body">
-                            <div class="oz-ai-info-title">Oylik tarif limitidan yechiladi</div>
-                            <div class="oz-ai-info-sub">Ishlatilgan tokenlar tarifingizdagi <strong>oylik AI token limiti</strong>dan kamayadi. Limit tugasa avtomatik yuborish vaqtincha to'xtatiladi</div>
+                            <div class="oz-ai-info-title">{{ tt('onb.ai.info3title') }}</div>
+                            <div class="oz-ai-info-sub" v-html="tt('onb.ai.info3sub')"></div>
                           </div>
                         </div>
                       </div>
@@ -448,12 +445,8 @@
                       <div class="oz-ai-strict">
                         <AppIcon name="Shield" :size="13" :stroke-width="1.9" style="flex-shrink:0;color:var(--danger);margin-top:1px"/>
                         <div>
-                          <div class="oz-ai-strict-title">AI ni chetlab o'tib bo'lmaydi</div>
-                          <div class="oz-ai-strict-sub">
-                            Avtomatik rejimda kanalga keladigan <strong>har bir post majburan AI dan o'tadi</strong>.
-                            AI bo'sh javob qaytarsa (post xabar emas yoki cheklov buzgan), <strong>post tashlanadi</strong> — manba matni o'z holicha hech qachon nashr qilinmaydi.
-                            Rejim almashtirilgan paytda allaqachon kelgan eski postlar avtomatik yuborilmaydi.
-                          </div>
+                          <div class="oz-ai-strict-title">{{ tt('onb.ai.noBypass') }}</div>
+                          <div class="oz-ai-strict-sub" v-html="tt('onb.ai.noBypassSub')"></div>
                         </div>
                       </div>
 
@@ -461,7 +454,7 @@
                       <button class="oz-ai-preview-toggle" @click="ai.showPrompt = !ai.showPrompt">
                         <AppIcon :name="ai.showPrompt ? 'ChevronL' : 'ChevronR'" :size="11" :stroke-width="2"
                           :style="{ transform: ai.showPrompt ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform .2s' }"/>
-                        Tizim promptini ko'rish
+                        {{ tt('onb.ai.promptToggle') }}
                       </button>
                       <pre v-if="ai.showPrompt" class="oz-ai-prompt">{{ compiledPrompt }}</pre>
                     </div>
@@ -475,7 +468,7 @@
                         style="flex:1;border:none;outline:none;background:transparent;font-size:13px;color:var(--text);font-family:var(--font-mono)"/>
                     </div>
                     <AppButton variant="secondary" size="md" :loading="tgAdding" @click="addTgChannel">
-                      Qo'shish
+                      {{ tt('onb.tg.add') }}
                     </AppButton>
                   </div>
                   <p v-if="tgError" style="margin:8px 0 0;font-size:11.5px;color:var(--danger)">{{ tgError }}</p>
@@ -485,10 +478,10 @@
                 <ApiError :msg="apiError"/>
                 <div class="oz-nav">
                   <AppButton variant="secondary" size="lg" @click="step=2">
-                    <template #icon><AppIcon name="ChevronL" :size="14"/></template>Orqaga
+                    <template #icon><AppIcon name="ChevronL" :size="14"/></template>{{ tt('onb.back') }}
                   </AppButton>
                   <AppButton variant="primary" size="lg" :loading="submitting" @click="submitStep3">
-                    Davom etish<template #icon-right><AppIcon name="ChevronR" :size="14"/></template>
+                    {{ tt('onb.continue') }}<template #icon-right><AppIcon name="ChevronR" :size="14"/></template>
                   </AppButton>
                 </div>
               </div>
@@ -502,8 +495,8 @@
                 <AppIcon name="Globe2" :size="22" :stroke-width="1.7" style="color:var(--success)"/>
               </div>
               <div>
-                <h1 class="oz-h1">Manba kanallarni tanlang</h1>
-                <p class="oz-sub">Qaysi kanallardan kontentni kuzatmoqchisiz? Istalgan vaqtda o'zgartirish mumkin.</p>
+                <h1 class="oz-h1">{{ tt('onb.step4.title') }}</h1>
+                <p class="oz-sub">{{ tt('onb.step4.sub') }}</p>
               </div>
             </div>
 
@@ -512,7 +505,7 @@
               <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;border-radius:12px 12px 0 0">
                 <div style="flex:1;display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-sm)">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                  <input v-model="sourceSearch" placeholder="Kanal nomi bo'yicha qidirish..."
+                  <input v-model="sourceSearch" :placeholder="tt('onboarding.searchChannels')"
                     style="flex:1;border:none;outline:none;background:transparent;font-size:13px;color:var(--text)"/>
                 </div>
                 <button @click="toggleAllSources"
@@ -525,7 +518,7 @@
                   }">
                   <svg v-if="!allSelected" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
                   <svg v-else width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                  {{ allSelected ? 'Barchasini bekor qilish' : 'Barchasini tanlash' }}
+                  {{ allSelected ? tt('onb.sources.deselectAll') : tt('onb.sources.selectAll') }}
                 </button>
                 <span style="font-size:11.5px;color:var(--muted);white-space:nowrap;flex-shrink:0">
                   <span style="font-weight:600;color:var(--text)">{{ selectedSources.length }}</span> / {{ sourceChannels.length }}
@@ -536,7 +529,7 @@
               <div style="max-height:460px;overflow-y:auto;padding:8px">
                 <template v-for="group in groupedChannels" :key="group.cat">
                   <div style="padding:10px 8px 6px;display:flex;align-items:center;gap:8px">
-                    <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">{{ group.cat }}</span>
+                    <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">{{ catLabel(group.cat) }}</span>
                     <span style="font-size:10.5px;color:var(--muted)">· {{ group.channels.length }}</span>
                     <div style="flex:1;height:1px;background:var(--border-2)"/>
                   </div>
@@ -567,17 +560,17 @@
                   </div>
                 </template>
                 <div v-if="groupedChannels.length===0" style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
-                  "{{ sourceSearch }}" bo'yicha hech narsa topilmadi
+                  {{ tt('onb.sources.noResults', { q: sourceSearch }) }}
                 </div>
               </div>
 
               <!-- Footer nav -->
               <div style="padding:14px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;border-radius:0 0 12px 12px">
                 <AppButton variant="secondary" size="lg" @click="step=3">
-                  <template #icon><AppIcon name="ChevronL" :size="14"/></template>Orqaga
+                  <template #icon><AppIcon name="ChevronL" :size="14"/></template>{{ tt('onb.back') }}
                 </AppButton>
                 <AppButton variant="primary" size="lg" :loading="submitting" @click="submitStep4">
-                  Davom etish — tarif tanlash<template #icon-right><AppIcon name="ChevronR" :size="14"/></template>
+                  {{ tt('onb.sources.continueBtn') }}<template #icon-right><AppIcon name="ChevronR" :size="14"/></template>
                 </AppButton>
               </div>
             </AppPanel>
@@ -586,13 +579,13 @@
           <!-- ────────── STEP 5: Tarif ────────── -->
           <div v-else-if="step === 5" style="width:100%">
             <div style="text-align:center;margin-bottom:28px">
-              <h1 class="oz-h1" style="margin:0 0 6px">Sizga mos tarifni tanlang</h1>
+              <h1 class="oz-h1" style="margin:0 0 6px">{{ tt('onb.step5.title') }}</h1>
               <p style="margin:0;color:var(--muted);font-size:13.5px">
-                Sizga mos tarifni tanlang · istalgan vaqtda o'zgartirish mumkin
+                {{ tt('onb.step5.sub') }}
               </p>
               <!-- Billing toggle -->
               <div style="display:inline-flex;margin-top:18px;padding:3px;background:var(--panel);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow-sm)">
-                <button v-for="o in [{id:'monthly',label:'Oylik'},{id:'yearly',label:'Yillik — 15% chegirma'}]" :key="o.id"
+                <button v-for="o in [{id:'monthly',label:tt('onb.plan.monthly')},{id:'yearly',label:tt('onb.plan.yearly')}]" :key="o.id"
                   @click="billingCycle=o.id"
                   :style="{
                     height:'30px',padding:'0 16px',fontSize:'12px',fontWeight:500,
@@ -607,7 +600,7 @@
 
             <!-- Empty state -->
             <div v-if="!plans.length" style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
-              Tariflar yuklanmadi. Sahifani yangilang yoki birozdan keyin urinib ko'ring.
+              {{ tt('onb.plan.noPlans') }}
             </div>
 
             <!-- Plan cards -->
@@ -634,10 +627,10 @@
                 </div>
                 <p style="margin:0;font-size:11.5px;color:var(--muted);min-height:30px;line-height:1.4">{{ p.desc }}</p>
                 <div style="display:flex;align-items:baseline;gap:4px">
-                  <span v-if="p.free" style="font-size:24px;font-weight:700;color:var(--success)">Bepul</span>
+                  <span v-if="p.free" style="font-size:24px;font-weight:700;color:var(--success)">{{ tt('onb.plan.free') }}</span>
                   <template v-else>
                     <span class="tabular" style="font-size:20px;font-weight:700">{{ fmtSom(billingCycle==='yearly' ? Math.round(p.price*12*0.85) : p.price) }}</span>
-                    <span style="font-size:10.5px;color:var(--muted)">so'm/{{ billingCycle==='monthly' ? 'oy' : 'yil' }}</span>
+                    <span style="font-size:10.5px;color:var(--muted)">{{ tt('onb.plan.som') }}/{{ billingCycle==='monthly' ? tt('onb.plan.monthly') : tt('onb.plan.yearly') }}</span>
                   </template>
                 </div>
                 <div style="height:1px;background:var(--border-2)"/>
@@ -653,27 +646,27 @@
             <!-- Sticky summary bar -->
             <div style="position:sticky;bottom:0;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow-md)">
               <div style="display:flex;flex-direction:column">
-                <span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Jami {{ billingCycle==='monthly' ? 'oyiga' : 'yiliga' }}</span>
+                <span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600">{{ billingCycle==='monthly' ? tt('onb.plan.totalMonthly') : tt('onb.plan.totalYearly') }}</span>
                 <div style="display:flex;align-items:baseline;gap:6px">
-                  <span v-if="currentPlan.free" style="font-size:22px;font-weight:700;color:var(--success)">Bepul</span>
+                  <span v-if="currentPlan.free" style="font-size:22px;font-weight:700;color:var(--success)">{{ tt('onb.plan.free') }}</span>
                   <template v-else>
                     <span class="tabular" style="font-size:22px;font-weight:700">{{ fmtSom(finalPrice) }}</span>
-                    <span style="font-size:12px;color:var(--muted)">so'm</span>
+                    <span style="font-size:12px;color:var(--muted)">{{ tt('onb.plan.som') }}</span>
                     <AppBadge v-if="billingCycle==='yearly'" tone="success">−15%</AppBadge>
                   </template>
                 </div>
               </div>
               <div style="flex:1;font-size:11.5px;color:var(--muted)">
-                <template v-if="!currentPlan.free">To'lovga o'tasiz · obuna darhol faollashadi</template>
+                <template v-if="!currentPlan.free">{{ tt('onb.plan.payNote') }}</template>
               </div>
               <AppButton variant="secondary" size="lg" @click="goToStep(2)">
-                <template #icon><AppIcon name="ChevronL" :size="14"/></template>Orqaga
+                <template #icon><AppIcon name="ChevronL" :size="14"/></template>{{ tt('onb.back') }}
               </AppButton>
               <AppButton v-if="currentPlan.free" variant="primary" size="lg" :loading="submitting" @click="submitStep5">
-                <template #icon><AppIcon name="Bolt" :size="14"/></template>Ishni boshlash
+                <template #icon><AppIcon name="Bolt" :size="14"/></template>{{ tt('onb.plan.startFree') }}
               </AppButton>
               <AppButton v-else variant="primary" size="lg" :loading="submitting" @click="submitStep5">
-                To'lovga o'tish<template #icon-right><AppIcon name="ChevronR" :size="14"/></template>
+                {{ tt('onb.plan.toPay') }}<template #icon-right><AppIcon name="ChevronR" :size="14"/></template>
               </AppButton>
             </div>
           </div>
@@ -686,8 +679,8 @@
                   <AppIcon name="Coin" :size="22" :stroke-width="1.7" style="color:var(--accent)"/>
                 </div>
                 <div>
-                  <h1 class="oz-h1" style="font-size:20px">To'lov usulini tanlang</h1>
-                  <p class="oz-sub">Obuna to'lovdan so'ng darhol faollashadi</p>
+                  <h1 class="oz-h1" style="font-size:20px">{{ tt('onb.step6.title') }}</h1>
+                  <p class="oz-sub">{{ tt('onb.step6.sub') }}</p>
                 </div>
               </div>
 
@@ -710,27 +703,27 @@
                   <div style="margin-top:6px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:flex-start;gap:8px">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
                     <span style="font-size:11.5px;color:var(--muted);line-height:1.5">
-                      Tanlangan tarif uchun
-                      <strong style="color:var(--text)">{{ fmtSom(finalPrice) }} so'm</strong>
-                      to'lov olinadi va obuna darhol faollashadi.
+                      {{ tt('onboarding.payNotePre') }}
+                      <strong style="color:var(--text)">{{ fmtSom(finalPrice) }} {{ tt('onb.plan.som') }}</strong>
+                      {{ tt('onboarding.payNotePost') }}
                     </span>
                   </div>
                 </div>
 
                 <div style="display:flex;justify-content:space-between;margin-top:18px">
                   <AppButton variant="secondary" size="lg" @click="step=5">
-                    <template #icon><AppIcon name="ChevronL" :size="14"/></template>Orqaga
+                    <template #icon><AppIcon name="ChevronL" :size="14"/></template>{{ tt('onb.back') }}
                   </AppButton>
                   <AppButton variant="primary" size="lg" :loading="submitting" @click="submitStep6">
                     <template #icon><AppIcon name="Check" :size="14"/></template>
-                    To'lovga o'tish
+                    {{ tt('onb.plan.toPay') }}
                   </AppButton>
                 </div>
               </AppPanel>
             </div>
 
             <!-- Order summary -->
-            <AppPanel title="Buyurtma" :dense="true">
+            <AppPanel :title="tt('onb.pay.order')" :dense="true">
               <div style="display:flex;flex-direction:column;gap:6px">
                 <div v-for="r in orderRows" :key="r.label"
                   style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:12.5px">
@@ -739,12 +732,12 @@
                 </div>
                 <div style="height:1px;background:var(--border-2);margin:4px 0"/>
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">
-                  <span style="font-size:12.5px;color:var(--text-2)">Jami to'lov</span>
-                  <span style="font-size:18px;font-weight:700;color:var(--text)">{{ currentPlan.free ? "0 so'm" : fmtSom(finalPrice) + " so'm" }}</span>
+                  <span style="font-size:12.5px;color:var(--text-2)">{{ tt('onb.pay.total') }}</span>
+                  <span style="font-size:18px;font-weight:700;color:var(--text)">{{ currentPlan.free ? '0 ' + tt('onb.plan.som') : fmtSom(finalPrice) + ' ' + tt('onb.plan.som') }}</span>
                 </div>
                 <p style="font-size:11px;color:var(--muted);margin:4px 0 0;line-height:1.5">
-                  <template v-if="currentPlan.free">Hech qanday to'lov olinmaydi.</template>
-                  <template v-else>To'lovdan so'ng obuna darhol faollashadi.</template>
+                  <template v-if="currentPlan.free">{{ tt('onb.pay.freeNote') }}</template>
+                  <template v-else>{{ tt('onb.pay.paidNote') }}</template>
                 </p>
               </div>
             </AppPanel>
@@ -766,6 +759,7 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import BrandLogo from '@/components/layout/BrandLogo.vue'
 import LangSwitcher from '@/components/layout/LangSwitcher.vue'
 import { fmtSom } from '@/i18n/index.js'
+import { useAppStore } from '@/stores/app.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { referencesApi } from '@/api/references.js'
 import { companiesApi } from '@/api/companies.js'
@@ -817,7 +811,7 @@ const VInput = defineComponent({
 })
 
 const StrengthBar = defineComponent({
-  props: { password: String },
+  props: { password: String, labels: { type: Array, default: () => ['', '', '', '', ''] } },
   setup(props) {
     const score = computed(() => {
       const p = props.password || ''
@@ -829,7 +823,6 @@ const StrengthBar = defineComponent({
       if (/[^A-Za-z0-9]/.test(p)) s++
       return s
     })
-    const labels = ['', 'Juda zaif', 'Zaif', 'Yaxshi', 'Kuchli']
     const colors = ['', '#ef4444', '#f59e0b', '#3b82f6', '#22c55e']
     return () => props.password ? h('div', { style: 'margin-top:7px;' }, [
       h('div', { style: 'display:flex;gap:4px;margin-bottom:5px;' },
@@ -838,7 +831,7 @@ const StrengthBar = defineComponent({
             background:${i <= score.value ? colors[score.value] : 'var(--border)'};`,
         }))
       ),
-      score.value > 0 ? h('span', { style: `font-size:10.5px;color:${colors[score.value]};font-weight:600;` }, labels[score.value]) : null,
+      score.value > 0 ? h('span', { style: `font-size:10.5px;color:${colors[score.value]};font-weight:600;` }, props.labels[score.value]) : null,
     ]) : null
   }
 })
@@ -861,14 +854,18 @@ const ApiError = defineComponent({
 // ── Router & stores ───────────────────────────────────────────
 const router = useRouter()
 const authStore = useAuthStore()
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
+const strengthLabels = computed(() => ['', tt('onb.strength.weak1'), tt('onb.strength.weak2'), tt('onb.strength.good'), tt('onb.strength.strong')])
 
 // ── Transition state ──────────────────────────────────────────
 const transitioning = ref(false)
 const nextStep = ref(1)
 
 const stepIconMap = { 1: 'Shield', 2: 'Building', 3: 'Telegram', 4: 'Globe2', 5: 'Tag', 6: 'Coin' }
-const stepFullLabels = { 1: 'Hisob ma\'lumotlari', 2: 'Kompaniya ma\'lumotlari', 3: 'Ijtimoiy tarmoqlar', 4: 'Manba kanallar', 5: 'Tarif tanlash', 6: 'To\'lov usuli' }
-const veilLabel = computed(() => stepFullLabels[nextStep.value] || '')
+const stepFullLabels = computed(() => ({ 1: tt('onb.step1.title'), 2: tt('onb.step2.title'), 3: tt('onb.step3.title'), 4: tt('onb.step4.title'), 5: tt('onb.step5.title'), 6: tt('onb.step6.title') }))
+const veilLabel = computed(() => stepFullLabels.value[nextStep.value] || '')
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
@@ -903,16 +900,18 @@ const progressPct = computed(() => ((step.value - 1) / (visibleSteps.value.lengt
 
 // ── Step 1 ────────────────────────────────────────────────────
 const showPass = ref(false)
-const f1 = ref({ full_name: '', email: '', password: '', accept_terms: false })
+const f1 = ref({ full_name: '', username: '', password: '', accept_terms: false })
 
 function validateStep1() {
   const errs = {}
-  if (!f1.value.full_name.trim()) errs.full_name = "To'liq ism kiritilishi shart"
-  if (!f1.value.email.trim()) errs.email = 'Email kiritilishi shart'
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f1.value.email)) errs.email = "Email formati noto'g'ri"
-  if (!f1.value.password) errs.password = 'Parol kiritilishi shart'
-  else if (f1.value.password.length < 6) errs.password = "Parol kamida 6 ta belgidan iborat bo'lishi kerak"
-  if (!f1.value.accept_terms) errs.accept_terms = "Shartlarni qabul qilishingiz shart"
+  if (!f1.value.full_name.trim()) errs.full_name = tt('onb.err.fullName')
+  const uname = f1.value.username.trim()
+  if (!uname) errs.username = tt('onb.err.username')
+  else if (uname.length < 3) errs.username = tt('onb.err.usernameMin')
+  else if (!/^[a-zA-Z0-9._-]+$/.test(uname)) errs.username = tt('onb.err.usernameChars')
+  if (!f1.value.password) errs.password = tt('onb.err.password')
+  else if (f1.value.password.length < 6) errs.password = tt('onb.err.passwordMin')
+  if (!f1.value.accept_terms) errs.accept_terms = tt('onb.err.terms')
   e.value = errs
   return Object.keys(errs).length === 0
 }
@@ -924,7 +923,7 @@ async function submitStep1() {
   try {
     const res = await authStore.register({
       full_name: f1.value.full_name,
-      email: f1.value.email,
+      username: f1.value.username.trim(),
       password: f1.value.password,
       accept_terms: f1.value.accept_terms,
     })
@@ -936,7 +935,7 @@ async function submitStep1() {
     loadReferences()
     if (resumeStep > 2) await loadOnboardingState()
   } catch (err) {
-    apiError.value = authStore.error || "Xatolik yuz berdi. Qayta urinib ko'ring."
+    apiError.value = authStore.error || tt('onb.err.generic')
     submitting.value = false
   }
 }
@@ -956,7 +955,7 @@ const companyId = ref(null)
 
 function validateStep2() {
   const errs = {}
-  if (!f2.value.name.trim()) errs.company_name = "Kompaniya nomi kiritilishi shart"
+  if (!f2.value.name.trim()) errs.company_name = tt('onb.err.companyName')
   e.value = errs
   return Object.keys(errs).length === 0
 }
@@ -980,7 +979,7 @@ async function submitStep2() {
     await goToStep(5)
   } catch (err) {
     const msg = err.response?.data?.message
-    apiError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Xatolik yuz berdi')
+    apiError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('onb.err.generic'))
     submitting.value = false
   }
 }
@@ -999,16 +998,16 @@ const tgDeepLink = ref('')         // bot deep_link, init javobidan keladi
 let tgPollTimer = null
 
 // ── AI assistent sozlamalari (Avtomatik rejim uchun) ──────────
-const TOPIC_PRESETS = [
-  { id: 'jahon', label: 'Jahon', desc: 'Faqat xalqaro voqealar' },
-  { id: 'siyosat', label: 'Siyosat', desc: 'Davlat, diplomatiya, qarorlar' },
-  { id: 'iqtisod', label: 'Iqtisodiyot', desc: 'Bozor, narx, biznes' },
-  { id: 'sport', label: 'Sport', desc: 'Futbol, boks, olimpiada' },
-  { id: 'texnologiya', label: 'Texnologiya', desc: 'IT, AI, gadjet' },
-  { id: 'madaniyat', label: 'Madaniyat', desc: 'Kino, musiqa, san\'at' },
-  { id: 'jamiyat', label: 'Jamiyat', desc: 'Mahalliy voqealar, O\'zbekiston' },
-  { id: 'all', label: 'Barchasi', desc: 'Mavzu cheklovi yo\'q' },
-]
+const TOPIC_PRESETS = computed(() => [
+  { id: 'jahon', label: tt('onboarding.topicWorldLabel'), desc: tt('onboarding.topicWorldDesc') },
+  { id: 'siyosat', label: tt('onboarding.topicPoliticsLabel'), desc: tt('onboarding.topicPoliticsDesc') },
+  { id: 'iqtisod', label: tt('onboarding.topicEconomyLabel'), desc: tt('onboarding.topicEconomyDesc') },
+  { id: 'sport', label: tt('onboarding.topicSportLabel'), desc: tt('onboarding.topicSportDesc') },
+  { id: 'texnologiya', label: tt('onboarding.topicTechLabel'), desc: tt('onboarding.topicTechDesc') },
+  { id: 'madaniyat', label: tt('onboarding.topicCultureLabel'), desc: tt('onboarding.topicCultureDesc') },
+  { id: 'jamiyat', label: tt('onboarding.topicSocietyLabel'), desc: tt('onboarding.topicSocietyDesc') },
+  { id: 'all', label: tt('onboarding.topicAllLabel'), desc: tt('onboarding.topicAllDesc') },
+])
 const ai = ref({
   topics: ['all'],     // tanlangan mavzu(lar)
   onlyNews: true,
@@ -1150,13 +1149,13 @@ async function loadTgChannels() {
 async function addTgChannel() {
   tgError.value = ''
   const url = tgNewUrl.value.trim()
-  if (!url) { tgError.value = 'URL kiriting'; return }
-  if (!companyId.value) { tgError.value = 'Avval kompaniya yaratilishi kerak'; return }
+  if (!url) { tgError.value = tt('onboarding.errUrlRequired'); return }
+  if (!companyId.value) { tgError.value = tt('onboarding.errCompanyFirst'); return }
 
   // dublikat oldini olish
   const norm = url.replace(/^https?:\/\//,'').replace(/^t\.me\//,'').replace(/^@/,'').toLowerCase()
   if (tgChannels.value.some(c => (c.username || '').toLowerCase() === '@' + norm)) {
-    tgError.value = 'Bu kanal allaqachon ro\'yxatda bor'
+    tgError.value = tt('onboarding.errChannelExists')
     return
   }
 
@@ -1172,7 +1171,7 @@ async function addTgChannel() {
     startTgPolling()
   } catch (err) {
     const msg = err.response?.data?.message
-    tgError.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Kanal qo\'shilmadi')
+    tgError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('onboarding.errChannelAddFailed'))
   } finally {
     tgAdding.value = false
   }
@@ -1219,7 +1218,7 @@ function validateStep3() {
   if (selectedPlatforms.value.includes('telegram')) {
     const connected = tgChannels.value.filter(c => c.status === 'connected')
     if (!connected.length) {
-      errs.channels = "Kamida 1 ta Telegram kanal ulanishi kerak. Botni kanalingizga admin qiling."
+      errs.channels = tt('onb.err.channels')
     }
   }
   e.value = errs
@@ -1235,7 +1234,7 @@ async function submitStep3() {
       ai_config: {
         mode: tgNewMode.value,
         topics: ai.value.topics.includes('all') ? [] : ai.value.topics
-          .map(id => TOPIC_PRESETS.find(t => t.id === id)?.label)
+          .map(id => TOPIC_PRESETS.value.find(t => t.id === id)?.label)
           .filter(Boolean),
         only_news: ai.value.onlyNews,
         strip_source: ai.value.stripSource,
@@ -1263,7 +1262,7 @@ async function submitStep3() {
     stopTgPolling()
     await goToStep(4)
   } catch {
-    apiError.value = 'Xatolik yuz berdi'
+    apiError.value = tt('onb.err.generic')
     submitting.value = false
   }
 }
@@ -1285,6 +1284,10 @@ const groupedChannels = computed(() => {
   filtered.forEach(c => { if (!map[c.cat]) map[c.cat] = []; map[c.cat].push(c) })
   return Object.entries(map).map(([cat, channels]) => ({ cat, channels }))
 })
+function catLabel(cat) {
+  const map = { 'Milliy yangiliklar': 'onboarding.catNationalNews' }
+  return map[cat] ? tt(map[cat]) : cat
+}
 function toggleSource(id) {
   const i = selectedSources.value.indexOf(id)
   if (i >= 0) selectedSources.value.splice(i, 1)
@@ -1315,11 +1318,13 @@ function i18nName(obj) {
 }
 function tariffIncludes(t) {
   return [
-    `Kuniga ${t.posts_daily_limit > 0 ? t.posts_daily_limit + ' ta xabar' : 'cheksiz'}`,
-    `Oyiga ${Number(t.posts_monthly_limit) || 0} ta xabar`,
-    `${Number(t.free_credits_monthly) || 0} bepul kredit/oy`,
+    t.posts_daily_limit > 0
+      ? tt('onboarding.tariffDailyLimit', { n: t.posts_daily_limit })
+      : tt('onboarding.tariffDailyUnlimited'),
+    tt('onboarding.tariffMonthlyLimit', { n: Number(t.posts_monthly_limit) || 0 }),
+    tt('onboarding.tariffFreeCredits', { n: Number(t.free_credits_monthly) || 0 }),
     Number(t.credit_price_per_message) > 0
-      ? `Qo'shimcha: ${fmtSom(t.credit_price_per_message)} so'm/xabar`
+      ? tt('onboarding.tariffExtraCredit', { price: fmtSom(t.credit_price_per_message) })
       : null,
   ].filter(Boolean)
 }
@@ -1348,8 +1353,8 @@ async function submitStep5() {
   apiError.value = ''
   try {
     const tariffId = chosen.value
-    if (!tariffId) throw new Error('Tarif yuklanmadi. Sahifani yangilab qayta urinib ko\'ring.')
-    if (!companyId.value) throw new Error('Kompaniya topilmadi. 2-qadamni qayta bajaring.')
+    if (!tariffId) throw new Error(tt('onboarding.errTariffNotLoaded'))
+    if (!companyId.value) throw new Error(tt('onboarding.errCompanyNotFound'))
 
     // Tanlangan tarif obunaga yoziladi — limit va featurelar shu obuna orqali userga o'tadi
     const sub = await subscriptionsApi.create({
@@ -1372,7 +1377,7 @@ async function submitStep5() {
       await goToStep(6)
     }
   } catch (err) {
-    apiError.value = err?.response?.data?.message || err.message || 'Xatolik yuz berdi'
+    apiError.value = err?.response?.data?.message || err.message || tt('onb.err.generic')
   } finally {
     submitting.value = false
   }
@@ -1387,16 +1392,16 @@ async function ensureSubscriptionId() {
 
 // ── Step 6 ────────────────────────────────────────────────────
 const payMethod = ref('click')
-const payMethods = [
-  { id: 'click', name: 'Click', hint: 'Onlayn karta orqali' },
-]
+const payMethods = computed(() => [
+  { id: 'click', name: 'Click', hint: tt('onboarding.payClickHint') },
+])
 const orderRows = computed(() => {
   const p = currentPlan.value
-  if (p.free) return [{ label: 'Tarif', value: 'Free' }, { label: 'Narx', value: 'Bepul', tone: 'success' }]
+  if (p.free) return [{ label: tt('onb.order.plan'), value: 'Free' }, { label: tt('onb.order.price'), value: tt('onb.order.free'), tone: 'success' }]
   return [
-    { label: 'Tarif', value: p.name },
-    { label: 'Davr', value: billingCycle.value === 'monthly' ? 'Oylik' : 'Yillik' },
-    { label: 'Asosiy narx', value: fmtSom(p.price) + " so'm/oy" },
+    { label: tt('onb.order.plan'), value: p.name },
+    { label: tt('onb.order.period'), value: billingCycle.value === 'monthly' ? tt('onb.order.monthly') : tt('onb.order.yearly') },
+    { label: tt('onb.order.basePrice'), value: fmtSom(p.price) + ' ' + tt('onb.plan.som') + '/oy' },
   ]
 })
 async function submitStep6() {
@@ -1404,7 +1409,7 @@ async function submitStep6() {
   apiError.value = ''
   try {
     const subId = await ensureSubscriptionId()
-    if (!subId) throw new Error('Obuna topilmadi. Tarifni qayta tanlang.')
+    if (!subId) throw new Error(tt('onboarding.errSubNotFound'))
 
     // Bepul sinov — to'lovsiz faollashtirib, ish maydoniga o'tamiz
     if (payMethod.value === 'trial') {
@@ -1423,9 +1428,9 @@ async function submitStep6() {
     }
 
     // payme / uzcard / bank — hali ulanmagan
-    apiError.value = "Bu to'lov usuli tez orada ulanadi. Hozircha Click yoki bepul sinovni tanlang."
+    apiError.value = tt('onboarding.errPayMethodSoon')
   } catch (err) {
-    apiError.value = err?.response?.data?.message || err.message || "To'lovni boshlashda xatolik"
+    apiError.value = err?.response?.data?.message || err.message || tt('onboarding.errPaymentStart')
   } finally {
     submitting.value = false
   }
@@ -1435,13 +1440,13 @@ async function submitStep6() {
 // Step ID'lar saqlanadi (1,2,5,6) — bu submitStepN funksiyalar va backend
 // step tracking bilan mos. Lekin "Tarmoqlar" (3) va "Manbalar" (4) qadamlari
 // olib tashlandi — endi user step 2 dan to'g'ridan-to'g'ri 5 (Tarif)ga o'tadi.
-const steps = [
-  { id: 1, label: 'Hisob' },
-  { id: 2, label: 'Kompaniya' },
-  { id: 5, label: 'Tarif' },
-  { id: 6, label: "To'lov" },
-]
-const visibleSteps = computed(() => currentPlan.value?.free ? steps.filter(s => s.id !== 6) : steps)
+const steps = computed(() => [
+  { id: 1, label: tt('onb.step.account') },
+  { id: 2, label: tt('onb.step.company') },
+  { id: 5, label: tt('onb.step.plan') },
+  { id: 6, label: tt('onb.step.payment') },
+])
+const visibleSteps = computed(() => currentPlan.value?.free ? steps.value.filter(s => s.id !== 6) : steps.value)
 
 // ── Load references ───────────────────────────────────────────
 async function loadReferences() {

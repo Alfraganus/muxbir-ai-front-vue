@@ -26,8 +26,8 @@
           :value="mm" @input="onMinuteInput" @blur="normalizeMinute"/>
         <button type="button" class="dtp-time-arrow" @click="bumpMinute(-1)" aria-label="minute down">▼</button>
       </div>
-      <span class="dtp-time-mode">24 soat</span>
-      <button v-if="modelValue" type="button" class="dtp-clear" @click="clear" :title="'Tozalash'">
+      <span class="dtp-time-mode">{{ tt('dateTimePicker.mode24h') }}</span>
+      <button v-if="modelValue" type="button" class="dtp-clear" @click="clear" :title="tt('dateTimePicker.clear')">
         ×
       </button>
     </div>
@@ -36,27 +36,46 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { DEFAULT_UTC_OFFSET_MIN, nowWallParts } from '@/utils/timezone.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const props = defineProps({
-  modelValue: { type: String, default: '' }, // 'YYYY-MM-DDTHH:MM'
+  modelValue: { type: String, default: '' }, // 'YYYY-MM-DDTHH:MM' (workspace offset ichidagi devor-vaqti)
+  // Workspace UTC offset (minut). "Bugun/hozir" chegaralari shu offset bo'yicha
+  // hisoblanadi — brauzer vaqt mintaqasiga tayanmaymiz.
+  offsetMinutes: { type: Number, default: DEFAULT_UTC_OFFSET_MIN },
 })
 const emit = defineEmits(['update:modelValue'])
 
 function pad(n) { return String(n).padStart(2, '0') }
-function toIsoDate(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` }
+// Hozirgi vaqt — workspace offset ichidagi devor-komponentlari.
+function nowParts() { return nowWallParts(props.offsetMinutes) }
 
-// 7 kunlik massiv (bugun + 6 keyingi)
-const DAY_NAMES = ["Yak", "Du", "Se", "Chor", "Pay", "Ju", "Sha"] // Yak=0..Sha=6
+// 7 kunlik massiv (bugun + 6 keyingi) — offset ichidagi "bugun"dan boshlab.
+const DAY_NAMES = computed(() => [
+  tt('dateTimePicker.daySun'),
+  tt('dateTimePicker.dayMon'),
+  tt('dateTimePicker.dayTue'),
+  tt('dateTimePicker.dayWed'),
+  tt('dateTimePicker.dayThu'),
+  tt('dateTimePicker.dayFri'),
+  tt('dateTimePicker.daySat'),
+]) // Yak=0..Sha=6
 const days = computed(() => {
   const out = []
-  const base = new Date()
-  base.setHours(0, 0, 0, 0)
+  const np = nowParts()
+  // UTC-asosli sana (faqat kun arifmetikasi uchun — soat/zona ta'sir qilmaydi).
+  const base = new Date(Date.UTC(np.year, np.month - 1, np.date))
   for (let i = 0; i < 7; i++) {
     const d = new Date(base)
-    d.setDate(base.getDate() + i)
-    const iso = toIsoDate(d)
-    const label = i === 0 ? 'Bugun' : i === 1 ? 'Ertaga' : DAY_NAMES[d.getDay()]
-    const short = `${pad(d.getDate())}.${pad(d.getMonth() + 1)}`
+    d.setUTCDate(base.getUTCDate() + i)
+    const iso = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
+    const label = i === 0 ? tt('dateTimePicker.today') : i === 1 ? tt('dateTimePicker.tomorrow') : DAY_NAMES.value[d.getUTCDay()]
+    const short = `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}`
     out.push({ iso, label, short })
   }
   return out
@@ -67,13 +86,13 @@ function parse(v) {
   // Bo'sh model — default sifatida hozirgi soat:daqiqani ko'rsatamiz
   // (foydalanuvchi hozirgi paytdan oldinroq vaqt qo'ya olmaydi)
   if (!v || typeof v !== 'string') {
-    const now = new Date()
-    return { date: '', hh: pad(now.getHours()), mm: pad(now.getMinutes()) }
+    const np = nowParts()
+    return { date: '', hh: pad(np.hour), mm: pad(np.minute) }
   }
   const m = v.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/)
   if (!m) {
-    const now = new Date()
-    return { date: '', hh: pad(now.getHours()), mm: pad(now.getMinutes()) }
+    const np = nowParts()
+    return { date: '', hh: pad(np.hour), mm: pad(np.minute) }
   }
   return { date: m[1], hh: m[2], mm: m[3] }
 }
@@ -93,10 +112,9 @@ let lastEmitted = ''
  * Boshqa kunlarda — 00:00 (chegara yo'q).
  */
 function getMinTime(iso) {
-  const todayIso = toIsoDate(new Date())
-  if (iso !== todayIso) return { h: 0, m: 0 }
-  const now = new Date()
-  return { h: now.getHours(), m: now.getMinutes() }
+  const np = nowParts()
+  if (iso !== np.iso) return { h: 0, m: 0 }
+  return { h: np.hour, m: np.minute }
 }
 /** Berilgan (h, m) ni shu sana uchun ruxsat etilgan minimumga clamp qiladi. */
 function clampToMin(iso, h, m) {
@@ -130,11 +148,11 @@ function emitValue() {
 function setDate(iso) {
   selectedDate.value = iso
   // Sanani tanlaganda vaqtni clamp qilamiz: bugun bo'lsa hozirdan kechroq
-  const now = new Date()
-  let h = parseInt(hh.value || pad(now.getHours()), 10)
-  let m = parseInt(mm.value || pad(now.getMinutes()), 10)
-  if (isNaN(h)) h = now.getHours()
-  if (isNaN(m)) m = now.getMinutes()
+  const np = nowParts()
+  let h = parseInt(hh.value || pad(np.hour), 10)
+  let m = parseInt(mm.value || pad(np.minute), 10)
+  if (isNaN(h)) h = np.hour
+  if (isNaN(m)) m = np.minute
   const c = clampToMin(iso, h, m)
   hh.value = pad(c.h)
   mm.value = pad(c.m)
@@ -158,7 +176,7 @@ function normalizeHour() {
   if (isNaN(n)) n = 0
   n = Math.max(0, Math.min(23, n))
   const m = parseInt(mm.value || '0', 10) || 0
-  const c = clampToMin(selectedDate.value || toIsoDate(new Date()), n, m)
+  const c = clampToMin(selectedDate.value || nowParts().iso, n, m)
   hh.value = pad(c.h)
   mm.value = pad(c.m)
   if (selectedDate.value) emitValue()
@@ -192,7 +210,7 @@ function normalizeMinute() {
   if (isNaN(n)) n = 0
   n = Math.max(0, Math.min(59, n))
   const h = parseInt(hh.value || '0', 10) || 0
-  const c = clampToMin(selectedDate.value || toIsoDate(new Date()), h, n)
+  const c = clampToMin(selectedDate.value || nowParts().iso, h, n)
   hh.value = pad(c.h)
   mm.value = pad(c.m)
   if (selectedDate.value) emitValue()

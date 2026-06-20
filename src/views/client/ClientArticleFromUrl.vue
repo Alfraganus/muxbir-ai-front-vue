@@ -2,25 +2,25 @@
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;max-width:880px;">
     <AiFullPageLoader
       :model-value="busy"
-      title="Havoladan maqola yaratilmoqda"
-      subtitle="AI sahifani o'qib, sizning uslubingizda maqola yozmoqda"
+      :title="tt('clientArticleFromUrl.loaderTitle')"
+      :subtitle="tt('clientArticleFromUrl.loaderSubtitle')"
       :steps="[
-        'Havola yuklanmoqda',
-        'Sahifa matni tahlil qilinmoqda',
-        'AI yangi maqola yozmoqda',
-        'Editor tayyorlanmoqda',
+        tt('clientArticleFromUrl.step1'),
+        tt('clientArticleFromUrl.step2'),
+        tt('clientArticleFromUrl.step3'),
+        tt('clientArticleFromUrl.step4'),
       ]"
-      hint="Bu jarayon odatda 15–40 soniya davom etadi. Sahifani yopmang yoki boshqa joyga o'tib ketmang."
+      :hint="tt('clientArticleFromUrl.loaderHint')"
     />
     <PageHeader
-      title="Havoladan maqola yozish"
-      subtitle="Yangilik saytidan havolani yopishtiring, prompt to'plamini tanlang — AI sizning uslubingizda maqola yozib beradi."
+      :title="tt('clientArticleFromUrl.pageTitle')"
+      :subtitle="tt('clientArticleFromUrl.pageSubtitle')"
     />
 
-    <AppPanel title="1. Havola">
+    <AppPanel :title="tt('clientArticleFromUrl.panel1Title')">
       <form @submit.prevent="generate" style="display:flex;flex-direction:column;gap:12px;">
         <label style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">Maqola URL'i</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('clientArticleFromUrl.urlLabel') }}</span>
           <input
             v-model="form.url"
             type="url"
@@ -33,13 +33,13 @@
           />
         </label>
         <span style="font-size:11.5px;color:var(--muted);">
-          AI sahifaga kirib matnni oladi, tanlangan prompt to'plamiga muvofiq qayta yozadi.
+          {{ tt('clientArticleFromUrl.urlHint') }}
         </span>
       </form>
     </AppPanel>
 
-    <AppPanel title="2. AI provayder va model"
-              subtitle="Qaysi AI va qaysi model bilan maqola yozilishini tanlang">
+    <AppPanel :title="tt('clientArticleFromUrl.panel2Title')"
+              :subtitle="tt('clientArticleFromUrl.panel2Subtitle')">
       <div style="display:flex;flex-direction:column;gap:14px;">
         <!-- Provider radio -->
         <div style="display:flex;gap:10px;">
@@ -61,7 +61,7 @@
 
         <!-- Model dropdown — provider'ga qarab -->
         <label style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">Model</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('clientArticleFromUrl.modelLabel') }}</span>
           <select v-model="form.model" :disabled="busy"
                   style="padding:10px 12px;border:1px solid var(--border-2);border-radius:6px;
                          background:var(--bg);color:var(--text);font-size:13px;
@@ -74,37 +74,35 @@
       </div>
     </AppPanel>
 
-    <AppPanel title="3. Prompt to'plamini tanlang" :subtitle="promptPanelSubtitle">
+    <AppPanel :title="tt('clientArticleFromUrl.panel3Title')" :subtitle="promptPanelSubtitle">
       <!-- Tavsiya etilgan promptdan foydalanish — faqat admin shu turdagi
            prompt yaratgan bo'lsa ko'rinadi -->
       <label v-if="recommended.exists" class="cafu-recommend" :class="{ on: form.useRecommended }">
         <input type="checkbox" v-model="form.useRecommended" :disabled="busy"/>
         <div style="display:flex;flex-direction:column;gap:3px;flex:1;">
           <span style="font-size:13.5px;font-weight:600;color:var(--text);">
-            ✨ Tavsiya etilgan promptdan foydalanish
+            ✨ {{ tt('clientArticleFromUrl.useRecommended') }}
             <span v-if="recommended.name" style="color:var(--muted);font-weight:400;">
               — {{ recommended.name }}
             </span>
           </span>
           <span style="font-size:12px;color:var(--muted);line-height:1.5;">
-            Admin tomonidan tayyorlangan eng yaxshi prompt avtomatik ishlatiladi —
-            shaxsiy to'plam tanlash shart emas. Boshqa prompt tanlamoqchi bo'lsangiz,
-            ushbu belgini olib tashlang.
+            {{ tt('clientArticleFromUrl.useRecommendedHint') }}
           </span>
         </div>
       </label>
 
-      <div v-if="loadingGroups" style="font-size:12.5px;color:var(--muted);margin-top:10px;">Yuklanmoqda…</div>
+      <div v-if="loadingGroups" style="font-size:12.5px;color:var(--muted);margin-top:10px;">{{ tt('clientArticleFromUrl.loading') }}</div>
       <div v-else-if="!groups.length && !form.useRecommended"
            style="margin-top:10px;padding:18px;text-align:center;border:1px dashed var(--border-2);border-radius:8px;
                   display:flex;flex-direction:column;gap:8px;align-items:center;">
         <span style="font-size:13px;color:var(--text);">
-          Hali prompt to'plami yo'q. Avval AI prompt sahifasida to'plam yarating.
+          {{ tt('clientArticleFromUrl.noGroups') }}
         </span>
         <button type="button" @click="$router.push('/client/ai-prompt')"
                 style="padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;
                        border:none;cursor:pointer;font-size:12.5px;font-weight:500;">
-          AI prompt →
+          {{ tt('clientArticleFromUrl.aiPromptBtn') }} →
         </button>
       </div>
       <div v-else :class="{ 'cafu-disabled': form.useRecommended }"
@@ -130,8 +128,8 @@
           <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
             <span style="font-size:13px;font-weight:600;color:var(--text);">{{ g.name }}</span>
             <span style="font-size:11px;color:var(--muted);">
-              {{ g.prompts.length }} ta prompt
-              <template v-if="anyApplyBase(g)">· BASE merge yoqilgan</template>
+              {{ tt('clientArticleFromUrl.promptCount', { n: g.prompts.length }) }}
+              <template v-if="anyApplyBase(g)">· {{ tt('clientArticleFromUrl.baseMerge') }}</template>
             </span>
           </div>
         </label>
@@ -159,10 +157,10 @@
           fontSize: '13.5px', fontWeight: 500,
         }"
       >
-        {{ busy ? 'Yaratilmoqda…' : '✨ AI orqali maqola yaratish' }}
+        {{ busy ? tt('clientArticleFromUrl.generating') : '✨ ' + tt('clientArticleFromUrl.generateBtn') }}
       </button>
       <span v-if="busy" style="font-size:12px;color:var(--muted);">
-        Sahifa yuklanmoqda → AI yozmoqda → editor ochilmoqda…
+        {{ tt('clientArticleFromUrl.busyStatus') }}
       </span>
     </div>
   </div>
@@ -176,6 +174,11 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
 import { companiesApi } from '@/api/companies.js'
 import { aiApi } from '@/api/ai.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const router = useRouter()
 const busy = ref(false)
@@ -184,31 +187,31 @@ const loadingGroups = ref(true)
 const groups = ref([])
 const company = ref(null)
 
-const providers = [
+const providers = computed(() => [
   { id: 'openai',    label: 'OpenAI',           note: 'GPT-4o, GPT-4o-mini' },
   { id: 'gemini',    label: 'Google Gemini',    note: '2.5 Pro / Flash / Flash-Lite' },
   { id: 'anthropic', label: 'Anthropic Claude', note: 'Sonnet, Haiku, Opus' },
-]
-const modelsByProvider = {
+])
+const modelsByProvider = computed(() => ({
   openai: [
-    { id: 'gpt-4o-mini',     label: 'gpt-4o-mini',     note: 'tezkor va arzon (default)' },
-    { id: 'gpt-4o',          label: 'gpt-4o',          note: 'eng kuchli OpenAI modeli' },
-    { id: 'gpt-4-turbo',     label: 'gpt-4-turbo',     note: 'oldingi avlod, kuchli' },
-    { id: 'gpt-3.5-turbo',   label: 'gpt-3.5-turbo',   note: 'eng arzon' },
+    { id: 'gpt-4o-mini',     label: 'gpt-4o-mini',     note: tt('clientArticleFromUrl.modelFastCheapDefault') },
+    { id: 'gpt-4o',          label: 'gpt-4o',          note: tt('clientArticleFromUrl.modelStrongestOpenai') },
+    { id: 'gpt-4-turbo',     label: 'gpt-4-turbo',     note: tt('clientArticleFromUrl.modelPrevGenStrong') },
+    { id: 'gpt-3.5-turbo',   label: 'gpt-3.5-turbo',   note: tt('clientArticleFromUrl.modelCheapest') },
   ],
   gemini: [
-    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: 'tezkor (default)' },
-    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: 'kuchli' },
-    { id: 'gemini-3.1-pro',        label: 'gemini-3.1-pro',        note: 'eng kuchli Gemini' },
-    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: 'eng arzon, juda tezkor' },
-    { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: 'doim eng yangi Flash' },
+    { id: 'gemini-2.5-flash',      label: 'gemini-2.5-flash',      note: tt('clientArticleFromUrl.modelFastDefault') },
+    { id: 'gemini-2.5-pro',        label: 'gemini-2.5-pro',        note: tt('clientArticleFromUrl.modelStrong') },
+    { id: 'gemini-3.1-pro',        label: 'gemini-3.1-pro',        note: tt('clientArticleFromUrl.modelStrongestGemini') },
+    { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite', note: tt('clientArticleFromUrl.modelCheapestVeryFast') },
+    { id: 'gemini-flash-latest',   label: 'gemini-flash-latest',   note: tt('clientArticleFromUrl.modelAlwaysLatestFlash') },
   ],
   anthropic: [
-    { id: 'claude-sonnet-4-6',         label: 'claude-sonnet-4-6',         note: 'tezkor (default)' },
-    { id: 'claude-opus-4-8',           label: 'claude-opus-4-8',           note: 'eng kuchli' },
-    { id: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5-20251001', note: 'eng arzon, tez' },
+    { id: 'claude-sonnet-4-6',         label: 'claude-sonnet-4-6',         note: tt('clientArticleFromUrl.modelFastDefault') },
+    { id: 'claude-opus-4-8',           label: 'claude-opus-4-8',           note: tt('clientArticleFromUrl.modelStrongest') },
+    { id: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5-20251001', note: tt('clientArticleFromUrl.modelCheapestFast') },
   ],
-}
+}))
 
 const form = reactive({
   url: '',
@@ -220,7 +223,7 @@ const form = reactive({
 
 const recommended = ref({ exists: false, name: null, loaded: false })
 
-const availableModels = computed(() => modelsByProvider[form.provider] || [])
+const availableModels = computed(() => modelsByProvider.value[form.provider] || [])
 
 const canSubmit = computed(() => {
   if (busy.value) return false
@@ -231,16 +234,16 @@ const canSubmit = computed(() => {
 
 const promptPanelSubtitle = computed(() => {
   if (form.useRecommended) {
-    return "Tavsiya etilgan prompt yoqilgan — quyidagi ro'yxat o'chiriladi"
+    return tt('clientArticleFromUrl.subtitleRecommendedOn')
   }
   return groups.value.length
-    ? `${groups.value.length} ta to'plam mavjud — maqola uslubini belgilang`
+    ? tt('clientArticleFromUrl.subtitleGroupsCount', { n: groups.value.length })
     : null
 })
 
 // Provider o'zgarsa default modelni tanlash
 watch(() => form.provider, (p) => {
-  const list = modelsByProvider[p] || []
+  const list = modelsByProvider.value[p] || []
   if (list.length && !list.some(m => m.id === form.model)) {
     form.model = list[0].id
   }
@@ -293,7 +296,7 @@ async function generate() {
     if (r?.post_id) {
       router.push(`/client/posts/${r.post_id}/edit`)
     } else {
-      error.value = 'Backend post_id qaytarmadi'
+      error.value = tt('clientArticleFromUrl.errNoPostId')
     }
   } catch (e) {
     error.value = e?.response?.data?.message ?? e.message

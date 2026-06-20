@@ -10,12 +10,12 @@
     <div class="te-actions">
       <button class="te-btn te-btn-primary" :disabled="paying" @click="extend">
         <span v-if="paying" class="te-spin"/>
-        <template v-else><AppIcon name="Coin" :size="13"/> Uzaytirish</template>
+        <template v-else><AppIcon name="Coin" :size="13"/> {{ tt('teb.extend') }}</template>
       </button>
       <button class="te-btn te-btn-ghost" :disabled="paying" @click="switchOpen = true">
-        Tarifni o'zgartirish
+        {{ tt('teb.switch') }}
       </button>
-      <button v-if="!expired" class="te-x" @click="dismissed = true" aria-label="Yopish">
+      <button v-if="!expired" class="te-x" @click="dismissed = true" :aria-label="tt('teb.close')">
         <AppIcon name="Close" :size="14"/>
       </button>
     </div>
@@ -30,6 +30,11 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import TariffSwitchModal from './TariffSwitchModal.vue'
 import { subscriptionsApi } from '@/api/subscriptions.js'
 import { useClickPayment } from '@/composables/useClickPayment.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const WARN_DAYS = 3 // shu kun qolganda ogohlantirish boshlanadi
 
@@ -57,13 +62,11 @@ const tariffName = computed(() => {
 
 const title = computed(() =>
   expired.value
-    ? `"${tariffName.value}" tarif muddati tugadi`
-    : `Tarif muddati ${daysLeft.value} kundan keyin tugaydi`,
+    ? tt('teb.expired', { name: tariffName.value })
+    : tt('teb.expiringSoon', { days: daysLeft.value }),
 )
 const subtitle = computed(() =>
-  expired.value
-    ? 'Avto-post va AI to\'xtatildi. Davom etish uchun tarifni uzaytiring yoki almashtiring.'
-    : 'Uzilishlarsiz davom etish uchun oldindan uzaytiring.',
+  expired.value ? tt('teb.expiredSub') : tt('teb.warnSub'),
 )
 
 async function extend() {

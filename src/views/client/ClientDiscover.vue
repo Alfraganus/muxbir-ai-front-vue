@@ -23,13 +23,13 @@
         <div class="cd-history-head-left">
           <span class="cd-history-ic"><AppIcon name="Calendar" :size="13"/></span>
           <div>
-            <div class="cd-history-title">Oxirgi qidiruvlar</div>
-            <div class="cd-history-sub">Ilgari topilgan postlar — istalganini ochib qayta ko'rishingiz mumkin</div>
+            <div class="cd-history-title">{{ tt('disc.history.title') }}</div>
+            <div class="cd-history-sub">{{ tt('disc.history.sub') }}</div>
           </div>
         </div>
         <button v-if="loadingHistorySnapshot" class="cd-history-refresh" disabled>
           <span class="cd-history-spinner"/>
-          Yuklanmoqda...
+          {{ tt('disc.history.loading') }}
         </button>
       </div>
       <div class="cd-history-list">
@@ -44,17 +44,17 @@
           <div class="cd-history-item-meta">
             <span class="cd-history-pill">
               <AppIcon name="Layers" :size="10"/>
-              {{ h.total_posts }} ta post
+              {{ tt('disc.history.posts', { n: h.total_posts }) }}
             </span>
             <span class="cd-history-pill cd-history-pill-muted">
               <AppIcon name="Telegram" :size="10"/>
-              {{ h.source_count }} ta kanal
+              {{ tt('disc.history.channels', { n: h.source_count }) }}
             </span>
             <span v-if="h.request_payload?.sort_mode === 'latest'" class="cd-history-pill cd-history-pill-blue">
-              🕒 Eng oxirgi
+              🕒 {{ tt('disc.history.latest') }}
             </span>
             <span v-else class="cd-history-pill cd-history-pill-accent">
-              ⭐ Eng yaxshi
+              ⭐ {{ tt('disc.history.best') }}
             </span>
             <span v-if="h.request_payload?.time_range" class="cd-history-pill cd-history-pill-muted">
               {{ rangeLabel(h.request_payload.time_range) }}
@@ -77,16 +77,15 @@
 
   <div v-else class="cd-root">
     <PageHeader
-      title="Topilgan xabarlar"
-      :subtitle="`AI ${discoveredSources.length} ta ${sourceTypeLabel ? sourceTypeLabel + ' ' : ''}manbadan ${totalPostsCount} ta ${config.sourceType === 'website' ? 'soʻnggi' : 'eng yaxshi'} xabarni topdi · davr: ${currentRangeLabel}`">
+      :title="tt('disc.results.title')">
       <template #right>
         <AppButton variant="secondary" size="md" @click="phase = 'setup'">
           <template #icon><AppIcon name="Settings" :size="13"/></template>
-          Sozlamalarni o'zgartirish
+          {{ tt('disc.results.change') }}
         </AppButton>
         <AppButton variant="primary" size="md" @click="startScan">
           <template #icon><AppIcon name="Sparkle" :size="13"/></template>
-          AI qayta skanerlash
+          {{ tt('disc.results.rescan') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -97,17 +96,16 @@
       <span class="cd-banner-ic"><AppIcon name="Sparkle" :size="18"/></span>
       <div class="cd-banner-body">
         <div class="cd-banner-line">
-          <span class="cd-banner-title">AI tavsiyasi</span>
-          <span class="cd-pill cd-pill-accent">{{ averageScore }}/100 o'rtacha bal</span>
+          <span class="cd-banner-title">{{ tt('disc.banner.title') }}</span>
+          <span class="cd-pill cd-pill-accent">{{ tt('disc.avgScore', { score: averageScore }) }}</span>
         </div>
         <span class="cd-banner-sub">
-          <b>{{ totalPostsCount }} ta post</b> filtrlangan — eng ko'p share va reaksiya olganlari, sizning DB'da yo'qlar.
-          Tavsiya: 3-5 ta postni tanlang.
+          <b>{{ tt('disc.history.posts', { n: totalPostsCount }) }}</b> {{ tt('disc.banner.sub') }}
         </span>
       </div>
       <AppButton variant="primary" size="md" @click="autoSelectTop">
         <template #icon><AppIcon name="Bolt" :size="12"/></template>
-        Top 5 ni tanlash
+        {{ tt('disc.banner.top5') }}
       </AppButton>
     </div>
 
@@ -115,7 +113,7 @@
     <div class="cd-filterbar" v-if="totalPostsCount > 0">
       <div class="cd-chips">
         <button class="cd-chip" :class="{ active: filter === 'all' }" @click="filter = 'all'">
-          <span>Hammasi</span>
+          <span>{{ tt('disc.filter.all') }}</span>
           <span class="cd-chip-count mono tabular">{{ totalPostsCount }}</span>
         </button>
         <button v-for="s in discoveredSources" :key="s.id"
@@ -129,7 +127,7 @@
       <div style="flex:1"/>
       <div class="cd-search-wrap">
         <AppIcon name="Search" :size="12" :style="{ color:'var(--muted)' }"/>
-        <input v-model="query" placeholder="Sarlavha, hashtag..." class="cd-search"/>
+        <input v-model="query" :placeholder="tt('disc.search.ph')" class="cd-search"/>
       </div>
     </div>
 
@@ -140,7 +138,7 @@
                 align-items:flex-start;">
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:22px;">🔒</span>
-        <strong style="font-size:14px;color:#ef4444;">Skanerlash uchun Telegram ulanishi kerak</strong>
+        <strong style="font-size:14px;color:#ef4444;">{{ tt('disc.tgError.title') }}</strong>
       </div>
       <p style="margin:0;font-size:13px;color:var(--text);line-height:1.55;">{{ scanError.message }}</p>
       <button @click="$router.push(scanError.actionPath)"
@@ -160,16 +158,16 @@
     <!-- Empty state -->
     <div v-else-if="totalPostsCount === 0" class="cd-empty" style="display:flex;flex-direction:column;align-items:stretch;gap:14px;max-width:640px;margin:0 auto;">
       <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;">
-        <span style="font-size:14px;color:var(--text);font-weight:500;">Hech qanday post topilmadi</span>
+        <span style="font-size:14px;color:var(--text);font-weight:500;">{{ tt('disc.empty.title') }}</span>
         <span style="font-size:12.5px;color:var(--muted);">
-          Tanlangan kanal va davr uchun yangi postlar yo'q yoki barchasi DB'da mavjud bo'lib chiqdi.
+          {{ tt('disc.empty.sub') }}
         </span>
       </div>
 
       <!-- Per-source diagnostic -->
       <div v-if="selectedSourcesWithStatus.length" style="display:flex;flex-direction:column;gap:8px;">
         <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">
-          Tanlangan manbalar holati
+          {{ tt('disc.empty.srcsTitle') }}
         </div>
         <div v-for="s in selectedSourcesWithStatus" :key="s.id"
              style="display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--panel);">
@@ -180,12 +178,12 @@
             <div style="flex:1"></div>
             <button @click="scanFromEmpty(s)" :disabled="scanningOwnedId === s.ownedId"
                     style="padding:5px 10px;border-radius:5px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-size:11.5px;">
-              {{ scanningOwnedId === s.ownedId ? 'Scan qilinmoqda…' : 'Hoziroq scan qil' }}
+              {{ scanningOwnedId === s.ownedId ? tt('disc.empty.scanning') : tt('disc.empty.scanBtn') }}
             </button>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted);">
-            <span>Obunachilar: <strong style="color:var(--text);">{{ s.subs.toLocaleString('uz-UZ').replace(/,/g, ' ') }}</strong></span>
-            <span>Oxirgi scan: <strong style="color:var(--text);">{{ s.lastScannedAt ? formatRelative(s.lastScannedAt) : 'hali yo\'q' }}</strong></span>
+            <span>{{ tt('disc.empty.subs') }}: <strong style="color:var(--text);">{{ s.subs.toLocaleString('uz-UZ').replace(/,/g, ' ') }}</strong></span>
+            <span>{{ tt('disc.empty.lastScan') }}: <strong style="color:var(--text);">{{ s.lastScannedAt ? formatRelative(s.lastScannedAt) : tt('disc.empty.noScan') }}</strong></span>
           </div>
           <div v-if="s.lastError"
                style="padding:6px 8px;border-radius:5px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);font-size:11.5px;color:#dc2626;line-height:1.4;">
@@ -193,14 +191,13 @@
           </div>
           <div v-else-if="s.subs > 0 && !s.lastScannedAt"
                style="font-size:11.5px;color:var(--muted);font-style:italic;">
-            Bu manba hali scan qilinmagan — yuqoridagi tugmani bosing.
+            {{ tt('disc.empty.notScanned') }}
           </div>
         </div>
       </div>
 
       <div style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">
-        Maslahat: agar kanalda postlar bor, lekin scan 0 qaytarsa — kanal Telegram session'ingiz uchun yopiq.
-        <br/>Telegram'da o'sha kanalga obuna bo'ling, keyin qayta scan qiling.
+        {{ tt('disc.empty.tip') }}
       </div>
     </div>
 
@@ -215,7 +212,7 @@
               <span class="mono" style="font-size:11px;color:var(--muted);">@{{ s.username }}</span>
             </div>
             <span style="font-size:11px;color:var(--muted);">
-              {{ postsForSource(s.id).length }} ta post tanlandi
+              {{ tt('disc.srcHead.posts', { n: postsForSource(s.id).length }) }}
             </span>
           </div>
         </header>
@@ -232,7 +229,7 @@
       </section>
 
       <div v-if="filtered.length === 0" class="cd-empty">
-        <span style="font-size:13px;color:var(--muted);">Ushbu filtr bilan hech qanday post topilmadi. Min AI ballini pasaytiring.</span>
+        <span style="font-size:13px;color:var(--muted);">{{ tt('disc.noFilter') }}</span>
       </div>
     </div>
 
@@ -240,17 +237,16 @@
     <transition name="cd-bar">
       <div v-if="selectedCount > 0" class="cd-sticky">
         <span class="cd-sticky-count">
-          <span class="cd-sticky-badge mono">{{ selectedCount }}</span>
-          ta post tanlandi
+          {{ tt('disc.selected', { n: selectedCount }) }}
         </span>
         <span class="cd-divider-v"/>
         <span class="cd-sticky-avg">
-          O'rtacha AI bal:
+          {{ tt('disc.avgScore') }}:
           <span class="tabular" :style="{ fontWeight:600, color: scoreColor(selectedAvg) }">{{ selectedAvg }}</span>
         </span>
         <AppButton variant="secondary" size="md" @click="clearSelection">
           <template #icon><AppIcon name="Close" :size="12"/></template>
-          Tozalash
+          {{ tt('disc.clear') }}
         </AppButton>
       </div>
     </transition>
@@ -280,8 +276,8 @@
             <AppIcon name="Sparkle" :size="20" class="cd-pick-spark"/>
           </div>
 
-          <h3 class="cd-pick-title">Postingiz tayyorlanmoqda</h3>
-          <p class="cd-pick-sub">Bir oz kuting…</p>
+          <h3 class="cd-pick-title">{{ tt('disc.picking.title') }}</h3>
+          <p class="cd-pick-sub">{{ tt('disc.picking.sub') }}</p>
         </div>
       </div>
     </transition>
@@ -303,26 +299,31 @@ import DiscoverWebSearch from '@/components/discover/DiscoverWebSearch.vue'
 import { discoverApi } from '@/api/discover.js'
 import { companiesApi } from '@/api/companies.js'
 import { postsApi } from '@/api/posts.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const router = useRouter()
 
 const phase = ref('setup') // setup | scanning | results
 
-const TIME_RANGES = [
-  { id: '15m', label: "So'nggi 15 daqiqa", hint: 'Eng so\'nggi xabarlar' },
-  { id: '1h',  label: "So'nggi 1 soat",  hint: 'Tezkor yangiliklar' },
-  { id: '3h',  label: "So'nggi 3 soat",  hint: 'Yangi qaynoq postlar' },
-  { id: '6h',  label: "So'nggi 6 soat",  hint: 'Yarim kun ichidagi yangiliklar' },
-  { id: '24h', label: "So'nggi 24 soat", hint: 'Bugun va kechagi postlar' },
-  { id: '3d',  label: "So'nggi 3 kun",   hint: 'Eng yangi materiallar' },
-  { id: '7d',  label: "So'nggi 7 kun",   hint: 'Haftalik trend', recommended: true },
-  { id: '30d', label: "So'nggi 30 kun",  hint: 'Oylik tahlil uchun' },
-  { id: '90d', label: "So'nggi 3 oy",    hint: 'Mavsumiy kontent' },
-  { id: 'all', label: "Cheklanmagan",    hint: '3 oydan ortiq — barcha vaqt' },
-]
-const CATEGORIES = [
-  { id: 'all', label: 'Hammasi' },
-]
+const TIME_RANGES = computed(() => [
+  { id: '15m', label: tt('disc.time.ranges.15m'), hint: tt('disc.time.ranges.15m') },
+  { id: '1h',  label: tt('disc.time.ranges.1h'),  hint: tt('disc.time.ranges.1h') },
+  { id: '3h',  label: tt('disc.time.ranges.3h'),  hint: tt('disc.time.ranges.3h') },
+  { id: '6h',  label: tt('disc.time.ranges.6h'),  hint: tt('disc.time.ranges.6h') },
+  { id: '24h', label: tt('disc.time.ranges.24h'), hint: tt('disc.time.ranges.24h') },
+  { id: '3d',  label: tt('disc.time.ranges.3d'),  hint: tt('disc.time.ranges.3d') },
+  { id: '7d',  label: tt('disc.time.ranges.7d'),  hint: tt('disc.time.ranges.7d'), recommended: true },
+  { id: '30d', label: tt('disc.time.ranges.30d'), hint: tt('disc.time.ranges.30d') },
+  { id: '90d', label: tt('disc.time.ranges.90d'), hint: tt('disc.time.ranges.90d') },
+  { id: 'all', label: tt('disc.time.ranges.all'), hint: tt('disc.time.ranges.all') },
+])
+const CATEGORIES = computed(() => [
+  { id: 'all', label: tt('disc.filter.all') },
+])
 
 const config = reactive({
   sources: [],
@@ -385,7 +386,7 @@ function formatHistoryTime(iso) {
 }
 
 function rangeLabel(id) {
-  const r = TIME_RANGES.find(t => t.id === id)
+  const r = TIME_RANGES.value.find(t => t.id === id)
   return r?.label || id
 }
 
@@ -403,7 +404,7 @@ async function openHistoryItem(h) {
     phase.value = 'results'
   } catch (e) {
     scanError.value = {
-      message: e?.response?.data?.message || e?.message || 'Tarix yozuvini ochib bo\'lmadi',
+      message: e?.response?.data?.message || e?.message || tt('clientDiscover.errHistoryOpen'),
       actionLabel: null, actionPath: null,
     }
   } finally {
@@ -487,10 +488,10 @@ function formatRelative(iso) {
   if (!iso) return ''
   const d = new Date(iso)
   const diff = (Date.now() - d.getTime()) / 1000
-  if (diff < 60) return 'hozirgina'
-  if (diff < 3600) return `${Math.floor(diff / 60)} daqiqa oldin`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} soat oldin`
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} kun oldin`
+  if (diff < 60) return tt('clientDiscover.justNow')
+  if (diff < 3600) return tt('clientDiscover.minutesAgo', { n: Math.floor(diff / 60) })
+  if (diff < 86400) return tt('clientDiscover.hoursAgo', { n: Math.floor(diff / 3600) })
+  if (diff < 86400 * 7) return tt('clientDiscover.daysAgo', { n: Math.floor(diff / 86400) })
   return d.toLocaleDateString('uz-UZ', { dateStyle: 'medium' })
 }
 
@@ -550,12 +551,12 @@ async function startScan() {
     const body = err?.response?.data
     if (body?.code === 'NO_TELEGRAM_SESSION' || err?.response?.status === 403) {
       scanError.value = {
-        message: body?.message || 'Telegram ulanish yo\'q. Avval API + session ulang.',
-        actionLabel: body?.action?.label || 'Telegram ulanish',
+        message: body?.message || tt('clientDiscover.errNoTelegramSession'),
+        actionLabel: body?.action?.label || tt('clientDiscover.telegramConnect'),
         actionPath: body?.action?.path || '/client/telegram-api',
       }
     } else {
-      scanError.value = { message: body?.message || err?.message || 'Xato yuz berdi', actionLabel: null, actionPath: null }
+      scanError.value = { message: body?.message || err?.message || tt('clientDiscover.errGeneric'), actionLabel: null, actionPath: null }
     }
     console.error('discover failed', err)
   }
@@ -585,9 +586,9 @@ function mapBackendPost(p) {
   const hasDate = !isNaN(postedMs)
   const ageH = hasDate ? (Date.now() - postedMs) / 3_600_000 : null
   const time = !hasDate ? null
-    : ageH < 1 ? `${Math.max(1, Math.round(ageH * 60))} daq`
-    : ageH < 24 ? `${Math.round(ageH)} soat`
-    : `${Math.round(ageH / 24)} kun`
+    : ageH < 1 ? tt('clientDiscover.ageMin', { n: Math.max(1, Math.round(ageH * 60)) })
+    : ageH < 24 ? tt('clientDiscover.ageHour', { n: Math.round(ageH) })
+    : tt('clientDiscover.ageDay', { n: Math.round(ageH / 24) })
   const dateLabel = hasDate ? fmtPostedAt(postedMs) : null
   // Website maqolasi telegram emas — embed/score/metrikalar yo'q, rasm image_url'dan.
   const isWebsite = p.source_type === 'website' || p.media_type === 'webpage'
@@ -633,8 +634,8 @@ function fmtPostedAt(ms) {
   const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
   const y = new Date(now); y.setDate(now.getDate() - 1)
   const isYtd = d.getFullYear() === y.getFullYear() && d.getMonth() === y.getMonth() && d.getDate() === y.getDate()
-  if (sameDay) return `Bugun ${hm}`
-  if (isYtd) return `Kecha ${hm}`
+  if (sameDay) return `${tt('disc.today')} ${hm}`
+  if (isYtd) return `${tt('disc.yesterday')} ${hm}`
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${hm}`
 }
 
@@ -691,7 +692,7 @@ const averageScore = computed(() => {
   return Math.round(mappedPosts.value.reduce((a, p) => a + p.ai.total, 0) / mappedPosts.value.length)
 })
 
-const currentRangeLabel = computed(() => TIME_RANGES.find(t => t.id === config.timeRange)?.label || config.timeRange)
+const currentRangeLabel = computed(() => TIME_RANGES.value.find(t => t.id === config.timeRange)?.label || config.timeRange)
 const sourceTypeLabel = computed(() =>
   config.sourceType === 'website' ? 'Website' : config.sourceType === 'telegram' ? 'Telegram' : '')
 const selectedCount = computed(() => Object.values(selected.value).filter(Boolean).length)
@@ -720,7 +721,7 @@ async function pickAndEdit(id) {
   } catch (e) {
     console.error('pickAndEdit failed', e)
     selected.value = { ...selected.value, [id]: false }
-    const msg = e?.response?.data?.message || 'Postni yaratishda xato yuz berdi'
+    const msg = e?.response?.data?.message || tt('clientDiscover.errCreatePost')
     alert(Array.isArray(msg) ? msg.join('. ') : msg)
   } finally {
     picking.value = false

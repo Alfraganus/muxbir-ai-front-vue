@@ -8,10 +8,10 @@
             <div class="bc-header-bg"/>
             <div class="bc-header-inner">
               <div>
-                <div class="bc-header-title">Kredit sotib olish</div>
-                <div class="bc-header-sub">Kreditlar oylik post limiti tugaganda ishlatiladi</div>
+                <div class="bc-header-title">{{ tt('buyCreditsModal.title') }}</div>
+                <div class="bc-header-sub">{{ tt('buyCreditsModal.subtitle') }}</div>
               </div>
-              <button class="bc-close" @click="close" aria-label="Yopish">
+              <button class="bc-close" @click="close" :aria-label="tt('buyCreditsModal.closeAria')">
                 <AppIcon name="Close" :size="16"/>
               </button>
             </div>
@@ -19,25 +19,25 @@
             <div class="bc-balance">
               <span class="bc-balance-icon"><AppIcon name="Coin" :size="16"/></span>
               <div>
-                <div class="bc-balance-label">Joriy balans</div>
-                <div class="bc-balance-value">{{ formatCredit(balance) }} kredit</div>
+                <div class="bc-balance-label">{{ tt('buyCreditsModal.currentBalance') }}</div>
+                <div class="bc-balance-value">{{ formatCredit(balance) }} {{ tt('buyCreditsModal.creditUnit') }}</div>
               </div>
             </div>
           </div>
 
           <div class="bc-body">
             <!-- Paketlar -->
-            <div class="bc-section-label">Paketni tanlang</div>
+            <div class="bc-section-label">{{ tt('buyCreditsModal.choosePack') }}</div>
             <div class="bc-packs">
               <button
                 v-for="p in packs" :key="p.credits"
                 class="bc-pack" :class="{ active: selected === p.credits && !custom }"
                 @click="selectPack(p.credits)"
               >
-                <span v-if="p.popular" class="bc-pack-badge">Ommabop</span>
+                <span v-if="p.popular" class="bc-pack-badge">{{ tt('buyCreditsModal.popular') }}</span>
                 <span class="bc-pack-credits">{{ formatNum(p.credits) }}</span>
-                <span class="bc-pack-credits-label">kredit</span>
-                <span class="bc-pack-price">{{ formatSom(p.credits * price) }} so'm</span>
+                <span class="bc-pack-credits-label">{{ tt('buyCreditsModal.creditUnit') }}</span>
+                <span class="bc-pack-price">{{ formatSom(p.credits * price) }} {{ tt('buyCreditsModal.somUnit') }}</span>
               </button>
             </div>
 
@@ -45,21 +45,21 @@
             <div class="bc-custom">
               <label class="bc-custom-label">
                 <input type="checkbox" :checked="custom" @change="toggleCustom($event.target.checked)"/>
-                Boshqa miqdor
+                {{ tt('buyCreditsModal.customAmount') }}
               </label>
               <div v-if="custom" class="bc-custom-input">
                 <button class="bc-step" @click="bump(-50)">−</button>
                 <input
                   type="number" min="1" v-model.number="customCredits"
-                  class="bc-input" placeholder="kredit"
+                  class="bc-input" :placeholder="tt('buyCreditsModal.creditUnit')"
                 />
                 <button class="bc-step" @click="bump(50)">+</button>
-                <span class="bc-custom-suffix">kredit</span>
+                <span class="bc-custom-suffix">{{ tt('buyCreditsModal.creditUnit') }}</span>
               </div>
             </div>
 
             <!-- To'lov usuli -->
-            <div class="bc-section-label" style="margin-top:18px;">To'lov usuli</div>
+            <div class="bc-section-label" style="margin-top:18px;">{{ tt('buyCreditsModal.paymentMethod') }}</div>
             <div class="bc-methods">
               <button class="bc-method active">
                 <span class="bc-click-logo">Click</span>
@@ -81,10 +81,10 @@
             <!-- Yakuniy summary -->
             <div class="bc-summary">
               <div class="bc-summary-row">
-                <span>{{ formatNum(finalCredits) }} kredit × {{ price }} so'm</span>
-                <span class="bc-summary-amount">{{ formatSom(totalSom) }} so'm</span>
+                <span>{{ formatNum(finalCredits) }} {{ tt('buyCreditsModal.creditUnit') }} × {{ price }} {{ tt('buyCreditsModal.somUnit') }}</span>
+                <span class="bc-summary-amount">{{ formatSom(totalSom) }} {{ tt('buyCreditsModal.somUnit') }}</span>
               </div>
-              <div class="bc-summary-note">1 kredit = {{ price }} so'm</div>
+              <div class="bc-summary-note">{{ tt('buyCreditsModal.priceNote', { price }) }}</div>
             </div>
 
             <div v-if="error" class="bc-error">{{ error }}</div>
@@ -92,12 +92,12 @@
 
           <!-- Footer -->
           <div class="bc-footer">
-            <button class="bc-btn-ghost" @click="close" :disabled="loading">Bekor qilish</button>
+            <button class="bc-btn-ghost" @click="close" :disabled="loading">{{ tt('buyCreditsModal.cancel') }}</button>
             <button class="bc-btn-pay" :disabled="loading || finalCredits < 1" @click="pay">
               <span v-if="loading" class="bc-spinner"/>
               <template v-else>
                 <AppIcon name="Coin" :size="14"/>
-                {{ formatSom(totalSom) }} so'm — To'lash
+                {{ tt('buyCreditsModal.payBtn', { amount: formatSom(totalSom) }) }}
               </template>
             </button>
           </div>
@@ -112,6 +112,7 @@ import { ref, computed, watch } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { paymentsApi, CREDIT_PRICE_SOM } from '@/api/payments.js'
 import { useToast } from '@/composables/useToast.js'
+import { useAppStore } from '@/stores/app.js'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -119,6 +120,9 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 const toast = useToast()
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const price = CREDIT_PRICE_SOM
 const packs = [
@@ -154,11 +158,11 @@ async function pay() {
       // Click to'lov sahifasiga yo'naltiramiz
       window.location.href = res.pay_url
     } else {
-      error.value = 'To\'lov havolasi olinmadi'
+      error.value = tt('buyCreditsModal.noPayUrl')
       loading.value = false
     }
   } catch (e) {
-    error.value = e?.response?.data?.message ?? 'To\'lovni boshlashda xatolik'
+    error.value = e?.response?.data?.message ?? tt('buyCreditsModal.payError')
     loading.value = false
   }
 }

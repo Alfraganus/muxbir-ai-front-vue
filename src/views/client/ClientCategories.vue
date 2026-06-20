@@ -1,10 +1,10 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
-    <PageHeader title="Kategoriyalar" subtitle="Ushbu kompaniya uchun post kategoriyalari spravochnigi">
+    <PageHeader :title="tt('cats.title')" :subtitle="tt('cats.subtitle')">
       <template #right>
         <AppButton variant="primary" size="md" @click="openCreate">
           <template #icon><AppIcon name="Plus" :size="13"/></template>
-          Yangi kategoriya
+          {{ tt('cats.new') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -13,14 +13,14 @@
     <AppPanel v-if="!loading && !categories.length" :padding="40">
       <div style="text-align:center;color:var(--muted);">
         <AppIcon name="Tag" :size="32" :style="{ color: 'var(--muted-2)', marginBottom: '8px' }"/>
-        <div style="font-size:13.5px;font-weight:500;color:var(--text-2);margin-bottom:4px;">Hali kategoriyalar yo'q</div>
-        <div style="font-size:12px;">Yuqoridagi "+ Yangi kategoriya" tugmasi orqali qo'shing</div>
+        <div style="font-size:13.5px;font-weight:500;color:var(--text-2);margin-bottom:4px;">{{ tt('cats.empty.title') }}</div>
+        <div style="font-size:12px;">{{ tt('cats.empty.sub') }}</div>
       </div>
     </AppPanel>
 
     <!-- Loading -->
     <div v-else-if="loading" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">
-      Yuklanmoqda...
+      {{ tt('cats.loading') }}
     </div>
 
     <!-- List -->
@@ -28,9 +28,9 @@
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <thead>
           <tr style="border-bottom:1px solid var(--border);">
-            <th style="text-align:left;padding:10px 16px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Nom</th>
-            <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);width:120px;">Rang</th>
-            <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);width:90px;">Tartib</th>
+            <th style="text-align:left;padding:10px 16px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cats.col.name') }}</th>
+            <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);width:120px;">{{ tt('cats.col.color') }}</th>
+            <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);width:90px;">{{ tt('cats.col.sort') }}</th>
             <th style="text-align:right;padding:10px 16px;width:100px;"></th>
           </tr>
         </thead>
@@ -50,10 +50,10 @@
               {{ c.sort_order }}
             </td>
             <td style="padding:12px 16px;vertical-align:middle;text-align:right;">
-              <button class="cat-act" @click="openEdit(c)" title="Tahrirlash">
+              <button class="cat-act" @click="openEdit(c)" :title="tt('cats.editTitle')">
                 <AppIcon name="Edit" :size="12"/>
               </button>
-              <button class="cat-act cat-act-danger" @click="onDelete(c)" title="O'chirish">
+              <button class="cat-act cat-act-danger" @click="onDelete(c)" :title="tt('cats.deleteTitle')">
                 <AppIcon name="Trash" :size="12"/>
               </button>
             </td>
@@ -63,32 +63,32 @@
     </AppPanel>
 
     <!-- Modal -->
-    <AppModal v-model="modalOpen" :title="form.id ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya'"
-      subtitle="Ushbu kompaniya uchun amal qiladi">
+    <AppModal v-model="modalOpen" :title="form.id ? tt('cats.modal.editTitle') : tt('cats.modal.createTitle')"
+      :subtitle="tt('cats.modal.subtitle')">
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <label class="cat-label">Nom *</label>
-          <input v-model="form.name" placeholder="Masalan: Yangiliklar"
+          <label class="cat-label">{{ tt('cats.field.name') }}</label>
+          <input v-model="form.name" :placeholder="tt('cats.field.namePh')"
             class="cat-input" @keydown.enter.prevent="save"/>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <label class="cat-label">Rang</label>
+          <label class="cat-label">{{ tt('cats.field.color') }}</label>
           <div style="display:flex;align-items:center;gap:8px;">
             <input v-model="form.color" type="color" class="cat-input" style="width:60px;height:36px;padding:2px 4px;cursor:pointer;"/>
             <input v-model="form.color" placeholder="#2F6FED" class="cat-input mono" style="flex:1;"/>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <label class="cat-label">Tartib raqami</label>
+          <label class="cat-label">{{ tt('cats.field.sort') }}</label>
           <input v-model.number="form.sort_order" type="number" min="0" class="cat-input"/>
         </div>
         <div v-if="error" style="padding:9px 12px;background:var(--danger-bg);border:1px solid color-mix(in oklab,var(--danger) 25%,transparent);border-radius:8px;font-size:12px;color:var(--danger);display:flex;align-items:center;gap:6px;">
           <AppIcon name="Close" :size="12"/> {{ error }}
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
-          <AppButton variant="secondary" size="md" @click="modalOpen = false">Bekor qilish</AppButton>
+          <AppButton variant="secondary" size="md" @click="modalOpen = false">{{ tt('cats.cancel') }}</AppButton>
           <AppButton variant="primary" size="md" :loading="saving" @click="save">
-            {{ form.id ? 'Saqlash' : 'Yaratish' }}
+            {{ form.id ? tt('cats.save') : tt('cats.create') }}
           </AppButton>
         </div>
       </div>
@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores/app.js'
 import { companiesApi } from '@/api/companies.js'
 import { categoriesApi } from '@/api/categories.js'
@@ -108,6 +108,8 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 
 const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 const company = ref(null)
 const categories = ref([])
 const loading = ref(true)
@@ -157,8 +159,8 @@ function openEdit(c) {
 async function save() {
   error.value = ''
   const name = form.name.trim()
-  if (!name) { error.value = 'Nom kiritilishi shart'; return }
-  if (!company.value) { error.value = 'Kompaniya topilmadi'; return }
+  if (!name) { error.value = tt('cats.err.noName'); return }
+  if (!company.value) { error.value = tt('cats.err.noCompany'); return }
   saving.value = true
   try {
     const payload = { name, color: form.color || undefined, sort_order: Number(form.sort_order) || 0 }
@@ -175,19 +177,19 @@ async function save() {
     modalOpen.value = false
   } catch (e) {
     const msg = e?.response?.data?.message
-    error.value = Array.isArray(msg) ? msg.join('. ') : (msg || 'Saqlashda xato')
+    error.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('cats.err.save'))
   } finally {
     saving.value = false
   }
 }
 
 async function onDelete(c) {
-  if (!confirm(`"${c.name}" kategoriyasi o'chirilsinmi?`)) return
+  if (!confirm(tt('cats.confirmDelete', { name: c.name }))) return
   try {
     await categoriesApi.remove(company.value.id, c.id)
     categories.value = categories.value.filter(x => x.id !== c.id)
   } catch (e) {
-    alert(e?.response?.data?.message || "O'chirishda xato")
+    alert(e?.response?.data?.message || tt('cats.err.delete'))
   }
 }
 

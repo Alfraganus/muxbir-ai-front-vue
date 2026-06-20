@@ -1,8 +1,8 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;max-width:880px;">
     <PageHeader
-      title="Telegram ulanish"
-      subtitle="my.telegram.org'dan API olib, telefon orqali Telegram session ham ulaydi. Wizard sizga qadam-baqadam yo'l ko'rsatadi."
+      :title="tt('clientTelegramApi.pageTitle')"
+      :subtitle="tt('clientTelegramApi.pageSubtitle')"
     />
 
     <!-- ─── Joriy holat banner (har doim ko'rinadi, agar biror narsa saqlangan bo'lsa) ─── -->
@@ -11,25 +11,25 @@
                 background:var(--bg-2,rgba(0,0,0,.02));display:flex;flex-direction:column;gap:10px;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;">
-          Joriy holat
+          {{ tt('clientTelegramApi.currentStatus') }}
         </span>
         <span v-if="state.is_saved"
               style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;
                      background:rgba(34,197,94,.1);color:#16a34a;font-size:11px;font-weight:600;">
           <span style="width:5px;height:5px;border-radius:50%;background:currentColor;"></span>
-          API saqlangan
+          {{ tt('clientTelegramApi.apiSaved') }}
         </span>
         <span v-if="session.has_session"
               style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;
                      background:rgba(34,197,94,.1);color:#16a34a;font-size:11px;font-weight:600;">
           <span style="width:5px;height:5px;border-radius:50%;background:currentColor;"></span>
-          Session faol
+          {{ tt('clientTelegramApi.sessionActive') }}
         </span>
         <span v-else-if="state.is_saved"
               style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;
                      background:rgba(234,179,8,.1);color:#ca8a04;font-size:11px;font-weight:600;">
           <span style="width:5px;height:5px;border-radius:50%;background:currentColor;"></span>
-          Session yo'q
+          {{ tt('clientTelegramApi.sessionNone') }}
         </span>
       </div>
 
@@ -39,11 +39,11 @@
         <span style="color:var(--muted);">api_hash:</span>
         <span style="font-family:'JetBrains Mono',monospace;">{{ state.api_hash_masked }}</span>
         <template v-if="state.phone || session.phone_masked">
-          <span style="color:var(--muted);">Telefon:</span>
+          <span style="color:var(--muted);">{{ tt('clientTelegramApi.phoneLabel') }}</span>
           <span style="font-family:'JetBrains Mono',monospace;">{{ session.phone_masked || state.phone }}</span>
         </template>
         <template v-if="session.fingerprint">
-          <span style="color:var(--muted);">Session ID:</span>
+          <span style="color:var(--muted);">{{ tt('clientTelegramApi.sessionIdLabel') }}</span>
           <span style="font-family:'JetBrains Mono',monospace;">🔐 {{ session.fingerprint }}</span>
         </template>
       </div>
@@ -52,17 +52,17 @@
         <button v-if="session.has_session" @click="revokeSession" type="button"
                 style="padding:6px 12px;border-radius:5px;border:1px solid #f97316;background:transparent;
                        color:#f97316;cursor:pointer;font-size:11.5px;">
-          Sessionni o'chirish
+          {{ tt('clientTelegramApi.deleteSession') }}
         </button>
         <button v-if="state.is_saved" @click="clearApiOnly" type="button"
                 style="padding:6px 12px;border-radius:5px;border:1px solid #ef4444;background:transparent;
                        color:#ef4444;cursor:pointer;font-size:11.5px;">
-          API'ni o'chirish
+          {{ tt('clientTelegramApi.deleteApi') }}
         </button>
         <button v-if="state.is_saved || session.has_session" @click="clearAll" type="button"
                 style="padding:6px 12px;border-radius:5px;border:1px solid #ef4444;background:#ef4444;
                        color:#fff;cursor:pointer;font-size:11.5px;font-weight:500;">
-          Hammasini o'chirish
+          {{ tt('clientTelegramApi.deleteAll') }}
         </button>
       </div>
     </div>
@@ -73,7 +73,7 @@
                 border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:16px;">
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="width:10px;height:10px;border-radius:50%;background:#16a34a;"></span>
-        <strong style="font-size:14px;color:#16a34a;">Telegram to'liq ulangan</strong>
+        <strong style="font-size:14px;color:#16a34a;">{{ tt('clientTelegramApi.fullyConnected') }}</strong>
         <span style="margin-left:auto;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">
           🔐 {{ session.fingerprint }}
         </span>
@@ -84,29 +84,29 @@
         <span style="font-family:'JetBrains Mono',monospace;">{{ state.api_id }}</span>
         <span style="color:var(--muted);">api_hash:</span>
         <span style="font-family:'JetBrains Mono',monospace;">{{ state.api_hash_masked }}</span>
-        <span style="color:var(--muted);">Telefon:</span>
+        <span style="color:var(--muted);">{{ tt('clientTelegramApi.phoneLabel') }}</span>
         <span style="font-family:'JetBrains Mono',monospace;">{{ session.phone_masked || state.phone }}</span>
-        <span style="color:var(--muted);">Session yaratilgan:</span>
+        <span style="color:var(--muted);">{{ tt('clientTelegramApi.sessionCreatedLabel') }}</span>
         <span>{{ formatDate(session.created_at) }}</span>
-        <span style="color:var(--muted);">Oxirgi ishlatilgan:</span>
-        <span>{{ session.last_used_at ? formatDate(session.last_used_at) : 'hali ishlatilmagan' }}</span>
+        <span style="color:var(--muted);">{{ tt('clientTelegramApi.lastUsedLabel') }}</span>
+        <span>{{ session.last_used_at ? formatDate(session.last_used_at) : tt('clientTelegramApi.neverUsed') }}</span>
       </div>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button @click="startEdit"
                 style="padding:7px 14px;border-radius:6px;border:1px solid var(--border-2);
                        background:transparent;color:var(--text);cursor:pointer;font-size:12.5px;">
-          API'ni tahrirlash
+          {{ tt('clientTelegramApi.editApi') }}
         </button>
         <button @click="revokeSession"
                 style="padding:7px 14px;border-radius:6px;border:1px solid #f97316;
                        background:transparent;color:#f97316;cursor:pointer;font-size:12.5px;">
-          Sessionni bekor qilish
+          {{ tt('clientTelegramApi.revokeSession') }}
         </button>
         <button @click="clearAll"
                 style="padding:7px 14px;border-radius:6px;border:1px solid #ef4444;
                        background:transparent;color:#ef4444;cursor:pointer;font-size:12.5px;">
-          Hammasini o'chirish
+          {{ tt('clientTelegramApi.deleteAll') }}
         </button>
       </div>
     </div>
@@ -137,84 +137,82 @@
 
         <!-- Step 0: Intro -->
         <div v-if="step === 0" style="display:flex;flex-direction:column;gap:14px;">
-          <h3 style="margin:0;font-size:15px;">Boshlashdan oldin</h3>
+          <h3 style="margin:0;font-size:15px;">{{ tt('clientTelegramApi.step0Title') }}</h3>
           <p style="margin:0;font-size:13.5px;line-height:1.6;color:var(--text);">
-            Sizning Telegram kanallaringizdan postlarni o'qish uchun <strong>MTProto userbot</strong>
-            ishlatamiz. Wizard ikki bosqichni o'tadi:
+            <span v-html="tt('clientTelegramApi.step0Intro')"></span>
           </p>
           <ol style="margin:0;padding-left:22px;font-size:13px;line-height:1.7;color:var(--text);">
-            <li><strong>API credentials</strong> — my.telegram.org'dan <code>api_id</code> + <code>api_hash</code> olamiz</li>
-            <li><strong>Session ulanish</strong> — telefon raqami + Telegram kod + (kerak bo'lsa) 2FA paroli orqali sessionni shifrlab saqlaymiz</li>
+            <li v-html="tt('clientTelegramApi.step0Li1')"></li>
+            <li v-html="tt('clientTelegramApi.step0Li2')"></li>
           </ol>
           <div style="padding:10px 12px;border-radius:6px;background:rgba(234,179,8,.08);
                        border:1px solid rgba(234,179,8,.25);font-size:11.5px;line-height:1.5;">
-            ⚠️ Bu funksiya sizning Telegram hisobingizga to'liq kirish beradi.
-            <strong>Maxsus Telegram hisobi yaratish tavsiya etiladi</strong> — asosiy shaxsiy hisobingiz emas.
+            <span v-html="tt('clientTelegramApi.step0Warn')"></span>
           </div>
           <ul style="margin:0;padding-left:20px;font-size:12.5px;line-height:1.6;color:var(--muted);">
-            <li>Jami jarayon 3-5 daqiqa</li>
-            <li>Telegram session AES-256-GCM bilan shifrlanadi</li>
-            <li>Istalgan vaqtda bekor qila olasiz</li>
+            <li>{{ tt('clientTelegramApi.step0Bullet1') }}</li>
+            <li>{{ tt('clientTelegramApi.step0Bullet2') }}</li>
+            <li>{{ tt('clientTelegramApi.step0Bullet3') }}</li>
           </ul>
         </div>
 
         <!-- Step 1: my.telegram.org -->
         <div v-else-if="step === 1" style="display:flex;flex-direction:column;gap:14px;">
-          <h3 style="margin:0;font-size:15px;">my.telegram.org'ga kiring</h3>
+          <h3 style="margin:0;font-size:15px;">{{ tt('clientTelegramApi.step1Title') }}</h3>
           <ol style="margin:0;padding-left:22px;font-size:13.5px;line-height:1.8;color:var(--text);">
             <li>
-              Yangi tab oching:
+              {{ tt('clientTelegramApi.step1Li1') }}
               <a href="https://my.telegram.org" target="_blank" style="color:var(--accent);font-weight:600;">https://my.telegram.org</a>
             </li>
-            <li>Telegram'ga ulangan telefon raqamingizni xalqaro formatda kiriting (masalan <code>+998901234567</code>).</li>
-            <li>Telegram ilovasiga (mobil yoki desktop) kelgan login kodini sahifadagi maydonga kiriting.</li>
-            <li><strong>API development tools</strong> linkini bosing.</li>
+            <li v-html="tt('clientTelegramApi.step1Li2')"></li>
+            <li>{{ tt('clientTelegramApi.step1Li3') }}</li>
+            <li v-html="tt('clientTelegramApi.step1Li4')"></li>
           </ol>
           <div style="padding:10px 12px;border-radius:6px;background:rgba(234,179,8,.08);
                        border:1px solid rgba(234,179,8,.25);font-size:12px;">
-            ⚠️ Telefon yoki kod ishlamasa: VPN o'chiring. Telegram ba'zi mintaqalardan my.telegram.org'ni bloklaydi.
+            {{ tt('clientTelegramApi.step1Warn') }}
           </div>
         </div>
 
         <!-- Step 2: Create app -->
         <div v-else-if="step === 2" style="display:flex;flex-direction:column;gap:14px;">
-          <h3 style="margin:0;font-size:15px;">Yangi application yarating</h3>
+          <h3 style="margin:0;font-size:15px;">{{ tt('clientTelegramApi.step2Title') }}</h3>
           <ol style="margin:0;padding-left:22px;font-size:13.5px;line-height:1.8;color:var(--text);">
-            <li><strong>App title</strong>: istalgan nom (masalan "Muxbir AI")</li>
-            <li><strong>Short name</strong>: 5-32 belgi, lotin harflar (masalan "muxbirai")</li>
-            <li><strong>URL</strong>: bo'sh qoldirsa bo'ladi</li>
-            <li><strong>Platform</strong>: "Other" tanlang</li>
-            <li><strong>Create application</strong> tugmasi</li>
+            <li v-html="tt('clientTelegramApi.step2Li1')"></li>
+            <li v-html="tt('clientTelegramApi.step2Li2')"></li>
+            <li v-html="tt('clientTelegramApi.step2Li3')"></li>
+            <li v-html="tt('clientTelegramApi.step2Li4')"></li>
+            <li v-html="tt('clientTelegramApi.step2Li5')"></li>
           </ol>
           <div style="padding:10px 12px;border-radius:6px;background:rgba(99,102,241,.08);
                        border:1px solid rgba(99,102,241,.2);font-size:12px;">
-            ℹ️ Sahifada <code>App api_id</code> va <code>App api_hash</code> ko'rinadi. <strong>Sahifani yopmang!</strong>
+            <span v-html="tt('clientTelegramApi.step2Info')"></span>
           </div>
         </div>
 
         <!-- Step 3: Paste credentials -->
         <div v-else-if="step === 3" style="display:flex;flex-direction:column;gap:14px;">
-          <h3 style="margin:0;font-size:15px;">Credentials va telefonni kiriting</h3>
+          <h3 style="margin:0;font-size:15px;">{{ tt('clientTelegramApi.step3Title') }}</h3>
           <p style="margin:0;font-size:12.5px;color:var(--muted);">
-            my.telegram.org sahifasidan <code>App api_id</code> va <code>App api_hash</code>'ni ko'chirib joylashtiring.
+            <span v-html="tt('clientTelegramApi.step3Desc')"></span>
           </p>
 
           <label style="display:flex;flex-direction:column;gap:5px;">
-            <span style="font-size:12px;font-weight:600;">api_id <span style="color:var(--muted);font-weight:400;">(raqamlar)</span></span>
+            <span style="font-size:12px;font-weight:600;">api_id <span style="color:var(--muted);font-weight:400;">{{ tt('clientTelegramApi.apiIdHint') }}</span></span>
             <input v-model="form.api_id" type="text" placeholder="12345678" autocomplete="off"
                    style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
                           background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;"/>
           </label>
 
           <label style="display:flex;flex-direction:column;gap:5px;">
-            <span style="font-size:12px;font-weight:600;">api_hash <span style="color:var(--muted);font-weight:400;">(32 belgili hex)</span></span>
+            <span style="font-size:12px;font-weight:600;">api_hash <span style="color:var(--muted);font-weight:400;">{{ tt('clientTelegramApi.apiHashHint') }}</span></span>
             <input v-model="form.api_hash" type="text" placeholder="0123456789abcdef0123456789abcdef" autocomplete="off"
                    style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
                           background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;"/>
           </label>
 
           <label style="display:flex;flex-direction:column;gap:5px;">
-            <span style="font-size:12px;font-weight:600;">Telefon raqami <span style="color:var(--muted);font-weight:400;">(keyingi qadamda kod yuboriladi)</span></span>
+            <span style="font-size:12px;font-weight:600;">{{ tt('clientTelegramApi.phoneFieldLabel') }} <span style="color:var(--muted);font-weight:400;">{{ tt('clientTelegramApi.phoneFieldHint') }}</span></span>
             <input v-model="form.phone" type="text" placeholder="+998901234567" autocomplete="off"
                    style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
                           background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;"/>
@@ -223,13 +221,13 @@
 
         <!-- Step 4: Confirm code -->
         <div v-else-if="step === 4" style="display:flex;flex-direction:column;gap:12px;">
-          <h3 style="margin:0;font-size:15px;">Telegram'dan kelgan kodni kiriting</h3>
+          <h3 style="margin:0;font-size:15px;">{{ tt('clientTelegramApi.step4Title') }}</h3>
           <p style="margin:0;font-size:12.5px;color:var(--text);line-height:1.6;">
-            <strong>{{ maskPhoneFront(form.phone) }}</strong> raqamiga kod yuborildi.
+            <span v-html="tt('clientTelegramApi.step4CodeSent', { phone: maskPhoneFront(form.phone) })"></span>
             <span v-if="deliveryHint">{{ deliveryHint }}</span>
           </p>
           <label style="display:flex;flex-direction:column;gap:5px;">
-            <span style="font-size:12px;font-weight:600;">Tasdiqlash kodi</span>
+            <span style="font-size:12px;font-weight:600;">{{ tt('clientTelegramApi.confirmCodeLabel') }}</span>
             <input v-model="form.code" type="text" placeholder="12345"
                    autocomplete="one-time-code" inputmode="numeric" maxlength="8"
                    style="padding:10px 12px;border:1px solid var(--border-2);border-radius:6px;
@@ -240,26 +238,25 @@
             <button type="button" @click="resendCode" :disabled="saving"
                     style="background:none;border:none;color:var(--accent);
                            font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;">
-              Kodni qayta yuborish
+              {{ tt('clientTelegramApi.resendCode') }}
             </button>
             <button type="button" @click="resendCodeSms" :disabled="saving"
                     style="background:none;border:none;color:var(--accent);
                            font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;">
-              SMS bilan yuborish
+              {{ tt('clientTelegramApi.resendSms') }}
             </button>
           </div>
         </div>
 
         <!-- Step 5: 2FA (conditional) -->
         <div v-else-if="step === 5" style="display:flex;flex-direction:column;gap:12px;">
-          <h3 style="margin:0;font-size:15px;">2FA paroli kerak</h3>
+          <h3 style="margin:0;font-size:15px;">{{ tt('clientTelegramApi.step5Title') }}</h3>
           <div style="padding:10px 12px;border-radius:6px;background:rgba(234,179,8,.08);
                        border:1px solid rgba(234,179,8,.25);font-size:12px;line-height:1.5;">
-            🔒 Sizning Telegram hisobingizda <strong>2FA (cloud parol)</strong> yoqilgan.
-            Davom etish uchun Telegram parolingizni kiriting.
+            <span v-html="tt('clientTelegramApi.step5Info')"></span>
           </div>
           <label style="display:flex;flex-direction:column;gap:5px;">
-            <span style="font-size:12px;font-weight:600;">Telegram cloud parol</span>
+            <span style="font-size:12px;font-weight:600;">{{ tt('clientTelegramApi.cloudPasswordLabel') }}</span>
             <input v-model="form.password" type="password" placeholder="••••••••" autocomplete="current-password"
                    style="padding:10px 12px;border:1px solid var(--border-2);border-radius:6px;
                           background:var(--bg);color:var(--text);font-size:14px;"/>
@@ -273,10 +270,9 @@
                        display:flex;align-items:center;justify-content:center;font-size:30px;">
             🔐
           </div>
-          <h3 style="margin:0;font-size:16px;">Telegram to'liq ulandi!</h3>
+          <h3 style="margin:0;font-size:16px;">{{ tt('clientTelegramApi.step6Title') }}</h3>
           <p style="margin:0;font-size:13px;color:var(--muted);max-width:480px;line-height:1.55;">
-            API credentials va MTProto session AES-256-GCM bilan shifrlanib saqlandi.
-            Endi tizim sizning hisobingiz orqali Mening manbalarim'dagi kanallarni scan qiladi.
+            {{ tt('clientTelegramApi.step6Desc') }}
           </p>
         </div>
 
@@ -290,7 +286,7 @@
           <button v-if="canGoBack" type="button" @click="prev"
                   style="padding:9px 16px;border-radius:6px;background:transparent;color:var(--muted);
                          border:1px solid var(--border-2);cursor:pointer;font-size:13px;">
-            ← Orqaga
+            {{ tt('clientTelegramApi.back') }}
           </button>
           <div style="flex:1"></div>
 
@@ -298,31 +294,31 @@
           <button v-if="step < 3" type="button" @click="next"
                   style="padding:9px 18px;border-radius:6px;background:var(--accent);color:#fff;
                          border:none;cursor:pointer;font-size:13px;font-weight:500;">
-            Keyingi →
+            {{ tt('clientTelegramApi.next') }}
           </button>
           <!-- step 3: Save creds + Send code -->
           <button v-else-if="step === 3" type="button" :disabled="saving" @click="saveCredsAndSendCode"
                   style="padding:9px 18px;border-radius:6px;background:var(--accent);color:#fff;
                          border:none;cursor:pointer;font-size:13px;font-weight:500;">
-            {{ saving ? 'Yuborilmoqda…' : 'Saqlash va kod yuborish' }}
+            {{ saving ? tt('clientTelegramApi.sending') : tt('clientTelegramApi.saveAndSendCode') }}
           </button>
           <!-- step 4: Submit code -->
           <button v-else-if="step === 4" type="button" :disabled="saving" @click="submitCode"
                   style="padding:9px 18px;border-radius:6px;background:var(--accent);color:#fff;
                          border:none;cursor:pointer;font-size:13px;font-weight:500;">
-            {{ saving ? 'Tekshirilmoqda…' : 'Tasdiqlash' }}
+            {{ saving ? tt('clientTelegramApi.checking') : tt('clientTelegramApi.confirm') }}
           </button>
           <!-- step 5: Submit 2FA -->
           <button v-else-if="step === 5" type="button" :disabled="saving" @click="submit2FA"
                   style="padding:9px 18px;border-radius:6px;background:var(--accent);color:#fff;
                          border:none;cursor:pointer;font-size:13px;font-weight:500;">
-            {{ saving ? 'Tekshirilmoqda…' : 'Kirish' }}
+            {{ saving ? tt('clientTelegramApi.checking') : tt('clientTelegramApi.signIn') }}
           </button>
           <!-- step 6: Finish -->
           <button v-else-if="step === 6" type="button" @click="finish"
                   style="padding:9px 18px;border-radius:6px;background:var(--accent);color:#fff;
                          border:none;cursor:pointer;font-size:13px;font-weight:500;">
-            Tugatish
+            {{ tt('clientTelegramApi.finish') }}
           </button>
         </div>
       </div>
@@ -335,9 +331,22 @@ import { onMounted, reactive, ref, computed } from 'vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { companiesApi } from '@/api/companies.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 // Step ro'yxati. 2FA shartli — agar kerak bo'lmasa o't qilib o'tiladi.
-const steps = ['Kirish', 'my.telegram.org', 'App yaratish', 'API + telefon', 'Tasdiqlash kodi', '2FA paroli', 'Tayyor']
+const steps = computed(() => [
+  tt('clientTelegramApi.stepName0'),
+  tt('clientTelegramApi.stepName1'),
+  tt('clientTelegramApi.stepName2'),
+  tt('clientTelegramApi.stepName3'),
+  tt('clientTelegramApi.stepName4'),
+  tt('clientTelegramApi.stepName5'),
+  tt('clientTelegramApi.stepName6'),
+])
 const step = ref(0)
 const editing = ref(false)
 const saving = ref(false)
@@ -347,10 +356,10 @@ const needs2FA = ref(false)
 const delivery = ref(null)
 const deliveryHint = computed(() => {
   const d = (delivery.value || '').toLowerCase()
-  if (d.includes('app')) return 'Kod Telegram ilovangizdagi "Telegram" rasmiy chatiga yuborildi (mobil yoki desktop).'
-  if (d.includes('sms')) return 'Kod SMS orqali yuborildi.'
-  if (d.includes('call')) return 'Telefonga qisqa qo\'ng\'iroq keladi — raqamning oxirgi 5 ta raqami kod bo\'ladi.'
-  if (d.includes('missedcall')) return 'Telefonga "missed call" keladi — qo\'ng\'iroq raqamining oxirgi 5 ta raqami kod.'
+  if (d.includes('app')) return tt('clientTelegramApi.deliveryApp')
+  if (d.includes('sms')) return tt('clientTelegramApi.deliverySms')
+  if (d.includes('call')) return tt('clientTelegramApi.deliveryCall')
+  if (d.includes('missedcall')) return tt('clientTelegramApi.deliveryMissedCall')
   return ''
 })
 
@@ -384,7 +393,7 @@ const visibleSteps = computed(() => {
   const arr = [0, 1, 2, 3, 4]
   if (needs2FA.value) arr.push(5)
   arr.push(6)
-  return arr.map((idx, i) => ({ idx, label: steps[idx] }))
+  return arr.map((idx, i) => ({ idx, label: steps.value[idx] }))
 })
 
 const canGoBack = computed(() => {
@@ -438,7 +447,7 @@ onMounted(async () => {
 
 function next() {
   error.value = null
-  if (step.value < steps.length - 1) step.value++
+  if (step.value < steps.value.length - 1) step.value++
 }
 function prev() {
   error.value = null
@@ -466,15 +475,15 @@ async function saveCredsAndSendCode() {
   const apiHash = form.api_hash.trim()
   const phone = form.phone.trim().replace(/\s+/g, '')
   if (!/^\d{4,12}$/.test(apiId)) {
-    error.value = 'api_id 4-12 ta raqamdan iborat bo\'lishi kerak'
+    error.value = tt('clientTelegramApi.errApiId')
     return
   }
   if (!/^[a-f0-9]{32}$/i.test(apiHash)) {
-    error.value = 'api_hash 32 belgili hex (0-9, a-f) bo\'lishi kerak'
+    error.value = tt('clientTelegramApi.errApiHash')
     return
   }
   if (!/^\+\d{8,15}$/.test(phone)) {
-    error.value = 'Telefon raqami xalqaro formatda bo\'lishi kerak (+998901234567)'
+    error.value = tt('clientTelegramApi.errPhone')
     return
   }
   saving.value = true
@@ -506,7 +515,7 @@ async function submitCode() {
   error.value = null
   const code = form.code.trim()
   if (!/^\d{4,8}$/.test(code)) {
-    error.value = 'Kod 4-8 raqamdan iborat bo\'lishi kerak'
+    error.value = tt('clientTelegramApi.errCode')
     return
   }
   saving.value = true
@@ -534,7 +543,7 @@ async function submit2FA() {
   if (!company.value) return
   error.value = null
   if (!form.password) {
-    error.value = 'Parolni kiriting'
+    error.value = tt('clientTelegramApi.errPassword')
     return
   }
   saving.value = true
@@ -593,7 +602,7 @@ function finish() {
 
 async function revokeSession() {
   if (!company.value) return
-  if (!confirm('Telegram sessionni bekor qilishni xohlaysizmi? Bu kanallar scanini to\'xtatadi.')) return
+  if (!confirm(tt('clientTelegramApi.confirmRevokeSession'))) return
   try {
     await companiesApi.revokeTelegramSession(company.value.id)
     await loadState()
@@ -610,9 +619,9 @@ async function revokeSession() {
 async function clearApiOnly() {
   if (!company.value) return
   if (session.has_session) {
-    if (!confirm('API\'ni o\'chirish session\'ni ham bekor qiladi (session API\'siz ishlamaydi). Davom etilsinmi?')) return
+    if (!confirm(tt('clientTelegramApi.confirmClearApiWithSession'))) return
   } else {
-    if (!confirm('Saqlangan Telegram API credentials\'ini o\'chirmoqchimisiz?')) return
+    if (!confirm(tt('clientTelegramApi.confirmClearApi'))) return
   }
   try {
     if (session.has_session) {
@@ -629,7 +638,7 @@ async function clearApiOnly() {
 
 async function clearAll() {
   if (!company.value) return
-  if (!confirm('Telegram API va session — hammasini o\'chirib tashlaymizmi?')) return
+  if (!confirm(tt('clientTelegramApi.confirmClearAll'))) return
   try {
     await companiesApi.revokeTelegramSession(company.value.id).catch(() => {})
     await companiesApi.clearTelegramApi(company.value.id)

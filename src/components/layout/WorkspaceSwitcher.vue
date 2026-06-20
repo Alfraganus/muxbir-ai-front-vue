@@ -32,7 +32,7 @@ const current = computed(() => {
   }
   return {
     label: store.t('nav.workspace.client'),
-    sub: store.companyName || 'Kompaniya',
+    sub: store.companyName || store.t('workspaceSwitcher.companyFallback'),
     iconName: 'Building',
   }
 })

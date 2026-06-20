@@ -1,17 +1,17 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;max-width:920px;">
     <PageHeader
-      title="AI prompt — kompaniya uslubi"
-      subtitle="Nomli promptlar yarating. Har bir promptga bir nechta bo'lim qo'shing va kerak bo'lsa admin BASE promptini qo'shing."
+      :title="tt('aip.title')"
+      :subtitle="tt('aip.subtitle')"
     />
 
     <AppPanel
-      title="Nomli promptlar"
-      subtitle="Prompt yarating, ichiga bo'limlar qo'shing. Har bo'limga nom bering — keyinroq qaysi bo'limga o'tganingiz aniq ko'rinadi."
+      :title="tt('aip.panel.title')"
+      :subtitle="tt('aip.panel.subtitle')"
     >
-      <div v-if="loading" style="color:var(--muted);font-size:13px;">Yuklanmoqda…</div>
+      <div v-if="loading" style="color:var(--muted);font-size:13px;">{{ tt('aip.loading') }}</div>
       <div v-else-if="!company" style="color:var(--muted);font-size:13px;">
-        Kompaniya topilmadi. Avval onboarding'ni tugating.
+        {{ tt('aip.noCompany') }}
       </div>
       <form v-else @submit.prevent="saveGroups" style="display:flex;flex-direction:column;gap:16px;">
 
@@ -21,14 +21,13 @@
                     padding:10px 12px;background:var(--bg);border:1px solid var(--border-2);
                     border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
           <span style="font-size:11.5px;color:var(--muted);">
-            <strong style="color:var(--text);">{{ groups.length }}</strong> ta prompt ·
-            <strong style="color:var(--text);">{{ totalPromptCount }}</strong> ta bo'lim
+            {{ tt('aip.count', { groups: groups.length, sections: totalPromptCount }) }}
           </span>
           <span v-if="dirty" style="font-size:11px;color:#f59e0b;font-weight:600;">
-            • saqlanmagan o'zgarish
+            {{ tt('aip.unsaved') }}
           </span>
           <div style="flex:1"></div>
-          <span v-if="savedAt" style="font-size:11.5px;color:var(--success);">✓ Saqlandi</span>
+          <span v-if="savedAt" style="font-size:11.5px;color:var(--success);">{{ tt('aip.saved') }}</span>
           <span v-if="error" style="font-size:11.5px;color:var(--danger);">{{ error }}</span>
           <!-- Yangi prompt — har doim qo'l ostida, scroll qilish kerak emas -->
           <button type="button" @click="addGroupAndScroll"
@@ -37,7 +36,7 @@
                          display:inline-flex;align-items:center;gap:5px;transition:all .15s;"
                   @mouseenter="$event.target.style.background='rgba(99,102,241,.05)'"
                   @mouseleave="$event.target.style.background='transparent'">
-            ＋ Yangi prompt
+            ＋ {{ tt('aip.addPrompt') }}
           </button>
           <button type="submit" :disabled="saving || !dirty"
                   :style="{
@@ -51,7 +50,7 @@
                     fontWeight: 600,
                     transition: 'all .15s',
                   }">
-            {{ saving ? 'Saqlanmoqda…' : (dirty ? '💾 O\'zgarishlarni saqlash' : '✓ Saqlangan') }}
+            {{ saving ? tt('aip.saving') : (dirty ? tt('aip.saveBtn') : tt('aip.savedBtn')) }}
           </button>
         </div>
 
@@ -61,14 +60,14 @@
                     display:flex;flex-direction:column;gap:12px;align-items:center;">
           <div style="width:54px;height:54px;border-radius:50%;background:rgba(99,102,241,.1);
                        display:flex;align-items:center;justify-content:center;font-size:24px;">✨</div>
-          <div style="font-size:14px;color:var(--text);font-weight:600;">Birinchi promptingizni yarating</div>
+          <div style="font-size:14px;color:var(--text);font-weight:600;">{{ tt('aip.emptyTitle') }}</div>
           <div style="font-size:12px;color:var(--muted);max-width:380px;">
-            Masalan: "Post yozish", "Reklama matni", "E'lon" — har biriga 1-3 bo'lim qo'shasiz.
+            {{ tt('aip.emptyDesc') }}
           </div>
           <button type="button" @click="addGroup"
                   style="padding:9px 18px;border-radius:7px;background:var(--accent);color:#fff;
                          border:none;cursor:pointer;font-size:13px;font-weight:500;">
-            + Birinchi prompt
+            + {{ tt('aip.firstPrompt') }}
           </button>
         </div>
 
@@ -83,7 +82,7 @@
           <!-- Group header — har doim ko'rinadi -->
           <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;
                        background:var(--bg-2,rgba(0,0,0,.02));border-bottom:1px solid var(--border-2);">
-            <button type="button" @click="toggleCollapse(g)" title="Yig'ish/yoyish"
+            <button type="button" @click="toggleCollapse(g)"
                     :style="{
                       width: '24px', height: '24px', border: 'none', background: 'transparent',
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -97,7 +96,7 @@
             <input
               v-model="g.name"
               type="text"
-              placeholder="Prompt nomi (masalan: Post yozish)"
+              :placeholder="tt('aip.promptNamePh')"
               style="flex:1;padding:6px 10px;border:1px solid transparent;border-radius:6px;
                      background:transparent;color:var(--text);font-size:15px;font-weight:700;
                      letter-spacing:-0.01em;transition:all .15s;"
@@ -107,18 +106,18 @@
             <span v-if="g._collapsed"
                   style="font-size:11px;color:var(--muted);padding:3px 8px;
                          background:var(--bg);border-radius:999px;border:1px solid var(--border-2);">
-              {{ g.prompts.length }} ta bo'lim
+              {{ tt('aip.sectionCount', { n: g.prompts.length }) }}
             </span>
             <div style="display:flex;gap:4px;">
-              <button type="button" :disabled="gi === 0" @click="moveGroup(gi, -1)" title="Yuqoriga"
+              <button type="button" :disabled="gi === 0" @click="moveGroup(gi, -1)"
                       style="width:28px;height:28px;border:1px solid var(--border-2);background:var(--bg);
                              color:var(--muted);border-radius:6px;cursor:pointer;font-size:12px;line-height:1;
                              display:flex;align-items:center;justify-content:center;">↑</button>
-              <button type="button" :disabled="gi === groups.length - 1" @click="moveGroup(gi, +1)" title="Pastga"
+              <button type="button" :disabled="gi === groups.length - 1" @click="moveGroup(gi, +1)"
                       style="width:28px;height:28px;border:1px solid var(--border-2);background:var(--bg);
                              color:var(--muted);border-radius:6px;cursor:pointer;font-size:12px;line-height:1;
                              display:flex;align-items:center;justify-content:center;">↓</button>
-              <button type="button" @click="removeGroup(gi)" title="Promptni o'chirish"
+              <button type="button" @click="removeGroup(gi)"
                       style="width:28px;height:28px;border:1px solid var(--border-2);background:var(--bg);
                              color:#ef4444;border-radius:6px;cursor:pointer;font-size:14px;line-height:1;
                              display:flex;align-items:center;justify-content:center;">🗑</button>
@@ -158,7 +157,7 @@
                 <input
                   v-model="p.title"
                   type="text"
-                  placeholder="Bo'lim nomi (masalan: Sarlavha yozish)"
+                  :placeholder="tt('aip.sectionNamePh')"
                   style="flex:1;padding:5px 9px;border:1px solid transparent;border-radius:5px;
                          background:transparent;color:var(--text);font-size:13.5px;font-weight:600;
                          transition:all .15s;"
@@ -174,7 +173,7 @@
                   {{ contentPreview(p.content) }}
                 </span>
                 <!-- BASE toggle switch -->
-                <label :title="p.apply_base ? 'BASE prompt qo\'shiladi' : 'BASE prompt qo\'shilmaydi'"
+                <label
                        @click.stop
                        :style="{
                          display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -189,15 +188,15 @@
                   <span>BASE</span>
                 </label>
                 <div style="display:flex;gap:3px;" @click.stop>
-                  <button type="button" :disabled="pi === 0" @click="movePrompt(gi, pi, -1)" title="Yuqoriga"
+                  <button type="button" :disabled="pi === 0" @click="movePrompt(gi, pi, -1)"
                           style="width:24px;height:24px;border:1px solid var(--border-2);background:var(--bg);
                                  color:var(--muted);border-radius:5px;cursor:pointer;font-size:11px;
                                  display:flex;align-items:center;justify-content:center;">↑</button>
-                  <button type="button" :disabled="pi === g.prompts.length - 1" @click="movePrompt(gi, pi, +1)" title="Pastga"
+                  <button type="button" :disabled="pi === g.prompts.length - 1" @click="movePrompt(gi, pi, +1)"
                           style="width:24px;height:24px;border:1px solid var(--border-2);background:var(--bg);
                                  color:var(--muted);border-radius:5px;cursor:pointer;font-size:11px;
                                  display:flex;align-items:center;justify-content:center;">↓</button>
-                  <button type="button" @click="removePrompt(gi, pi)" :disabled="g.prompts.length <= 1" title="Bo'limni o'chirish"
+                  <button type="button" @click="removePrompt(gi, pi)" :disabled="g.prompts.length <= 1"
                           style="width:24px;height:24px;border:1px solid var(--border-2);background:var(--bg);
                                  color:#ef4444;border-radius:5px;cursor:pointer;font-size:12px;
                                  display:flex;align-items:center;justify-content:center;">✕</button>
@@ -209,7 +208,7 @@
                 v-model="p.content"
                 spellcheck="false"
                 data-section-ta
-                placeholder="Bo'lim matnini yozing — qoidalar, uslub, misol va h.k.&#10;&#10;Masalan:&#10;- Sarlavha 60-90 belgi bo'lsin&#10;- Birinchi paragrafda asosiy fakt&#10;- Emoji ishlatish: 1-2 ta"
+                :placeholder="tt('aip.sectionContentPh')"
                 @input="autoGrow"
                 :ref="(el) => onTaMount(el)"
                 style="width:100%;padding:14px 16px;border:none;font-family:'JetBrains Mono',Menlo,Consolas,monospace;
@@ -221,13 +220,12 @@
             <button
               type="button"
               @click="addPrompt(gi)"
-              :title="`'${g.name || 'shu'}' promptiga yangi bo'lim qo'shish`"
               style="padding:8px 14px;border-radius:7px;background:transparent;color:var(--accent);
                      border:1.5px dashed var(--accent);cursor:pointer;font-size:12.5px;font-weight:500;
                      align-self:flex-start;transition:all .15s;"
               @mouseenter="$event.target.style.background='rgba(99,102,241,.05)'"
               @mouseleave="$event.target.style.background='transparent'"
-            >＋ Shu promptga bo'lim qo'shish</button>
+            >＋ {{ tt('aip.addSection') }}</button>
           </div>
         </div>
 
@@ -235,16 +233,15 @@
         <div v-if="groups.length"
              style="display:flex;align-items:center;gap:10px;padding-top:8px;
                     border-top:1px dashed var(--border-2);">
-          <span style="font-size:11px;color:var(--muted);">Yangi prompt yaratish:</span>
+          <span style="font-size:11px;color:var(--muted);">{{ tt('aip.newPromptLabel') }}</span>
           <button type="button" @click="addGroup"
-                  title="Yuqoridagilardan ALOHIDA yangi prompt yaratish (Post yozish, Reklama, va h.k.)"
                   style="padding:8px 16px;border-radius:7px;background:var(--accent);color:#fff;
                          border:none;cursor:pointer;font-size:12.5px;font-weight:500;
                          display:inline-flex;align-items:center;gap:6px;">
-            ＋ Yangi prompt
+            ＋ {{ tt('aip.addPrompt') }}
           </button>
           <span style="font-size:11px;color:var(--muted);">
-            (masalan "Post yozish", "Reklama", "E'lon" — alohida uslublar)
+            {{ tt('aip.newPromptHint') }}
           </span>
         </div>
 
@@ -258,6 +255,11 @@ import { onMounted, reactive, ref, computed, watch } from 'vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { companiesApi } from '@/api/companies.js'
+import { useAppStore } from '@/stores/app.js'
+
+const store = useAppStore()
+const t = computed(() => store.t)
+function tt(key, params) { return t.value(key, params) }
 
 const loading = ref(true)
 const saving = ref(false)
@@ -315,8 +317,8 @@ function togglePromptCollapse(p) {
 }
 
 function contentPreview(s) {
-  const t = (s || '').trim().replace(/\s+/g, ' ')
-  return t.length > 60 ? t.slice(0, 60) + '…' : t
+  const txt = (s || '').trim().replace(/\s+/g, ' ')
+  return txt.length > 60 ? txt.slice(0, 60) + '…' : txt
 }
 
 function autoGrow(ev) {
@@ -377,7 +379,7 @@ function addGroupAndScroll() {
 }
 
 function removeGroup(gi) {
-  if (!confirm(`"${groups.value[gi].name}" prompti va uning ichidagi barcha bo'limlar o'chiriladi. Davom etilsinmi?`)) return
+  if (!confirm(tt('aip.confirmDelete', { name: groups.value[gi].name }))) return
   groups.value.splice(gi, 1)
 }
 
