@@ -41,6 +41,9 @@
 
     <!-- Global toast bildirishnomalari (har sahifadan useToast() chaqiruvlari) -->
     <AppToast/>
+
+    <!-- Sayt jonli-chat (customer support) — login + dashboard, doim fixed -->
+    <LiveChatWidget/>
   </div>
 </template>
 
@@ -56,6 +59,7 @@ import AppTopbar from '@/components/layout/AppTopbar.vue'
 import StorageQuotaBanner from '@/components/layout/StorageQuotaBanner.vue'
 import TariffExpiryBanner from '@/components/billing/TariffExpiryBanner.vue'
 import AppToast from '@/components/ui/AppToast.vue'
+import LiveChatWidget from '@/components/support/LiveChatWidget.vue'
 
 const store = useAppStore()
 const authStore = useAuthStore()
