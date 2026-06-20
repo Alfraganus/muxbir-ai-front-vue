@@ -21,8 +21,21 @@
           </button>
         </div>
 
+        <!-- Pre-chat forma: ism + telefon -->
+        <form v-if="!registered" class="lcw-form" @submit.prevent="startChat">
+          <div class="lcw-form-ic">👋</div>
+          <div class="lcw-form-title">{{ tt('chat.formTitle') }}</div>
+          <div class="lcw-form-hint">{{ tt('chat.formHint') }}</div>
+          <label class="lcw-form-label">{{ tt('chat.name') }}</label>
+          <input v-model="formName" class="lcw-form-input" :placeholder="tt('chat.namePlaceholder')" maxlength="64"/>
+          <label class="lcw-form-label">{{ tt('chat.phone') }}</label>
+          <input v-model="formPhone" class="lcw-form-input" type="tel" :placeholder="tt('chat.phonePlaceholder')" maxlength="32"/>
+          <div v-if="formErr" class="lcw-form-err">{{ formErr }}</div>
+          <button type="submit" class="lcw-form-btn">{{ tt('chat.start') }}</button>
+        </form>
+
         <!-- Messages -->
-        <div ref="scrollEl" class="lcw-body">
+        <div v-else ref="scrollEl" class="lcw-body">
           <div class="lcw-greet">
             <span class="lcw-greet-ic">👋</span>
             <p>{{ tt('chat.greeting') }}</p>
@@ -35,7 +48,7 @@
         </div>
 
         <!-- Composer -->
-        <form class="lcw-foot" @submit.prevent="send">
+        <form v-if="registered" class="lcw-foot" @submit.prevent="send">
           <textarea
             v-model="draft"
             class="lcw-input"
@@ -75,6 +88,8 @@ function tt(key, params) { return t.value(key, params) }
 const LS_ID = 'support_visitor_id'
 const LS_MSGS = 'support_chat_msgs'
 const LS_SEEN = 'support_chat_seen'
+const LS_NAME = 'support_visitor_name'
+const LS_PHONE = 'support_visitor_phone'
 const POLL_MS = 4000
 
 function genId() {
@@ -95,6 +110,28 @@ const scrollEl = ref(null)
 const messages = ref(loadMsgs())
 let lastSeen = Number(localStorage.getItem(LS_SEEN) || 0)
 let timer = null
+
+// Pre-chat forma (ism + telefon) — bir marta so'raladi, brauzerда saqlanadi.
+const visitorName = ref(localStorage.getItem(LS_NAME) || '')
+const visitorPhone = ref(localStorage.getItem(LS_PHONE) || '')
+const registered = ref(!!(visitorName.value && visitorPhone.value))
+const formName = ref('')
+const formPhone = ref('')
+const formErr = ref('')
+
+function startChat() {
+  const n = formName.value.trim()
+  const p = formPhone.value.trim()
+  if (n.length < 2) { formErr.value = tt('chat.errName'); return }
+  if (p.replace(/\D/g, '').length < 7) { formErr.value = tt('chat.errPhone'); return }
+  visitorName.value = n
+  visitorPhone.value = p
+  localStorage.setItem(LS_NAME, n)
+  localStorage.setItem(LS_PHONE, p)
+  registered.value = true
+  formErr.value = ''
+  scrollDown()
+}
 
 function loadMsgs() {
   try { return JSON.parse(localStorage.getItem(LS_MSGS) || '[]') } catch { return [] }
@@ -137,7 +174,13 @@ async function send() {
   persist()
   scrollDown()
   try {
-    await supportChatApi.send({ visitor_id: visitorId, text, page: pageLabel() })
+    await supportChatApi.send({
+      visitor_id: visitorId,
+      text,
+      name: visitorName.value || undefined,
+      phone: visitorPhone.value || undefined,
+      page: pageLabel(),
+    })
   } catch {
     messages.value.push({ id: 'e' + Date.now(), mine: false, text: tt('chat.sendError'), at: new Date().toISOString() })
     persist()
@@ -253,6 +296,38 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 }
 .lcw-greet-ic { font-size: 20px; line-height: 1; }
 .lcw-greet p { margin: 0; font-size: 12.5px; color: var(--text-2, #475569); line-height: 1.5; }
+
+/* Pre-chat forma */
+.lcw-form {
+  flex: 1; overflow-y: auto;
+  padding: 22px 18px;
+  display: flex; flex-direction: column;
+  background:
+    radial-gradient(600px 300px at 100% 0%, color-mix(in oklab, var(--accent, #2F6FED) 6%, transparent), transparent 60%),
+    var(--bg, #f8fafc);
+}
+.lcw-form-ic { font-size: 30px; text-align: center; }
+.lcw-form-title { font-size: 16px; font-weight: 700; text-align: center; color: var(--text, #0f172a); margin-top: 8px; }
+.lcw-form-hint { font-size: 12.5px; color: var(--muted, #64748b); text-align: center; line-height: 1.5; margin: 6px 0 18px; }
+.lcw-form-label { font-size: 11.5px; font-weight: 500; color: var(--text-2, #475569); margin-bottom: 5px; }
+.lcw-form-input {
+  height: 42px; border: 1px solid var(--border, #e2e8f0); border-radius: 11px;
+  padding: 0 13px; font-size: 13px; font-family: inherit;
+  color: var(--text, #0f172a); background: var(--panel, #fff);
+  outline: none; margin-bottom: 13px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.lcw-form-input:focus { border-color: var(--accent, #2F6FED); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent, #2F6FED) 16%, transparent); }
+.lcw-form-err { font-size: 11.5px; color: #ef4444; margin: -6px 0 12px; }
+.lcw-form-btn {
+  height: 44px; border: none; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(135deg, var(--accent, #2F6FED), #4f8af5); color: #fff;
+  font-size: 13.5px; font-weight: 700; font-family: inherit; margin-top: 4px;
+  box-shadow: 0 10px 22px -10px color-mix(in oklab, var(--accent, #2F6FED) 60%, transparent);
+  transition: filter .15s, transform .1s;
+}
+.lcw-form-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.lcw-form-btn:active { transform: translateY(0); }
 
 .lcw-msg { display: flex; flex-direction: column; max-width: 82%; }
 .lcw-msg.mine { align-self: flex-end; align-items: flex-end; }
