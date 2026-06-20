@@ -4,10 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1440" />
   <title>Muxbir AI — Console</title>
+  <!-- Telegram Mini App: launch parametrlari (#tgWebAppData=...) hash-router yo'lini
+       buzadi. Bu inline script modul bundle (va vue-router) yuklanishidan OLDIN
+       ishlaydi — Telegram ichida bo'lsa hash'ni /support ga to'g'rilaymiz. -->
+  <script>
+    (function () {
+      try {
+        var h = window.location.hash || '';
+        var inTelegram = h.indexOf('tgWebApp') !== -1 ||
+          !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
+        if (inTelegram && h.indexOf('#/support') !== 0) {
+          window.history.replaceState(null, '',
+            window.location.pathname + window.location.search + '#/support');
+        }
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <script type="module" crossorigin src="/assets/index-B23ko1e-.js"></script>
+  <script type="module" crossorigin src="/assets/index-ClQDDuyQ.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-Bovfotgb.css">
 </head>
 <body>
