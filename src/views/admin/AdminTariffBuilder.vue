@@ -293,7 +293,7 @@ function slugify(s) {
 }
 
 watch(() => form.value.name, (val) => {
-  form.value.slug = slugify(val)
+  if (!isEdit.value) form.value.slug = slugify(val)
 })
 
 async function addCategory() {
