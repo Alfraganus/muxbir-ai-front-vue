@@ -16,6 +16,7 @@ export const useQuotaStore = defineStore('quota', () => {
   // Obuna holati — null = hali noma'lum (yuklanmagan)
   const subscriptionActive = ref(null)
   const subscriptionStatus = ref(null)
+  const daysLeft = ref(null)
 
   async function refresh() {
     const app = useAppStore()
@@ -31,11 +32,12 @@ export const useQuotaStore = defineStore('quota', () => {
       credits.value = q?.credits || { used: 0, balance: 0, total: 0 }
       subscriptionActive.value = !!q?.subscription_active
       subscriptionStatus.value = q?.subscription_status || null
+      daysLeft.value = q?.days_left ?? null
       loaded.value = true
     } catch { /* jim */ } finally {
       loading.value = false
     }
   }
 
-  return { tariffName, hasTariff, monthly, daily, credits, loading, loaded, subscriptionActive, subscriptionStatus, refresh }
+  return { tariffName, hasTariff, monthly, daily, credits, loading, loaded, subscriptionActive, subscriptionStatus, daysLeft, refresh }
 })

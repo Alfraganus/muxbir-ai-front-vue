@@ -88,13 +88,13 @@ const quota = useQuotaStore()
 const buyCreditsOpen = ref(false)
 const switchOpen = ref(false)
 const currentTariffId = ref(null)
-const daysLeft = ref(null)
 let timer = null
+
+const daysLeft = computed(() => quota.daysLeft)
 
 const daysColorClass = computed(() => {
   const n = daysLeft.value
   if (n === null) return ''
-  if (n <= 0) return 'quc-days-danger'
   if (n <= 3) return 'quc-days-danger'
   if (n <= 7) return 'quc-days-warn'
   return 'quc-days-ok'
@@ -130,7 +130,6 @@ async function loadTariffId() {
   try {
     const sub = await subscriptionsApi.getMine()
     currentTariffId.value = sub?.tariff_id || null
-    daysLeft.value = sub?.days_left ?? null
   } catch { /* obuna yo'q bo'lishi mumkin */ }
 }
 
