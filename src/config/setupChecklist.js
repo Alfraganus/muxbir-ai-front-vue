@@ -57,13 +57,6 @@ export const SETUP_CHECK_META = {
     hint: 'Tasdiq xabarlari boradigan chat ID kiritilsin',
     link: '/client/telegram-chats',
   },
-  timezone: {
-    order: 8,
-    icon: 'Globe',
-    title: 'Vaqt mintaqasi tanlash',
-    hint: 'Workspace UTC offset tanlansin (publish vaqti va avto-post jadvali shunga bog\'liq)',
-    link: '/client/settings?tab=timezone',
-  },
 }
 
 /** Noma'lum key kelsa ham komponent buzilmasin uchun zaxira meta. */
