@@ -23,21 +23,9 @@
 
         <!-- Basics -->
         <AppPanel :title="tt('adminTariffBuilder.basicsTitle')" :dense="true">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label :style="labelStyle">{{ tt('adminTariffBuilder.tariffName') }}</label>
-              <AppInput v-model="form.name" :placeholder="tt('adminTariffBuilder.tariffNamePlaceholder')"/>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;grid-column:1 / -1;">
-              <label :style="labelStyle">{{ tt('adminTariffBuilder.category') }}</label>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <AppSelect v-model="form.category_id" :options="categoryOptions" :placeholder="tt('adminTariffBuilder.categoryPlaceholder')" />
-                <AppButton variant="secondary" size="md" @click="catModal = true">
-                  <template #icon><AppIcon name="Plus" :size="12"/></template>
-                  {{ tt('adminTariffBuilder.categories') }}
-                </AppButton>
-              </div>
-            </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label :style="labelStyle">{{ tt('adminTariffBuilder.tariffName') }}</label>
+            <AppInput v-model="form.name" :placeholder="tt('adminTariffBuilder.tariffNamePlaceholder')"/>
           </div>
         </AppPanel>
 
@@ -98,7 +86,6 @@
             <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px;">
               <span style="font-size:19px;font-weight:600;text-transform:capitalize;">{{ form.name || tt('adminTariffBuilder.tariffName') }}</span>
             </div>
-            <div v-if="selectedCategoryName" style="font-size:11.5px;color:var(--accent);margin-top:4px;">{{ selectedCategoryName }}</div>
           </div>
           <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px;">
             <PreviewLine :label="tt('adminTariffBuilder.previewDaily')" :value="form.posts_daily_limit > 0 ? tt('adminTariffBuilder.nMessages', { n: form.posts_daily_limit }) : tt('adminTariffBuilder.unlimited')" />
@@ -118,46 +105,18 @@
         </div>
       </div>
     </div>
-
-    <!-- Category management modal -->
-    <AppModal v-model="catModal" :title="tt('adminTariffBuilder.catModalTitle')" :subtitle="tt('adminTariffBuilder.catModalSubtitle')" width="460px">
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div v-if="!categories.length" style="font-size:12.5px;color:var(--muted);text-align:center;padding:14px;">
-          {{ tt('adminTariffBuilder.noCategories') }}
-        </div>
-        <div v-for="c in categories" :key="c.id" style="display:flex;align-items:center;gap:8px;">
-          <AppInput v-model="c._editName" style="flex:1;"/>
-          <AppButton variant="secondary" size="sm" @click="saveCategory(c)">{{ tt('adminTariffBuilder.save') }}</AppButton>
-          <AppButton variant="ghost" size="sm" @click="removeCategory(c)">
-            <template #icon><AppIcon name="Trash" :size="12"/></template>
-          </AppButton>
-        </div>
-        <div style="height:1px;background:var(--border-2);margin:4px 0;"/>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <AppInput v-model="newCatName" :placeholder="tt('adminTariffBuilder.newCatPlaceholder')" style="flex:1;"/>
-          <AppButton variant="primary" size="sm" :disabled="!newCatName.trim()" @click="addCategory">
-            <template #icon><AppIcon name="Plus" :size="12"/></template>
-            {{ tt('adminTariffBuilder.add') }}
-          </AppButton>
-        </div>
-        <div v-if="catError" style="font-size:12px;color:var(--danger);">{{ catError }}</div>
-      </div>
-    </AppModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, h, defineComponent } from 'vue'
+import { ref, computed, h, defineComponent, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import AppInput from '@/components/ui/AppInput.vue'
-import AppSelect from '@/components/ui/AppSelect.vue'
-import AppModal from '@/components/ui/AppModal.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { tariffsApi } from '@/api/tariffs.js'
-import { tariffCategoriesApi } from '@/api/tariff-categories.js'
 import { fmtSom } from '@/i18n/index.js'
 import { useAppStore } from '@/stores/app.js'
 
@@ -176,8 +135,6 @@ const hintStyle = 'font-size:10.5px;color:var(--muted-2);'
 
 const form = ref({
   name: '',
-  slug: '',
-  category_id: '',
   posts_daily_limit: 0,
   posts_monthly_limit: 0,
   free_credits_monthly: 0,
@@ -189,36 +146,14 @@ const form = ref({
 const saving = ref(false)
 const saveError = ref(null)
 
-const categories = ref([])
-const categoryOptions = computed(() =>
-  categories.value.map((c) => ({ value: c.id, label: catName(c) }))
-)
-const selectedCategoryName = computed(() => {
-  const c = categories.value.find((x) => x.id === form.value.category_id)
-  return c ? catName(c) : ''
-})
 const creditPreview = computed(() =>
   form.value.credit_price_per_message > 0
     ? tt('adminTariffBuilder.creditPreview', { price: fmtSom(form.value.credit_price_per_message) })
     : '—'
 )
 
-function catName(c) {
-  const lang = localStorage.getItem('lang') || 'uz'
-  return c.name_i18n?.[lang] || c.name_i18n?.uz || c.slug || '—'
-}
-
 function goBack() {
   router.push('/admin/tariffs')
-}
-
-async function loadCategories() {
-  try {
-    const data = await tariffCategoriesApi.list()
-    categories.value = (Array.isArray(data) ? data : []).map((c) => ({ ...c, _editName: catName(c) }))
-  } catch (e) {
-    /* sukut — kategoriyalar bo'lmasa ham tarif yaratish mumkin */
-  }
 }
 
 async function loadTariff() {
@@ -226,9 +161,9 @@ async function loadTariff() {
   try {
     const t = await tariffsApi.getOne(editId.value)
     form.value = {
-      name: t.name_i18n?.uz || t.slug || '',
-      slug: t.slug || '',
-      category_id: t.category_id || '',
+      // Backend i18n interceptor `name_i18n` ni `name` stringga aylantiradi —
+      // shuning uchun avval `t.name` ni o'qiymiz (slug fallback emas).
+      name: t.name || t.name_i18n?.uz || '',
       posts_daily_limit: Number(t.posts_daily_limit) || 0,
       posts_monthly_limit: Number(t.posts_monthly_limit) || 0,
       free_credits_monthly: Number(t.free_credits_monthly) || 0,
@@ -241,14 +176,16 @@ async function loadTariff() {
   }
 }
 
+/**
+ * Payload — slug yo'q (yangi tarifda server avtomatik yasaydi, tahrirda
+ * mavjud slug o'zgarmaydi), kategoriya yo'q.
+ */
 function buildPayload() {
   const name = form.value.name.trim()
   return {
-    slug: form.value.slug.trim().toLowerCase(),
     name_i18n: { uz: name, ru: name, en: name },
     description_i18n: { uz: '', ru: '', en: '' },
     is_active: form.value.is_active,
-    category_id: form.value.category_id || null,
     price_monthly: Math.round(form.value.price_monthly || 0),
     price_yearly: Math.round((form.value.price_monthly || 0) * 12),
     posts_daily_limit: Math.round(form.value.posts_daily_limit || 0),
@@ -259,7 +196,7 @@ function buildPayload() {
 }
 
 async function save() {
-  if (!form.value.name.trim() || !form.value.slug.trim()) {
+  if (!form.value.name.trim()) {
     saveError.value = tt('adminTariffBuilder.requiredError')
     return
   }
@@ -280,62 +217,6 @@ async function save() {
   }
 }
 
-// ─── Category management ─────────────────────────────────────────────────────
-const catModal = ref(false)
-const newCatName = ref('')
-const catError = ref(null)
-
-function slugify(s) {
-  return s.trim().toLowerCase()
-    .replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i')
-    .replace(/[òóôõö]/g, 'o').replace(/[ùúûü]/g, 'u').replace(/[ñ]/g, 'n')
-    .replace(/[^a-z0-9\s]+/g, '').replace(/\s+/g, '_').replace(/^_+|_+$/g, '')
-}
-
-watch(() => form.value.name, (val) => {
-  if (!isEdit.value) form.value.slug = slugify(val)
-})
-
-async function addCategory() {
-  const name = newCatName.value.trim()
-  if (!name) return
-  catError.value = null
-  try {
-    await tariffCategoriesApi.create({
-      slug: slugify(name) || 'kategoriya',
-      name_i18n: { uz: name, ru: name, en: name },
-    })
-    newCatName.value = ''
-    await loadCategories()
-  } catch (e) {
-    catError.value = e.response?.data?.message || tt('adminTariffBuilder.catAddError')
-  }
-}
-
-async function saveCategory(c) {
-  const name = (c._editName || '').trim()
-  if (!name) return
-  catError.value = null
-  try {
-    await tariffCategoriesApi.update(c.id, { name_i18n: { uz: name, ru: name, en: name } })
-    await loadCategories()
-  } catch (e) {
-    catError.value = e.response?.data?.message || tt('adminTariffBuilder.catSaveError')
-  }
-}
-
-async function removeCategory(c) {
-  if (!confirm(tt('adminTariffBuilder.catRemoveConfirm', { name: catName(c) }))) return
-  catError.value = null
-  try {
-    await tariffCategoriesApi.remove(c.id)
-    if (form.value.category_id === c.id) form.value.category_id = ''
-    await loadCategories()
-  } catch (e) {
-    catError.value = e.response?.data?.message || tt('adminTariffBuilder.catRemoveError')
-  }
-}
-
 const PreviewLine = defineComponent({
   name: 'PreviewLine',
   props: { label: String, value: [String, Number] },
@@ -347,8 +228,7 @@ const PreviewLine = defineComponent({
   },
 })
 
-onMounted(async () => {
-  await loadCategories()
-  await loadTariff()
+onMounted(() => {
+  loadTariff()
 })
 </script>

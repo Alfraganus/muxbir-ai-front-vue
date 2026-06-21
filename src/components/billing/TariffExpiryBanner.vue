@@ -56,7 +56,10 @@ const show = computed(() => {
 })
 
 const tariffName = computed(() => {
-  const n = sub.value?.tariff?.name_i18n
+  const tr = sub.value?.tariff
+  // Backend i18n interceptor `name_i18n` ni `name` stringga aylantiradi.
+  if (typeof tr?.name === 'string' && tr.name) return tr.name
+  const n = tr?.name_i18n
   return (typeof n === 'string' ? n : n?.uz || n?.ru || n?.en) || ''
 })
 

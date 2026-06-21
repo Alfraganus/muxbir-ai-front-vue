@@ -79,8 +79,10 @@ const selectedId = ref(null)
 const paying = ref(false)
 
 function name(tr) {
+  // Backend i18n interceptor `name_i18n` ni `name` stringga aylantiradi.
+  if (typeof tr?.name === 'string' && tr.name) return tr.name
   const n = tr?.name_i18n
-  return (typeof n === 'string' ? n : n?.uz || n?.ru || n?.en) || tr?.slug || 'Tarif'
+  return (typeof n === 'string' ? n : n?.uz || n?.ru || n?.en) || 'Tarif'
 }
 function formatSom(n) { return (Number(n) || 0).toLocaleString('uz-UZ').replace(/,/g, ' ') }
 function close() { if (!paying.value) emit('update:modelValue', false) }

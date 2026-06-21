@@ -85,7 +85,6 @@
               </span>
               <div style="display:flex;flex-direction:column;gap:2px;">
                 <span style="font-size:14px;font-weight:600;line-height:1.1;">{{ tariffName(t) }}</span>
-                <span class="mono" style="font-size:10.5px;color:var(--muted);">{{ categoryName(t) || t.slug }}</span>
               </div>
             </div>
             <AppBadge :tone="t.is_active ? 'success' : 'muted'" :dot="true">
@@ -188,7 +187,6 @@
                 </span>
                 <div style="display:flex;flex-direction:column;">
                   <span style="font-weight:500;">{{ tariffName(t) }}</span>
-                  <span class="mono" style="font-size:11px;color:var(--muted);">{{ t.slug }}</span>
                 </div>
               </div>
             </td>
@@ -301,7 +299,9 @@ const colHeaders = computed(() => [
 
 function tariffName(t) {
   const lang = localStorage.getItem('lang') || 'uz'
-  return t.name_i18n?.[lang] || t.name_i18n?.uz || t.slug || '—'
+  // Backend i18n interceptor `name_i18n` ni `name` stringga aylantiradi —
+  // shuning uchun avval `t.name`, keyin obyekt, slug fallback emas.
+  return t.name || t.name_i18n?.[lang] || t.name_i18n?.uz || '—'
 }
 function categoryName(t) {
   const c = t.category
