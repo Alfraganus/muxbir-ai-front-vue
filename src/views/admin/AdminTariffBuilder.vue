@@ -28,13 +28,6 @@
               <label :style="labelStyle">{{ tt('adminTariffBuilder.tariffName') }}</label>
               <AppInput v-model="form.name" :placeholder="tt('adminTariffBuilder.tariffNamePlaceholder')"/>
             </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label :style="labelStyle">
-                {{ tt('adminTariffBuilder.slug') }}
-                <span v-if="slugAutoMode" style="margin-left:4px;font-size:9.5px;background:var(--accent-bg);color:var(--accent);border-radius:4px;padding:1px 5px;font-weight:600;vertical-align:middle;">AUTO</span>
-              </label>
-              <AppInput v-model="form.slug" :mono="true" placeholder="tarif_1" @input="slugAutoMode = false"/>
-            </div>
             <div style="display:flex;flex-direction:column;gap:4px;grid-column:1 / -1;">
               <label :style="labelStyle">{{ tt('adminTariffBuilder.category') }}</label>
               <div style="display:flex;gap:8px;align-items:center;">
@@ -101,7 +94,6 @@
           <div style="padding:16px 18px;border-bottom:1px solid var(--border-2);">
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500;">{{ tt('adminTariffBuilder.preview') }}</span>
-              <span class="mono" style="font-size:10.5px;color:var(--muted);">{{ form.slug || '—' }}</span>
             </div>
             <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px;">
               <span style="font-size:19px;font-weight:600;text-transform:capitalize;">{{ form.name || tt('adminTariffBuilder.tariffName') }}</span>
@@ -233,7 +225,6 @@ async function loadTariff() {
   if (!editId.value) return
   try {
     const t = await tariffsApi.getOne(editId.value)
-    slugAutoMode.value = false
     form.value = {
       name: t.name_i18n?.uz || t.slug || '',
       slug: t.slug || '',
@@ -301,10 +292,8 @@ function slugify(s) {
     .replace(/[^a-z0-9\s]+/g, '').replace(/\s+/g, '_').replace(/^_+|_+$/g, '')
 }
 
-const slugAutoMode = ref(true)
-
 watch(() => form.value.name, (val) => {
-  if (slugAutoMode.value) form.value.slug = slugify(val)
+  form.value.slug = slugify(val)
 })
 
 async function addCategory() {
