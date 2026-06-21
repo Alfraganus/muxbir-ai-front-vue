@@ -8,15 +8,20 @@
           <div class="quc-head-cap">{{ tt('quc.currentTariff') }}</div>
           <div v-if="quota.loaded" class="quc-head-name">{{ quota.tariffName || 'Free' }}</div>
           <div v-else class="quc-skel quc-skel-name" />
-          <div v-if="daysLeft !== null" class="quc-head-days" :class="daysColorClass">
-            <AppIcon name="Calendar" :size="10"/>
-            {{ daysLeft <= 0 ? tt('quc.expired') : tt('quc.daysLeft', { n: daysLeft }) }}
-          </div>
         </div>
       </div>
       <button class="quc-change" @click="openSwitch">
         <AppIcon name="ChevronR" :size="13"/>
       </button>
+    </div>
+
+    <!-- Tarif tugashiga qolgan kun (counter) -->
+    <div v-if="daysLeft !== null && daysLeft !== undefined" class="quc-days" :class="daysColorClass">
+      <span class="quc-days-label"><AppIcon name="Calendar" :size="13"/> {{ tt('quc.expiresIn') }}</span>
+      <span class="quc-days-val tabular">
+        <template v-if="daysLeft <= 0">{{ tt('quc.expired') }}</template>
+        <template v-else>{{ daysLeft }} <span class="quc-days-unit">{{ tt('quc.dayUnit') }}</span></template>
+      </span>
     </div>
 
     <!-- Oylik post limiti -->
@@ -88,13 +93,16 @@ const quota = useQuotaStore()
 const buyCreditsOpen = ref(false)
 const switchOpen = ref(false)
 const currentTariffId = ref(null)
+// Obuna muddati (/subscriptions/my dan) — quota store hali yangilanmagan bo'lsa zaxira
+const subDaysLeft = ref(null)
 let timer = null
 
-const daysLeft = computed(() => quota.daysLeft)
+// Avval quota store'dan (yangi backend), bo'lmasa /subscriptions/my dan olamiz
+const daysLeft = computed(() => quota.daysLeft ?? subDaysLeft.value)
 
 const daysColorClass = computed(() => {
   const n = daysLeft.value
-  if (n === null) return ''
+  if (n === null || n === undefined) return ''
   if (n <= 3) return 'quc-days-danger'
   if (n <= 7) return 'quc-days-warn'
   return 'quc-days-ok'
@@ -130,6 +138,7 @@ async function loadTariffId() {
   try {
     const sub = await subscriptionsApi.getMine()
     currentTariffId.value = sub?.tariff_id || null
+    subDaysLeft.value = sub?.days_left ?? null
   } catch { /* obuna yo'q bo'lishi mumkin */ }
 }
 
@@ -165,13 +174,23 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 .quc-head-cap { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .quc-head-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; margin-top: 1px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; text-transform: capitalize; }
-.quc-head-days {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 10px; font-weight: 600; margin-top: 3px;
+/* Tarif tugashiga qolgan kun qatori */
+.quc-days {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 11px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-2); background: var(--panel-2);
 }
-.quc-days-ok    { color: var(--success); }
-.quc-days-warn  { color: var(--warn, #f59e0b); }
-.quc-days-danger { color: var(--danger); }
+.quc-days-label { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.quc-days-label svg { color: var(--muted-2); }
+.quc-days-val { font-size: 15px; font-weight: 800; }
+.quc-days-unit { font-size: 11px; font-weight: 500; color: var(--muted); margin-left: 1px; }
+/* Holatga ko'ra rang (qiymat + chap chegara) */
+.quc-days-ok     { border-color: color-mix(in oklab, var(--success) 30%, var(--border-2)); }
+.quc-days-ok     .quc-days-val { color: var(--success); }
+.quc-days-warn   { border-color: color-mix(in oklab, var(--warn, #f59e0b) 35%, var(--border-2)); background: color-mix(in oklab, var(--warn, #f59e0b) 7%, transparent); }
+.quc-days-warn   .quc-days-val { color: var(--warn, #f59e0b); }
+.quc-days-danger { border-color: color-mix(in oklab, var(--danger) 35%, var(--border-2)); background: color-mix(in oklab, var(--danger) 7%, transparent); }
+.quc-days-danger .quc-days-val { color: var(--danger); }
 .quc-change {
   width: 26px; height: 26px; border-radius: var(--r-xs); flex-shrink: 0;
   border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
