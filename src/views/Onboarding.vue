@@ -1457,7 +1457,7 @@ async function loadReferences() {
       tariffsApi.list().catch(() => []),
     ])
     // Backend tariflari (arxivlanmagan, faol) — kartalar shulardan quriladi.
-    loadedTariffs.value = Array.isArray(tariffs) ? tariffs : []
+    loadedTariffs.value = Array.isArray(tariffs) ? [...tariffs].sort((a, b) => (a.price_monthly ?? 0) - (b.price_monthly ?? 0)) : []
     if (!chosen.value && loadedTariffs.value.length) chosen.value = loadedTariffs.value[0].id
     businessTypes.value = bt
     platformsForStep.value = pl.length ? pl : [

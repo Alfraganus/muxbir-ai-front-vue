@@ -84,7 +84,7 @@ async function load() {
       subscriptionsApi.getMine().catch(() => null),
       tariffsApi.list().catch(() => []),
     ])
-    tariffs.value = Array.isArray(list) ? list : []
+    tariffs.value = Array.isArray(list) ? [...list].sort((a, b) => (a.price_monthly ?? 0) - (b.price_monthly ?? 0)) : []
     // Joriy tarif bo'lsa oldindan tanlanadi, bo'lmasa birinchisi
     selectedTariffId.value = sub?.tariff_id || tariffs.value[0]?.id || null
   } catch (e) {

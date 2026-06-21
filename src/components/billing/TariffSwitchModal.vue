@@ -90,7 +90,7 @@ async function load() {
   error.value = ''
   try {
     const list = await tariffsApi.list()
-    tariffs.value = Array.isArray(list) ? list : []
+    tariffs.value = Array.isArray(list) ? [...list].sort((a, b) => (a.price_monthly ?? 0) - (b.price_monthly ?? 0)) : []
     selectedId.value = props.currentTariffId || tariffs.value[0]?.id || null
   } catch (e) {
     error.value = e?.response?.data?.message || tt('tsm.err.load')
