@@ -56,7 +56,16 @@
     <!-- Card grid -->
     <div v-else-if="view === 'cards'"
       style="display:grid;grid-template-columns:repeat(auto-fill, minmax(290px, 1fr));gap:14px;">
-      <div v-for="(t, i) in filtered" :key="t.id" :style="cardStyle(i)">
+      <template v-for="(t, i) in orderedTariffs" :key="t.id">
+        <!-- Faol/nofaol bo'limlari orasidagi ajratuvchi sarlavha -->
+        <div v-if="i === activeCount && inactiveTariffs.length" class="quc-section-divider"
+          style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;margin-top:8px;">
+          <span style="font-size:12px;font-weight:600;color:var(--danger);text-transform:uppercase;letter-spacing:0.05em;">
+            {{ tt('adminTariffs.inactiveSection', { n: inactiveTariffs.length }) }}
+          </span>
+          <span style="flex:1;height:1px;background:color-mix(in oklab, var(--danger) 25%, var(--border));"/>
+        </div>
+      <div :style="cardStyle(t)">
         <!-- Top: gradient header -->
         <div :style="{
           padding:'16px 18px 14px',
@@ -146,6 +155,7 @@
           </AppButton>
         </div>
       </div>
+      </template>
     </div>
 
     <!-- Table -->
@@ -160,7 +170,17 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(t, i) in filtered" :key="t.id" :style="{borderTop:i===0?'none':'1px solid var(--border-2)'}">
+          <template v-for="(t, i) in orderedTariffs" :key="t.id">
+          <!-- Nofaol bo'lim sarlavhasi -->
+          <tr v-if="i === activeCount && inactiveTariffs.length">
+            <td :colspan="colHeaders.length" style="padding:10px 12px;background:color-mix(in oklab, var(--danger) 6%, transparent);font-size:11px;font-weight:600;color:var(--danger);text-transform:uppercase;letter-spacing:0.05em;border-top:1px solid color-mix(in oklab, var(--danger) 25%, var(--border));">
+              {{ tt('adminTariffs.inactiveSection', { n: inactiveTariffs.length }) }}
+            </td>
+          </tr>
+          <tr :style="{
+            borderTop: i===0 ? 'none' : '1px solid var(--border-2)',
+            background: t.is_active ? 'transparent' : 'color-mix(in oklab, var(--danger) 6%, transparent)',
+          }">
             <td style="padding:12px;vertical-align:middle;">
               <div style="display:flex;align-items:center;gap:10px;">
                 <span :style="{width:'26px',height:'26px',borderRadius:'7px',background:tariffColor(i),color:'white',display:'inline-flex',alignItems:'center',justifyContent:'center'}">
@@ -197,6 +217,7 @@
               </div>
             </td>
           </tr>
+          </template>
         </tbody>
       </table>
     </AppPanel>
@@ -259,6 +280,13 @@ const filtered = computed(() => {
   )
 })
 
+// Faol tariflar yuqorida, nofaollar pastda alohida bo'limda ko'rsatiladi.
+const activeTariffs = computed(() => filtered.value.filter(t => t.is_active))
+const inactiveTariffs = computed(() => filtered.value.filter(t => !t.is_active))
+// Bitta grid/jadvalda ketma-ket chiqarish uchun (faol → nofaol).
+const orderedTariffs = computed(() => [...activeTariffs.value, ...inactiveTariffs.value])
+const activeCount = computed(() => activeTariffs.value.length)
+
 const colHeaders = computed(() => [
   { label: tt('adminTariffs.colTariff') },
   { label: tt('adminTariffs.colCategory') },
@@ -294,16 +322,21 @@ function fmtNum(n) {
   return Number(n).toLocaleString('uz-UZ').replace(/,/g, ' ')
 }
 
-const cardStyle = (i) => ({
-  background: 'var(--panel)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--r-lg, 12px)',
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
-  transition: 'transform .15s ease, box-shadow .15s ease',
-  boxShadow: 'var(--shadow-sm, 0 1px 2px rgba(0,0,0,.04))',
-})
+const cardStyle = (t) => {
+  const inactive = !t.is_active
+  return {
+    // Nofaol tarif — qizil-pushti fon va chegara
+    background: inactive ? 'color-mix(in oklab, var(--danger) 7%, var(--panel))' : 'var(--panel)',
+    border: inactive ? '1px solid color-mix(in oklab, var(--danger) 30%, var(--border))' : '1px solid var(--border)',
+    borderRadius: 'var(--r-lg, 12px)',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    transition: 'transform .15s ease, box-shadow .15s ease',
+    boxShadow: 'var(--shadow-sm, 0 1px 2px rgba(0,0,0,.04))',
+    opacity: inactive ? '0.92' : '1',
+  }
+}
 
 const viewBtnStyle = (id) => ({
   display: 'inline-flex', alignItems: 'center', gap: '6px',
