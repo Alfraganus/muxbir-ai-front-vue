@@ -165,7 +165,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 }
 .quc-head-cap { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .quc-head-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; margin-top: 1px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; text-transform: capitalize; }
 .quc-head-days {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 10px; font-weight: 600; margin-top: 3px;
