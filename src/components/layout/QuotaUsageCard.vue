@@ -8,6 +8,10 @@
           <div class="quc-head-cap">{{ tt('quc.currentTariff') }}</div>
           <div v-if="quota.loaded" class="quc-head-name">{{ quota.tariffName || 'Free' }}</div>
           <div v-else class="quc-skel quc-skel-name" />
+          <div v-if="daysLeft !== null" class="quc-head-days" :class="daysColorClass">
+            <AppIcon name="Calendar" :size="10"/>
+            {{ daysLeft <= 0 ? tt('quc.expired') : tt('quc.daysLeft', { n: daysLeft }) }}
+          </div>
         </div>
       </div>
       <button class="quc-change" @click="openSwitch">
@@ -84,7 +88,17 @@ const quota = useQuotaStore()
 const buyCreditsOpen = ref(false)
 const switchOpen = ref(false)
 const currentTariffId = ref(null)
+const daysLeft = ref(null)
 let timer = null
+
+const daysColorClass = computed(() => {
+  const n = daysLeft.value
+  if (n === null) return ''
+  if (n <= 0) return 'quc-days-danger'
+  if (n <= 3) return 'quc-days-danger'
+  if (n <= 7) return 'quc-days-warn'
+  return 'quc-days-ok'
+})
 
 function openSwitch() { switchOpen.value = true }
 
@@ -116,6 +130,7 @@ async function loadTariffId() {
   try {
     const sub = await subscriptionsApi.getMine()
     currentTariffId.value = sub?.tariff_id || null
+    daysLeft.value = sub?.days_left ?? null
   } catch { /* obuna yo'q bo'lishi mumkin */ }
 }
 
@@ -151,6 +166,13 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 .quc-head-cap { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .quc-head-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; margin-top: 1px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+.quc-head-days {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 600; margin-top: 3px;
+}
+.quc-days-ok    { color: var(--success); }
+.quc-days-warn  { color: var(--warn, #f59e0b); }
+.quc-days-danger { color: var(--danger); }
 .quc-change {
   width: 26px; height: 26px; border-radius: var(--r-xs); flex-shrink: 0;
   border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
