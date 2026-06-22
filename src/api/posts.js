@@ -40,6 +40,12 @@ export const postsApi = {
               { timeout: 120000 })
       .then(r => r.data),
 
+  /** TEST: t.me post URL media'sini (rasm/video) muxbirAI bot orqali test kanalga yuboradi.
+   *  MTProto yuklab olish + Telegram yuborish sekin bo'lishi mumkin → uzun timeout. */
+  testMediaRelay: (companyId, url) =>
+    http.post(`/companies/${companyId}/posts/test-media-relay`, { url }, { timeout: 180000 })
+      .then(r => r.data),
+
   update: (companyId, postId, data) =>
     http.patch(`/companies/${companyId}/posts/${postId}`, data).then(r => r.data),
 

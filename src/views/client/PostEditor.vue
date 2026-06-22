@@ -476,6 +476,25 @@
             </div>
           </section>
 
+          <!-- Video card — manbadan import qilingan video (yoki qo'lda URL) -->
+          <section v-if="form.video_url || post?.video_processing" class="pe-card">
+            <header class="pe-card-head">
+              <span class="pe-card-head-icon"><AppIcon name="Eye" :size="13"/></span>
+              <h3>{{ tt('pe.field.video') }}</h3>
+            </header>
+            <div v-if="post?.video_processing" class="pe-video-loading">
+              <AppIcon name="Sparkle" :size="14"/>
+              {{ tt('pe.video.loadingInline') }}
+            </div>
+            <template v-else-if="form.video_url">
+              <video class="pe-video-player" :src="form.video_url" controls preload="metadata"/>
+              <button type="button" class="pe-gallery-upload-btn" @click="form.video_url = ''">
+                <AppIcon name="Close" :size="13"/>
+                {{ tt('pe.video.remove') }}
+              </button>
+            </template>
+          </section>
+
         </aside>
       </div>
 
@@ -917,6 +936,7 @@ const form = reactive({
   category_id: null,
   publish_at: '',
   cover_image_url: '',
+  video_url: '',
   telegram_channel_id: null,
   telegram_channel_ids: [],
   telegram_raw_long_text: '',
@@ -1324,6 +1344,7 @@ async function loadInitial() {
         form.publish_at = ''
       }
       form.cover_image_url = p.cover_image_url || ''
+      form.video_url = p.video_url || ''
       form.telegram_channel_id = p.telegram_channel_id || null
       form.telegram_channel_ids = (p.telegram_channel_ids && p.telegram_channel_ids.length)
         ? [...p.telegram_channel_ids]
@@ -1444,6 +1465,7 @@ async function saveAll() {
       tags: tagsArr.value,
       cover_image_url: form.cover_image_url || null,
       gallery: galleryArr.value,
+      video_url: form.video_url || null,
       // form.publish_at — workspace offset ichidagi devor-vaqti; UTC ISO'ga shu
       // offset bo'yicha o'giriladi (brauzer mintaqasiga bog'liq emas).
       publish_at: form.publish_at ? wallToUtcISO(form.publish_at, companyOffsetMin.value) : null,
@@ -3349,6 +3371,22 @@ async function aiGenerateTags() {
 }
 
 /* Gallery */
+.pe-video-player {
+  width: 100%;
+  max-height: 320px;
+  border-radius: 9px;
+  background: #000;
+  margin-bottom: 8px;
+  display: block;
+}
+.pe-video-loading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 10px 0;
+}
 .pe-gallery-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
