@@ -311,6 +311,7 @@ const phase = ref('setup') // setup | scanning | results
 
 const TIME_RANGES = computed(() => [
   { id: '15m', label: tt('disc.time.ranges.15m'), hint: tt('disc.time.ranges.15m') },
+  { id: '30m', label: tt('disc.time.ranges.30m'), hint: tt('disc.time.ranges.30m') },
   { id: '1h',  label: tt('disc.time.ranges.1h'),  hint: tt('disc.time.ranges.1h') },
   { id: '3h',  label: tt('disc.time.ranges.3h'),  hint: tt('disc.time.ranges.3h') },
   { id: '6h',  label: tt('disc.time.ranges.6h'),  hint: tt('disc.time.ranges.6h') },

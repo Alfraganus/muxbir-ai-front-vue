@@ -32,6 +32,10 @@ export const channelsApi = {
   recentPosts: (companyId, channelId) =>
     http.get(`/companies/${companyId}/channels/${channelId}/recent-posts`).then(r => r.data),
 
+  /** Real-time dispatcher loglari (so'nggi 100 ta yozuv) */
+  dispatchLogs: (companyId, channelId) =>
+    http.get(`/companies/${companyId}/channels/${channelId}/dispatch-logs`).then(r => r.data),
+
   // ── Kanalga biriktirilgan manbalar (har kanal o'z manbalarini boshqaradi) ──
   /** Kanal manbalari ro'yxati */
   listSources: (companyId, channelId) =>

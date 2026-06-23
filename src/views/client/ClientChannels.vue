@@ -166,6 +166,10 @@
                 <template #icon><AppIcon name="Layers" :size="14"/></template>
                 {{ tt('cc.foot.sources') }}
               </AppButton>
+              <AppButton variant="secondary" size="md" @click="openDispatchLogs(c)" :title="tt('cc.foot.logsTitle')">
+                <template #icon><AppIcon name="Terminal" :size="14"/></template>
+                {{ tt('cc.foot.logs') }}
+              </AppButton>
               <AppButton variant="primary" size="md" @click="openAutoSettings(c)">
                 <template #icon><AppIcon name="Settings" :size="14"/></template>
                 {{ tt('cc.foot.settings') }}
@@ -1094,7 +1098,7 @@
                           ♾️ <span v-html="tt('cc.adv.unlimitedHint')"></span>
                         </template>
                         <template v-else>
-                          <span v-html="tt('cc.adv.rangeHint', { range: {'3h':tt('cc.dur.3h'),'6h':tt('cc.dur.6h'),'12h':tt('cc.dur.12h'),'24h':tt('cc.dur.24h')}[autoFilters.time_range] || autoFilters.time_range })"></span>
+                          <span v-html="tt('cc.adv.rangeHint', { range: {'15m':tt('cc.dur.15m'),'30m':tt('cc.dur.30m'),'1h':tt('cc.dur.1h'),'3h':tt('cc.dur.3h'),'6h':tt('cc.dur.6h'),'12h':tt('cc.dur.12h'),'24h':tt('cc.dur.24h')}[autoFilters.time_range] || autoFilters.time_range })"></span>
                         </template>
                       </div>
                     </div>
@@ -1418,6 +1422,36 @@
       </Transition>
     </Teleport>
 
+    <!-- ─── Dispatch log modal ─── -->
+    <Teleport to="body">
+      <Transition name="cc-modal">
+        <div v-if="logModalOpen" class="cc-modal-backdrop" @click.self="closeLogModal">
+          <div class="cc-log-modal" role="dialog" aria-modal="true">
+            <div class="cc-log-modal-head">
+              <span class="cc-log-modal-title">
+                <AppIcon name="Terminal" :size="16" style="margin-right:6px;vertical-align:middle"/>
+                {{ tt('cc.log.title') }}
+                <span v-if="logChannel" style="font-weight:400;opacity:.7;margin-left:6px">
+                  — {{ logChannel.display_name || logChannel.username }}
+                </span>
+              </span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span v-if="logLastUpdated" style="font-size:11px;opacity:.5">{{ logLastUpdated }}</span>
+                <button class="cc-modal-close" @click="closeLogModal" style="position:static;font-size:18px;line-height:1">×</button>
+              </div>
+            </div>
+            <div class="cc-log-list" ref="logListEl">
+              <div v-if="!logEntries.length" class="cc-log-empty">{{ tt('cc.log.empty') }}</div>
+              <div v-for="(e, i) in logEntries" :key="i" class="cc-log-entry" :class="'cc-log-' + e.level">
+                <span class="cc-log-time">{{ fmtLogTime(e.ts) }}</span>
+                <span class="cc-log-msg">{{ e.msg }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- ─── Kanal imzosi modal ─── -->
     <SignatureModal
       v-model="sigModalOpen"
@@ -1485,7 +1519,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -1556,6 +1590,9 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
   label: String(h).padStart(2, '0') + ':00',
 }))
 const TIME_RANGE_OPTIONS = computed(() => [
+  { value: '15m', label: tt('cc.dur.15m') },
+  { value: '30m', label: tt('cc.dur.30m') },
+  { value: '1h',  label: tt('cc.dur.1h') },
   { value: '3h',  label: tt('cc.dur.3h') },
   { value: '6h',  label: tt('cc.dur.6h') },
   { value: '12h', label: tt('cc.dur.12h') },
@@ -2065,6 +2102,46 @@ async function togglePostingMode(c) {
     const updated = await channelsApi.setPostingMode(company.value.id, c.id, next)
     replaceChannel(updated)
   } catch {}
+}
+
+// ── Dispatch log modal ─────────────────────────────────────
+const logModalOpen = ref(false)
+const logChannel = ref(null)
+const logEntries = ref([])
+const logListEl = ref(null)
+const logLastUpdated = ref('')
+let logPollTimer = null
+
+function fmtLogTime(ts) {
+  const d = new Date(ts)
+  return d.toTimeString().slice(0, 8)
+}
+
+async function fetchLogs() {
+  if (!logChannel.value || !company.value) return
+  try {
+    const data = await channelsApi.dispatchLogs(company.value.id, logChannel.value.id)
+    logEntries.value = data.logs || []
+    const now = new Date()
+    logLastUpdated.value = now.toTimeString().slice(0, 8)
+    await nextTick()
+    if (logListEl.value) logListEl.value.scrollTop = logListEl.value.scrollHeight
+  } catch {}
+}
+
+function openDispatchLogs(channel) {
+  logChannel.value = channel
+  logEntries.value = []
+  logLastUpdated.value = ''
+  logModalOpen.value = true
+  fetchLogs()
+  logPollTimer = setInterval(fetchLogs, 2000)
+}
+
+function closeLogModal() {
+  logModalOpen.value = false
+  logChannel.value = null
+  if (logPollTimer) { clearInterval(logPollTimer); logPollTimer = null }
 }
 
 // ── Kanal manbalari (sources) modal ───────────────────────
@@ -2635,6 +2712,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKey)
   stopAddPolling()
   stopReactivatePolling()
+  if (logPollTimer) clearInterval(logPollTimer)
 })
 </script>
 
@@ -2830,6 +2908,73 @@ onBeforeUnmount(() => {
   border-radius: 18px;
   box-shadow: 0 40px 100px -20px rgba(15,23,42,0.45),
               0 0 0 1px rgba(255,255,255,0.5) inset;
+}
+
+/* ─── Dispatch log modal ─── */
+.cc-log-modal {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  height: min(560px, calc(100vh - 64px));
+  background: #0d1117;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cc-log-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.cc-log-modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+}
+.cc-log-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.cc-log-empty {
+  color: rgba(255,255,255,0.3);
+  padding: 24px 16px;
+  text-align: center;
+  font-family: inherit;
+}
+.cc-log-entry {
+  display: flex;
+  gap: 10px;
+  padding: 2px 14px;
+  border-radius: 4px;
+}
+.cc-log-entry:hover { background: rgba(255,255,255,0.04); }
+.cc-log-time {
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+  font-size: 11px;
+  margin-top: 2px;
+}
+.cc-log-msg { color: #cbd5e1; word-break: break-word; }
+.cc-log-info  .cc-log-msg { color: #94a3b8; }
+.cc-log-success .cc-log-msg { color: #4ade80; }
+.cc-log-warn  .cc-log-msg { color: #fbbf24; }
+.cc-log-error .cc-log-msg { color: #f87171; }
+@media (max-width: 640px) {
+  .cc-log-modal { max-width: 100%; height: calc(100vh - 48px); border-radius: 10px; }
 }
 .cc-modal-close {
   position: absolute;
