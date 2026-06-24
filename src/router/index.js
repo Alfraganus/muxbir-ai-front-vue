@@ -30,6 +30,8 @@ import Onboarding from '@/views/Onboarding.vue'
 import SignIn from '@/views/SignIn.vue'
 import MagicAuth from '@/views/MagicAuth.vue'
 import MetaDataDeletion from '@/views/public/MetaDataDeletion.vue'
+import Privacy from '@/views/public/Privacy.vue'
+import Terms from '@/views/public/Terms.vue'
 import SupportConsole from '@/views/SupportConsole.vue'
 import axios from 'axios'
 import { API_BASE } from '@/api/base.js'
@@ -41,6 +43,8 @@ const routes = [
   { path: '/signin',           component: SignIn },
   { path: '/auth/magic',       component: MagicAuth },
   { path: '/meta/delete',      component: MetaDataDeletion },
+  { path: '/privacy',          component: Privacy },
+  { path: '/terms',            component: Terms },
   { path: '/admin/overview',   component: AdminOverview },
   { path: '/admin/companies',  component: AdminCompanies },
   { path: '/admin/tariffs',    component: AdminTariffs },
@@ -73,7 +77,7 @@ const routes = [
   { path: '/support',          component: SupportConsole },
 ]
 
-const PUBLIC_PATHS = ['/signin', '/signup', '/auth/magic', '/meta/delete']
+const PUBLIC_PATHS = ['/signin', '/signup', '/auth/magic', '/meta/delete', '/privacy', '/terms']
 
 const router = createRouter({
   history: createWebHashHistory(),
