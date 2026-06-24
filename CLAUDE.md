@@ -7,6 +7,8 @@ Vue 3 (`<script setup>`) + Vite. Bundan keyin **barcha kod SOLID prinsiplariga a
 > 📱 **MAJBURIY:** Har bir yangi yoki o'zgargan ekran/sahifa/komponent **responsive** bo'lib yozilsin — desktop, **planshet (tablet)** va **mobil (telefon)** da to'g'ri ko'rinsin. Bu i18n bilan bir qatorda doimiy talab: sahifa yozilganda mobil ko'rinishi ham birga o'ylanadi, keyinroq emas. To'liq qoida pastda — *Responsivlik (mobile/tablet)* bo'limiga qara.
 
 > **Backend path:** lokal — `D:\personal projects\backend-ai-muxbir`, server — `/var/www/backend-ai-muxbir/`. Backend kerak bo'lganda shu yo'llardan foydalan, har safar foydalanuvchidan so'rama.
+>
+> ⚠️ **MAJBURIY:** Backendga tegishingdan oldin (fayl o'qish, API mantiqi tekshirish, o'zgartirish va h.k.) **avval `D:\personal projects\backend-ai-muxbir\CLAUDE.md`** ni `Read` bilan o'qi — u avtomatik yuklanmaydi (front ishchi papkasidan tashqarida). Backend ichida tegishli papkada qo'shimcha documentation md fayllari bo'lsa (papka ichidagi `CLAUDE.md`, `README` va h.k.), ish boshlashdan oldin ularni ham ko'r.
 
 ---
 
