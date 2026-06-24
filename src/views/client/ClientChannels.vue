@@ -88,26 +88,47 @@
 
           <!-- Meta strip -->
           <div class="ccx-meta">
-            <div class="ccx-meta-item">
-              <AppIcon name="Shield" :size="11"/>
-              <span class="ccx-meta-lbl">{{ tt('cc.col.botStatus') }}</span>
-              <span class="ccx-meta-val" :style="{ color: isActive(c) ? 'var(--success)' : 'var(--warn)' }">{{ botStatusLabel(c.bot_status) }}</span>
-            </div>
-            <div class="ccx-meta-item">
-              <AppIcon name="Layers" :size="11"/>
-              <span class="ccx-meta-lbl">{{ tt('cc.col.type') }}</span>
-              <span class="ccx-meta-val">{{ chatTypeLabel(c.chat_type) }}</span>
-            </div>
-            <div class="ccx-meta-item">
-              <AppIcon name="Calendar" :size="11"/>
-              <span class="ccx-meta-lbl">{{ tt('cc.col.connectedAt') }}</span>
-              <span class="ccx-meta-val" :title="connectedDateFull(c)">{{ connectedDate(c) }}</span>
-            </div>
-            <div class="ccx-meta-item">
-              <AppIcon name="Database" :size="11"/>
-              <span class="ccx-meta-lbl">ID</span>
-              <span class="ccx-meta-val mono">{{ c.telegram_chat_id || '—' }}</span>
-            </div>
+            <template v-if="platformSlug(c) === 'facebook' || platformSlug(c) === 'instagram'">
+              <div class="ccx-meta-item">
+                <AppIcon name="Shield" :size="11"/>
+                <span class="ccx-meta-lbl">{{ tt('cc.col.status') }}</span>
+                <span class="ccx-meta-val" :style="{ color: isActive(c) ? 'var(--success)' : 'var(--warn)' }">
+                  {{ isActive(c) ? tt('cc.status.active') : tt('cc.status.inactive') }}
+                </span>
+              </div>
+              <div class="ccx-meta-item">
+                <AppIcon name="Calendar" :size="11"/>
+                <span class="ccx-meta-lbl">{{ tt('cc.col.connectedAt') }}</span>
+                <span class="ccx-meta-val" :title="connectedDateFull(c)">{{ connectedDate(c) }}</span>
+              </div>
+              <div class="ccx-meta-item">
+                <AppIcon name="Database" :size="11"/>
+                <span class="ccx-meta-lbl">ID</span>
+                <span class="ccx-meta-val mono">{{ c.fb_page_id || c.ig_user_id || '—' }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="ccx-meta-item">
+                <AppIcon name="Shield" :size="11"/>
+                <span class="ccx-meta-lbl">{{ tt('cc.col.botStatus') }}</span>
+                <span class="ccx-meta-val" :style="{ color: isActive(c) ? 'var(--success)' : 'var(--warn)' }">{{ botStatusLabel(c.bot_status) }}</span>
+              </div>
+              <div class="ccx-meta-item">
+                <AppIcon name="Layers" :size="11"/>
+                <span class="ccx-meta-lbl">{{ tt('cc.col.type') }}</span>
+                <span class="ccx-meta-val">{{ chatTypeLabel(c.chat_type) }}</span>
+              </div>
+              <div class="ccx-meta-item">
+                <AppIcon name="Calendar" :size="11"/>
+                <span class="ccx-meta-lbl">{{ tt('cc.col.connectedAt') }}</span>
+                <span class="ccx-meta-val" :title="connectedDateFull(c)">{{ connectedDate(c) }}</span>
+              </div>
+              <div class="ccx-meta-item">
+                <AppIcon name="Database" :size="11"/>
+                <span class="ccx-meta-lbl">ID</span>
+                <span class="ccx-meta-val mono">{{ c.telegram_chat_id || '—' }}</span>
+              </div>
+            </template>
           </div>
 
           <!-- Stats -->
@@ -1427,6 +1448,7 @@
       <Transition name="cc-modal">
         <div v-if="logModalOpen" class="cc-modal-backdrop" @click.self="closeLogModal">
           <div class="cc-log-modal" role="dialog" aria-modal="true">
+            <!-- Head -->
             <div class="cc-log-modal-head">
               <span class="cc-log-modal-title">
                 <AppIcon name="Terminal" :size="16" style="margin-right:6px;vertical-align:middle"/>
@@ -1436,14 +1458,54 @@
                 </span>
               </span>
               <div style="display:flex;gap:8px;align-items:center">
-                <span v-if="logLastUpdated" style="font-size:11px;opacity:.5">{{ logLastUpdated }}</span>
-                <button class="cc-modal-close" @click="closeLogModal" style="position:static;font-size:18px;line-height:1">×</button>
+                <span class="cc-log-live-badge">
+                  <span class="cc-log-live-dot"/>
+                  {{ tt('cc.log.live') }}
+                </span>
+                <button class="cc-log-close-btn" @click="closeLogModal">×</button>
               </div>
             </div>
+
+            <!-- Stats bar -->
+            <div class="cc-log-stats">
+              <span class="cc-log-stat-item success">
+                <span class="cc-log-stat-dot"/>
+                {{ tt('cc.log.stats.accepted') }}: <b>{{ logStats.success }}</b>
+              </span>
+              <span class="cc-log-stat-item warn">
+                <span class="cc-log-stat-dot"/>
+                {{ tt('cc.log.stats.skipped') }}: <b>{{ logStats.warn }}</b>
+              </span>
+              <span class="cc-log-stat-item error">
+                <span class="cc-log-stat-dot"/>
+                {{ tt('cc.log.stats.errors') }}: <b>{{ logStats.error }}</b>
+              </span>
+              <span class="cc-log-stat-item info">
+                {{ tt('cc.log.db24h') }}
+              </span>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="cc-log-filters">
+              <button v-for="f in logFilterOptions" :key="f.value"
+                class="cc-log-filter-btn"
+                :class="{ active: logLevelFilter === f.value }"
+                @click="logLevelFilter = f.value">
+                {{ f.label }}
+                <span v-if="f.value !== 'all'" class="cc-log-filter-count">{{ logStats[f.value] || 0 }}</span>
+              </button>
+            </div>
+
+            <!-- Log list -->
             <div class="cc-log-list" ref="logListEl">
-              <div v-if="!logEntries.length" class="cc-log-empty">{{ tt('cc.log.empty') }}</div>
-              <div v-for="(e, i) in logEntries" :key="i" class="cc-log-entry" :class="'cc-log-' + e.level">
-                <span class="cc-log-time">{{ fmtLogTime(e.ts) }}</span>
+              <div v-if="!filteredLogEntries.length && !logEntries.length" class="cc-log-empty">
+                {{ tt('cc.log.empty') }}
+              </div>
+              <div v-else-if="!filteredLogEntries.length" class="cc-log-empty">
+                {{ tt('cc.log.noMore') }}
+              </div>
+              <div v-for="e in filteredLogEntries" :key="e.id || e.ts" class="cc-log-entry" :class="'cc-log-' + e.level">
+                <span class="cc-log-time">{{ fmtLogDateTime(e.ts) }}</span>
                 <span class="cc-log-msg">{{ e.msg }}</span>
               </div>
             </div>
@@ -1792,6 +1854,10 @@ function anyApplyBaseInGroup(g) {
 
 // ── Status helperlari ─────────────────────────────────────────────
 function isActive(c) {
+  const slug = platformSlug(c)
+  if (slug === 'facebook' || slug === 'instagram') {
+    return c.status === 'connected'
+  }
   return c.status === 'connected' && (c.bot_status === 'administrator' || c.bot_status === 'creator')
 }
 function statusLabel(c) { return isActive(c) ? tt('cc.status.active') : tt('cc.status.inactive') }
@@ -1801,7 +1867,9 @@ function displayName(c) {
 }
 
 function identifier(c) {
-  // Telegram — @username. Boshqa platforma — URL yoki handle.
+  const slug = platformSlug(c)
+  if (slug === 'facebook') return c.fb_page_id || '—'
+  if (slug === 'instagram') return c.ig_user_id ? `@${c.display_name || c.ig_user_id}` : '—'
   return c.username || c.telegram_chat_id || '—'
 }
 
@@ -2109,33 +2177,63 @@ const logModalOpen = ref(false)
 const logChannel = ref(null)
 const logEntries = ref([])
 const logListEl = ref(null)
-const logLastUpdated = ref('')
+const logLevelFilter = ref('all')
 let logPollTimer = null
+let logLastTs = 0  // ms timestamp of last fetched log (for incremental fetch)
 
-function fmtLogTime(ts) {
+const logFilterOptions = computed(() => [
+  { value: 'all',     label: tt('cc.log.filterAll') },
+  { value: 'success', label: tt('cc.log.filterSuccess') },
+  { value: 'warn',    label: tt('cc.log.filterWarn') },
+  { value: 'error',   label: tt('cc.log.filterError') },
+  { value: 'info',    label: tt('cc.log.filterInfo') },
+])
+
+const logStats = computed(() => {
+  const s = { info: 0, success: 0, warn: 0, error: 0 }
+  for (const e of logEntries.value) s[e.level] = (s[e.level] || 0) + 1
+  return s
+})
+
+const filteredLogEntries = computed(() => {
+  if (logLevelFilter.value === 'all') return logEntries.value
+  return logEntries.value.filter(e => e.level === logLevelFilter.value)
+})
+
+function fmtLogDateTime(ts) {
   const d = new Date(ts)
-  return d.toTimeString().slice(0, 8)
+  const date = d.toLocaleDateString('ru', { day: '2-digit', month: '2-digit' })
+  const time = d.toTimeString().slice(0, 8)
+  return `${date} ${time}`
 }
 
 async function fetchLogs() {
   if (!logChannel.value || !company.value) return
   try {
-    const data = await channelsApi.dispatchLogs(company.value.id, logChannel.value.id)
-    logEntries.value = data.logs || []
-    const now = new Date()
-    logLastUpdated.value = now.toTimeString().slice(0, 8)
-    await nextTick()
-    if (logListEl.value) logListEl.value.scrollTop = logListEl.value.scrollHeight
+    const since = logLastTs > 0 ? logLastTs : undefined
+    const data = await channelsApi.dispatchLogs(company.value.id, logChannel.value.id, since)
+    const newLogs = data.logs || []
+    if (newLogs.length) {
+      logEntries.value = since ? [...logEntries.value, ...newLogs] : newLogs
+      logLastTs = newLogs[newLogs.length - 1].ts
+      await nextTick()
+      // auto-scroll only if user is near bottom
+      const el = logListEl.value
+      if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+        el.scrollTop = el.scrollHeight
+      }
+    }
   } catch {}
 }
 
 function openDispatchLogs(channel) {
   logChannel.value = channel
   logEntries.value = []
-  logLastUpdated.value = ''
+  logLevelFilter.value = 'all'
+  logLastTs = 0
   logModalOpen.value = true
   fetchLogs()
-  logPollTimer = setInterval(fetchLogs, 2000)
+  logPollTimer = setInterval(fetchLogs, 3000)
 }
 
 function closeLogModal() {
@@ -2914,12 +3012,12 @@ onBeforeUnmount(() => {
 .cc-log-modal {
   position: relative;
   width: 100%;
-  max-width: 680px;
-  height: min(560px, calc(100vh - 64px));
+  max-width: 720px;
+  height: min(620px, calc(100vh - 48px));
   background: #0d1117;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
-  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.7);
+  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2939,42 +3037,142 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
 }
+.cc-log-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.cc-log-live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: cc-log-pulse 1.5s infinite;
+}
+@keyframes cc-log-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.cc-log-close-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
+  font-size: 18px;
+  line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+}
+.cc-log-close-btn:hover { background: rgba(255,255,255,0.18); }
+.cc-log-stats {
+  display: flex;
+  gap: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cc-log-stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.4);
+}
+.cc-log-stat-item b { font-weight: 600; }
+.cc-log-stat-item.success .cc-log-stat-dot { background: #4ade80; }
+.cc-log-stat-item.success b { color: #4ade80; }
+.cc-log-stat-item.warn .cc-log-stat-dot { background: #fbbf24; }
+.cc-log-stat-item.warn b { color: #fbbf24; }
+.cc-log-stat-item.error .cc-log-stat-dot { background: #f87171; }
+.cc-log-stat-item.error b { color: #f87171; }
+.cc-log-stat-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cc-log-filters {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.cc-log-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all .15s;
+}
+.cc-log-filter-btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+.cc-log-filter-btn.active { background: rgba(255,255,255,0.15); color: #e2e8f0; border-color: rgba(255,255,255,0.25); }
+.cc-log-filter-count {
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 0 5px;
+  font-size: 10px;
+  min-width: 16px;
+  text-align: center;
+}
 .cc-log-list {
   flex: 1;
   overflow-y: auto;
-  padding: 10px 4px;
+  padding: 8px 0;
   font-family: 'Courier New', monospace;
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1.6;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.15) transparent;
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
 }
 .cc-log-empty {
-  color: rgba(255,255,255,0.3);
-  padding: 24px 16px;
+  color: rgba(255,255,255,0.25);
+  padding: 32px 16px;
   text-align: center;
   font-family: inherit;
+  font-size: 12px;
 }
 .cc-log-entry {
   display: flex;
-  gap: 10px;
-  padding: 2px 14px;
+  gap: 12px;
+  padding: 2px 16px;
   border-radius: 4px;
+  align-items: baseline;
 }
-.cc-log-entry:hover { background: rgba(255,255,255,0.04); }
+.cc-log-entry:hover { background: rgba(255,255,255,0.03); }
 .cc-log-time {
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.25);
   flex-shrink: 0;
-  font-size: 11px;
-  margin-top: 2px;
+  font-size: 10.5px;
+  white-space: nowrap;
+  min-width: 120px;
 }
-.cc-log-msg { color: #cbd5e1; word-break: break-word; }
-.cc-log-info  .cc-log-msg { color: #94a3b8; }
+.cc-log-msg { color: #cbd5e1; word-break: break-word; flex: 1; }
+.cc-log-info  .cc-log-msg { color: #8fa3bb; }
 .cc-log-success .cc-log-msg { color: #4ade80; }
+.cc-log-success .cc-log-time { color: rgba(74,222,128,0.35); }
 .cc-log-warn  .cc-log-msg { color: #fbbf24; }
+.cc-log-warn  .cc-log-time { color: rgba(251,191,36,0.35); }
 .cc-log-error .cc-log-msg { color: #f87171; }
+.cc-log-error .cc-log-time { color: rgba(248,113,113,0.35); }
 @media (max-width: 640px) {
-  .cc-log-modal { max-width: 100%; height: calc(100vh - 48px); border-radius: 10px; }
+  .cc-log-modal { max-width: 100%; height: calc(100vh - 32px); border-radius: 10px; }
+  .cc-log-time { min-width: 90px; font-size: 9.5px; }
 }
 .cc-modal-close {
   position: absolute;
