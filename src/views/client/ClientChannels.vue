@@ -2196,8 +2196,13 @@ const logStats = computed(() => {
 })
 
 const filteredLogEntries = computed(() => {
-  if (logLevelFilter.value === 'all') return logEntries.value
-  return logEntries.value.filter(e => e.level === logLevelFilter.value)
+  const list = logLevelFilter.value === 'all'
+    ? logEntries.value
+    : logEntries.value.filter(e => e.level === logLevelFilter.value)
+  // Eng yangi log ENG TEPADA ko'rinsin — foydalanuvchi oxiriga scroll
+  // qilmasin. Ichki saqlash xronologik (eski→yangi) qoladi; faqat ko'rsatishda
+  // teskari qilamiz (since/incremental fetch va logLastTs mantig'i o'zgarmaydi).
+  return [...list].reverse()
 })
 
 function fmtLogDateTime(ts) {
@@ -2217,10 +2222,12 @@ async function fetchLogs() {
       logEntries.value = since ? [...logEntries.value, ...newLogs] : newLogs
       logLastTs = newLogs[newLogs.length - 1].ts
       await nextTick()
-      // auto-scroll only if user is near bottom
+      // Yangi loglar ENG TEPADA qo'shiladi — foydalanuvchi tepada turgan bo'lsa
+      // (eng yangisini kuzatayotgan bo'lsa) tepaga qaytaramiz. Pastroqqa
+      // (eski loglarni) o'qiyotgan bo'lsa joyini buzmaymiz.
       const el = logListEl.value
-      if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
-        el.scrollTop = el.scrollHeight
+      if (el && el.scrollTop < 80) {
+        el.scrollTop = 0
       }
     }
   } catch {}
@@ -2428,9 +2435,14 @@ async function saveAutoSettings() {
     // posting_mode ENG OXIRIDA yoqiladi — sozlamalar (jumladan tasdiqlash
     // rejimi) saqlanib bo'lgach kanal dispatcher'ga ko'rinadi. Aks holda
     // collect tick eski sozlamalar bilan post yig'ib yuborishi mumkin edi.
-    if (autoModalSwitching.value) {
-      updated = await channelsApi.setPostingMode(company.value.id, updated.id, 'auto')
-    }
+    // HAR doim 'auto'ga sinxronlaymiz — bu modal aynan auto-post uchun. Avval
+    // `autoModalSwitching` bayrog'iga bog'liq edi, lekin u frontdagi (ehtimol
+    // eskirgan) `channel.posting_mode`'dan hisoblanardi: agar u 'auto' (yoki
+    // bo'sh→default 'auto') bo'lsa, switch chaqirilmay DB 'manual' qolardi va
+    // dispatcher kanalni ko'rmasdi. Backend setPostingMode faqat haqiqiy
+    // manual→auto o'tishda cleanupStaleQueue chaqiradi, shuning uchun har
+    // saqlashda chaqirish xavfsiz (auto kanal uchun no-op).
+    updated = await channelsApi.setPostingMode(company.value.id, updated.id, 'auto')
 
     replaceChannel(updated)
     closeAutoModal()
