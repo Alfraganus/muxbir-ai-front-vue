@@ -115,8 +115,10 @@ function enforceSubscription() {
 
 async function refreshSubscriptionGate() {
   if (store.workspace !== 'client') return
+  // Kompaniya hali yuklanmagan bo'lishi mumkin (login/route race) — backend'dan urinib ko'ramiz.
+  // Faqat backend'da ham KOMPANIYA YO'Q bo'lsa onboarding tugallanmagan deb /signup ga yuboramiz.
+  if (!store.companyId) await loadCompanyForClient()
   if (!store.companyId) {
-    // Kompaniya yo'q = onboarding tugallanmagan; client sahifalardan /signup ga qaytaramiz
     if (route.path.startsWith('/client/')) router.replace('/signup')
     return
   }
