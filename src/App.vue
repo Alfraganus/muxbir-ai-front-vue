@@ -48,6 +48,26 @@
 
     <!-- Sayt jonli-chat (customer support) — operator console'да ko'rsatilmaydi -->
     <LiveChatWidget v-if="route.path !== '/support'"/>
+
+    <!-- Pending trial: ilovaning istalgan sahifasida modal ko'rsatiladi -->
+    <Teleport to="body">
+      <Transition name="pt-fade">
+        <div v-if="isPendingTrial" class="pt-overlay">
+          <div class="pt-box">
+            <div class="pt-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h2 class="pt-title">{{ tt('app.pendingTrialTitle') }}</h2>
+            <p class="pt-body">{{ tt('app.pendingTrialBody') }}</p>
+            <div class="pt-note">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+              <span>{{ tt('app.pendingTrialNote') }}</span>
+            </div>
+            <button class="pt-logout" @click="handleLogout">{{ tt('app.pendingTrialLogout') }}</button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -70,6 +90,7 @@ const authStore = useAuthStore()
 const quota = useQuotaStore()
 const route = useRoute()
 const router = useRouter()
+const tt = (key, params) => store.t(key, params)
 
 /**
  * Obuna faol bo'lmasa (to'lov muvaffaqiyatsiz) — client foydalanuvchini
@@ -152,6 +173,21 @@ const langLabel = computed(() => {
   const map = { uz: "O'zbek tiliga o'tilmoqda…", ru: 'Переключаем на русский…', en: 'Switching to English…' }
   return map[store.lang] || ''
 })
+
+// Pending trial: status='trial', trial_ends_at=null (admin hali tasdiqlamagan)
+// isFullScreen sahifalarida (ClientActivate, Onboarding) ko'rsatilmaydi — ular o'z UI'ga ega
+const isPendingTrial = computed(() =>
+  store.workspace === 'client' &&
+  quota.subscriptionStatus === 'trial' &&
+  quota.daysLeft === null &&
+  quota.loaded &&
+  !isFullScreen.value
+)
+
+async function handleLogout() {
+  try { await authStore.logout() } catch {}
+  router.push('/signin')
+}
 </script>
 
 <style>
@@ -245,5 +281,52 @@ const langLabel = computed(() => {
 .lang-veil-enter-to,
 .lang-veil-leave-from {
   opacity: 1;
+}
+
+/* ──── Pending trial global modal ────────────────────────── */
+.pt-overlay {
+  position: fixed; inset: 0; z-index: 8000;
+  background: rgba(10, 15, 30, 0.65);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.pt-box {
+  width: 100%; max-width: 400px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 32px 28px 26px;
+  box-shadow: 0 30px 90px -20px rgba(15,23,42,.5);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  animation: ptPop .3s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes ptPop {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pt-icon {
+  width: 64px; height: 64px; border-radius: 18px; margin-bottom: 20px;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in oklab, #f59e0b 12%, transparent);
+  color: #f59e0b;
+}
+.pt-title { font-size: 19px; font-weight: 800; color: var(--text); margin: 0 0 10px; }
+.pt-body  { font-size: 13.5px; color: var(--muted); line-height: 1.65; margin: 0 0 18px; }
+.pt-note {
+  width: 100%; box-sizing: border-box;
+  display: flex; align-items: flex-start; gap: 10px; text-align: left;
+  padding: 12px 14px; border-radius: 10px; margin-bottom: 22px;
+  background: color-mix(in oklab, #f59e0b 8%, transparent);
+  border: 1px solid color-mix(in oklab, #f59e0b 28%, transparent);
+  font-size: 12.5px; color: color-mix(in oklab, #f59e0b 85%, var(--text)); line-height: 1.55;
+}
+.pt-logout {
+  background: none; border: none; color: var(--muted);
+  font-size: 13px; cursor: pointer; text-decoration: underline; padding: 0;
+}
+.pt-logout:hover { color: var(--text); }
+.pt-fade-enter-active, .pt-fade-leave-active { transition: opacity .22s ease; }
+.pt-fade-enter-from, .pt-fade-leave-to { opacity: 0; }
+
+@media (max-width: 480px) {
+  .pt-box { padding: 24px 18px 20px; }
 }
 </style>
