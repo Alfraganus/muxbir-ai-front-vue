@@ -131,6 +131,12 @@
             </template>
           </div>
 
+          <!-- Meta (FB/IG): read_insights statistikasi; aks holda Telegram stats -->
+          <ChannelInsights
+            v-if="(platformSlug(c) === 'facebook' || platformSlug(c) === 'instagram') && company"
+            :company-id="company.id" :channel="c" style="margin:2px 0 4px;"/>
+
+          <template v-else>
           <!-- Stats -->
           <div class="ccx-stats">
             <div class="ccx-stat">
@@ -165,6 +171,7 @@
             </div>
             <Sparkline :data="activitySeries(c)" :width="300" :height="filteredList.length === 1 ? 60 : 36"/>
           </div>
+          </template>
 
           <!-- Footer -->
           <div class="ccx-foot">
@@ -1592,6 +1599,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import SignatureModal from '@/components/channels/SignatureModal.vue'
 import ChannelSourcesModal from '@/components/channels/ChannelSourcesModal.vue'
 import ChannelActionsMenu from '@/components/channels/ChannelActionsMenu.vue'
+import ChannelInsights from '@/components/channels/ChannelInsights.vue'
 import Sparkline from '@/components/ui/Sparkline.vue'
 import { companiesApi } from '@/api/companies.js'
 import { channelsApi } from '@/api/channels.js'
@@ -1981,6 +1989,10 @@ function fmtCompact(n) {
 }
 function modeOf(c) { return c.posting_mode || 'auto' }
 function avatarBg(c) {
+  // Brend ranglari — Facebook ko'k, Instagram gradient (logosi aniq ko'rinsin)
+  const slug = platformSlug(c)
+  if (slug === 'facebook') return '#1877F2'
+  if (slug === 'instagram') return 'linear-gradient(45deg, #FEDA75, #FA7E1E, #D62976, #962FBF, #4F5BD5)'
   const name = displayName(c)
   const hue = [...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 360
   return `linear-gradient(135deg, oklch(0.68 0.15 ${hue}), oklch(0.55 0.16 ${(hue + 40) % 360}))`

@@ -32,6 +32,10 @@ export const channelsApi = {
   recentPosts: (companyId, channelId) =>
     http.get(`/companies/${companyId}/channels/${channelId}/recent-posts`).then(r => r.data),
 
+  /** Facebook/Instagram kanal statistikasi (read_insights, 28 kun) */
+  insights: (companyId, channelId) =>
+    http.get(`/companies/${companyId}/channels/${channelId}/insights`).then(r => r.data),
+
   /** Dispatcher loglari DB'dan (so'nggi 24 soat). since — ms timestamp, faqat undan keyingi loglar */
   dispatchLogs: (companyId, channelId, since) =>
     http.get(`/companies/${companyId}/channels/${channelId}/dispatch-logs`, {
