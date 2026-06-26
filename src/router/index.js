@@ -102,7 +102,7 @@ async function tryRefresh() {
   return refreshInFlight
 }
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
   // Operator console (Mini App) — mustaqil, o'z login'i bor (asosiy auth'dan tashqari).
   if (to.path === '/support') return undefined
 
@@ -123,8 +123,18 @@ router.beforeEach(async (to) => {
     return isPublic ? undefined : '/signin'
   }
 
-  // Tizimga kirgan foydalanuvchi public sahifalarda turmasin
+  // Tizimga kirgan foydalanuvchi public sahifalarda turmasin —
+  // ISTISNO: kompaniyasiz company_role user /client/ dan /signup ga redirect bo'lganida
+  // onboardingni davom ettirishiga ruxsat beramiz (login→/client/overview→no-company→/signup).
   if (isPublic) {
+    const role = getUserRole()
+    if (
+      to.path === '/signup' &&
+      isCompanyRole(role) &&
+      from?.path?.startsWith('/client/')
+    ) {
+      return undefined
+    }
     return homePathForRole(getUserRole())
   }
 

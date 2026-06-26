@@ -114,7 +114,12 @@ function enforceSubscription() {
 }
 
 async function refreshSubscriptionGate() {
-  if (store.workspace !== 'client' || !store.companyId) return
+  if (store.workspace !== 'client') return
+  if (!store.companyId) {
+    // Kompaniya yo'q = onboarding tugallanmagan; client sahifalardan /signup ga qaytaramiz
+    if (route.path.startsWith('/client/')) router.replace('/signup')
+    return
+  }
   await quota.refresh()
   enforceSubscription()
 }
