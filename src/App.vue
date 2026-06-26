@@ -158,8 +158,15 @@ watch(() => authStore.accessToken, async (tok) => {
 
 // Sahifa o'zgarganda obuna holatini qayta tekshiramiz (paywall'da ushlab turish)
 // va mobil navigatsiya draweri'ni yopamiz.
-watch(() => route.path, () => {
-  enforceSubscription()
+// Non-client → /client/ tranzitsiyasida (masalan onboarding tugagach) quota stale bo'lishi mumkin:
+// token refresh vaqtida subscription hali yaratilmagan bo'lsa, quota subscriptionActive=false deb
+// yod olgan. Shu holatda qayta yuklaymiz — refreshSubscriptionGate enforceSubscription ham chaqiradi.
+watch(() => route.path, async (newPath, oldPath) => {
+  if (newPath.startsWith('/client/') && oldPath != null && !oldPath.startsWith('/client/')) {
+    await refreshSubscriptionGate()
+  } else {
+    enforceSubscription()
+  }
   store.closeSidebar()
 })
 
