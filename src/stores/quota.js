@@ -16,6 +16,7 @@ export const useQuotaStore = defineStore('quota', () => {
   // Obuna holati — null = hali noma'lum (yuklanmagan)
   const subscriptionActive = ref(null)
   const subscriptionStatus = ref(null)
+  const tariffSlug = ref(null)
   const daysLeft = ref(null)
 
   async function refresh() {
@@ -26,6 +27,7 @@ export const useQuotaStore = defineStore('quota', () => {
     try {
       const q = await quotaApi.get(cid)
       tariffName.value = q?.tariff_name || null
+      tariffSlug.value = q?.tariff_slug || null
       hasTariff.value = !!q?.has_tariff
       monthly.value = q?.monthly || { used: 0, limit: 0 }
       daily.value = q?.daily || { used: 0, limit: 0 }
@@ -39,5 +41,5 @@ export const useQuotaStore = defineStore('quota', () => {
     }
   }
 
-  return { tariffName, hasTariff, monthly, daily, credits, loading, loaded, subscriptionActive, subscriptionStatus, daysLeft, refresh }
+  return { tariffName, tariffSlug, hasTariff, monthly, daily, credits, loading, loaded, subscriptionActive, subscriptionStatus, daysLeft, refresh }
 })

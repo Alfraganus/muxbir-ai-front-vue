@@ -174,10 +174,11 @@ const langLabel = computed(() => {
   return map[store.lang] || ''
 })
 
-// Pending trial: status='trial', trial_ends_at=null (admin hali tasdiqlamagan)
-// isFullScreen sahifalarida (ClientActivate, Onboarding) ko'rsatilmaydi — ular o'z UI'ga ega
+// Pending trial: faqat 'trial' slug'li tarif, status='trial', trial_ends_at=null (admin hali tasdiqlamagan)
+// To'lovli tarif tanlagan foydalanuvchilar uchun ko'rsatilmaydi (ular ham default status='trial' bo'ladi)
 const isPendingTrial = computed(() =>
   store.workspace === 'client' &&
+  quota.tariffSlug === 'trial' &&
   quota.subscriptionStatus === 'trial' &&
   quota.daysLeft === null &&
   quota.loaded &&

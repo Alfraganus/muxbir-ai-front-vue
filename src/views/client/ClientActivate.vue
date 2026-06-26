@@ -103,8 +103,9 @@ async function load() {
       subscriptionsApi.getMine().catch(() => null),
       tariffsApi.list().catch(() => []),
     ])
-    // Pending trial: status=trial, trial_ends_at=null
-    if (sub?.status === 'trial' && !sub?.trial_ends_at) {
+    // Pending trial: faqat 'trial' slug'li tarif, status=trial, trial_ends_at=null
+    // To'lovli tarif tanlagan foydalanuvchilar uchun isPendingTrial=false (ular tarif tanlaydi va to'laydi)
+    if (sub?.status === 'trial' && !sub?.trial_ends_at && sub?.tariff?.slug === 'trial') {
       isPendingTrial.value = true
       return
     }
