@@ -1334,9 +1334,9 @@ const plans = computed(() => loadedTariffs.value.map((t) => {
   return {
     id: t.id,
     slug: t.slug,
-    name: i18nName(t.name_i18n) || t.slug,
+    name: (typeof t.name === 'string' && t.name) ? t.name : (i18nName(t.name_i18n) || t.slug),
     tag: i18nName(t.category?.name_i18n) || null,
-    desc: '',
+    desc: i18nName(t.description_i18n) || '',
     price,
     free: price === 0,
     includes: tariffIncludes(t),
@@ -1370,9 +1370,14 @@ async function submitStep5() {
       .catch(() => {})
 
     if (isFree) {
-      // Bepul tarif — sinov rejimini faollashtirib, ish maydoniga o'tamiz
       await paymentsApi.freeTrial(sub.id).catch(() => {})
-      router.push('/client/overview')
+      const isTrial = currentPlan.value.slug === 'trial'
+      if (isTrial) {
+        // Sinov tarifi — admin tasdig'ini kutadi, signin'ga yo'naltirish
+        router.push({ path: '/signin', query: { trial_pending: '1' } })
+      } else {
+        router.push('/client/overview')
+      }
     } else {
       await goToStep(6)
     }
@@ -1454,7 +1459,7 @@ async function loadReferences() {
     const [bt, pl, tariffs] = await Promise.all([
       referencesApi.getBusinessTypes().catch(() => []),
       referencesApi.getPlatforms().catch(() => []),
-      tariffsApi.list().catch(() => []),
+      tariffsApi.listForOnboarding().catch(() => []),
     ])
     // Backend tariflari (arxivlanmagan, faol) — kartalar shulardan quriladi.
     loadedTariffs.value = Array.isArray(tariffs) ? [...tariffs].sort((a, b) => (a.price_monthly ?? 0) - (b.price_monthly ?? 0)) : []
