@@ -1357,11 +1357,24 @@ async function submitStep5() {
     if (!companyId.value) throw new Error(tt('onboarding.errCompanyNotFound'))
 
     // Tanlangan tarif obunaga yoziladi — limit va featurelar shu obuna orqali userga o'tadi
-    const sub = await subscriptionsApi.create({
-      company_id: companyId.value,
-      tariff_id: tariffId,
-      billing_cycle: billingCycle.value,
-    })
+    let sub
+    try {
+      sub = await subscriptionsApi.create({
+        company_id: companyId.value,
+        tariff_id: tariffId,
+        billing_cycle: billingCycle.value,
+      })
+    } catch (e) {
+      // Eskirgan company_id (kompaniya o'chirilgan) — step 2'ga qaytaramiz
+      const msg = e?.response?.data?.message || ''
+      if (msg.includes('Kompaniya') || e?.response?.status === 400) {
+        companyId.value = null
+        await goToStep(2)
+        apiError.value = tt('onboarding.errCompanyNotFound')
+        return
+      }
+      throw e
+    }
     subscriptionId.value = sub.id
 
     const isFree = currentPlan.value.free
