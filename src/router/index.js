@@ -150,10 +150,11 @@ router.beforeEach(async (to, from) => {
     // subscriptionActive === false bo'lsagina bloklaymiz (null = hali noma'lum,
     // App.vue quota'ni yuklab, kerak bo'lsa redirect qiladi). Faollashsa, paywall'dan chiqaramiz.
     const quota = useQuotaStore()
-    if (to.path !== '/client/activate' && quota.subscriptionActive === false) {
+    const pendingTrial = quota.tariffSlug === 'trial' && quota.subscriptionStatus === 'trial' && quota.daysLeft === null
+    if (to.path !== '/client/activate' && quota.subscriptionActive === false && !pendingTrial) {
       return '/client/activate'
     }
-    if (to.path === '/client/activate' && quota.subscriptionActive === true) {
+    if (to.path === '/client/activate' && (quota.subscriptionActive === true || pendingTrial)) {
       return '/client/overview'
     }
   }
