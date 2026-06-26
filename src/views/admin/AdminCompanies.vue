@@ -72,6 +72,10 @@
               {{ formatDate(c.created_at) }}
             </td>
             <td style="padding:10px 12px;vertical-align:middle;text-align:right;white-space:nowrap;">
+              <AppButton v-if="hasPendingTrial(c)" variant="primary" size="sm" @click="approveTrial(c)" style="background:var(--success,#10b981);border-color:var(--success,#10b981)">
+                <template #icon><AppIcon name="Check" :size="11"/></template>
+                {{ tt('adminCompanies.approveTrial') }}
+              </AppButton>
               <AppButton variant="ghost" size="sm" @click="openEditModal(c)">
                 <template #icon><AppIcon name="Edit" :size="11"/></template>
                 {{ tt('adminCompanies.edit') }}
@@ -175,6 +179,36 @@
               </select>
             </div>
           </div>
+        </div>
+
+        <!-- Phone section -->
+        <div style="display:flex;flex-direction:column;gap:10px;
+                    padding-top:14px;border-top:1px dashed var(--border-2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
+                        text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">
+              <AppIcon name="Phone" :size="12"/>
+              {{ tt('adminCompanies.fieldPhones') }}
+            </div>
+            <button type="button" @click="editForm.phones.push('')"
+                    style="font-size:11.5px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;">
+              {{ tt('adminCompanies.addPhone') }}
+            </button>
+          </div>
+          <div v-if="editForm.phones.length" style="display:flex;flex-direction:column;gap:6px;">
+            <div v-for="(_, i) in editForm.phones" :key="i"
+                 style="display:flex;gap:6px;align-items:center;">
+              <input v-model="editForm.phones[i]" :style="{ ...inputStyle, flex: 1 }"
+                     :placeholder="tt('adminCompanies.phonePlaceholder')"/>
+              <button type="button" @click="editForm.phones.splice(i, 1)"
+                      style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);
+                             background:var(--panel-2);cursor:pointer;color:var(--danger);font-size:14px;
+                             display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                ×
+              </button>
+            </div>
+          </div>
+          <div v-else style="font-size:12px;color:var(--muted);">—</div>
         </div>
 
         <!-- Owner section -->
@@ -285,6 +319,7 @@ const editError = ref(null)
 const editSuccess = ref(null)
 const editForm = reactive({
   name: '', slug: '', country: '', location: '', status: 'active',
+  phones: [],
   owner_full_name: '', owner_email: '',
   new_password: '',
 })
@@ -437,6 +472,7 @@ function openEditModal(c) {
   editForm.country = c.country || 'UZ'
   editForm.location = c.location || ''
   editForm.status = c.status || 'active'
+  editForm.phones = (c.phones || []).map(p => p.phone)
   editForm.owner_full_name = c.owner?.full_name || ''
   editForm.owner_email = c.owner?.email || ''
   editForm.new_password = ''
@@ -462,6 +498,7 @@ async function submitEdit() {
       country: editForm.country.trim() || 'UZ',
       location: editForm.location.trim() || null,
       status: editForm.status,
+      phones: editForm.phones.map(p => p.trim()).filter(Boolean),
       owner_full_name: editForm.owner_full_name.trim(),
       owner_email: editForm.owner_email.trim(),
     })
@@ -478,6 +515,22 @@ async function submitEdit() {
     editError.value = e.response?.data?.message || tt('adminCompanies.saveError')
   } finally {
     editSubmitting.value = false
+  }
+}
+
+function hasPendingTrial(c) {
+  const sub = c.subscription
+  return sub?.status === 'trial' && !sub?.trial_ends_at
+}
+
+async function approveTrial(c) {
+  if (!confirm(tt('adminCompanies.approveTrialConfirm', { name: c.name }))) return
+  try {
+    const updated = await adminApi.approveTrial(c.id)
+    const idx = companies.value.findIndex(x => x.id === updated.id)
+    if (idx !== -1) companies.value.splice(idx, 1, updated)
+  } catch (e) {
+    alert(e.response?.data?.message || tt('adminCompanies.approveTrialError'))
   }
 }
 
