@@ -2,6 +2,7 @@ import http from './http.js'
 
 export const tariffsApi = {
   list: () => http.get('/tariffs').then((r) => r.data),
+  listForOnboarding: () => http.get('/tariffs', { params: { include_trial: 1 } }).then((r) => r.data),
   listAll: () => http.get('/tariffs', { params: { all: 1 } }).then((r) => r.data),
   getOne: (id) => http.get(`/tariffs/${id}`).then((r) => r.data),
   create: (data) => http.post('/tariffs', data).then((r) => r.data),
