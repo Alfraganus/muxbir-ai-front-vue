@@ -5,11 +5,8 @@
 
       <div class="ca-icon"><AppIcon name="Tag" :size="26"/></div>
       <h1 class="ca-title">{{ tt('clientActivate.title') }}</h1>
-      <p class="ca-sub">
-        {{ tt('clientActivate.subtitle') }}
-      </p>
+      <p class="ca-sub">{{ tt('clientActivate.subtitle') }}</p>
 
-      <!-- Tarif tanlash -->
       <div v-if="loadingPlan" class="ca-plan ca-plan-loading">
         <span class="ca-spinner"/> {{ tt('clientActivate.loading') }}
       </div>
@@ -35,7 +32,6 @@
 
       <div v-if="error" class="ca-error">{{ error }}</div>
 
-      <!-- To'lov -->
       <button class="ca-pay" :disabled="paying || !selectedTariffId" @click="pay">
         <span v-if="paying" class="ca-spinner ca-spinner-light"/>
         <template v-else>
@@ -46,6 +42,26 @@
       <button class="ca-logout" @click="logout">{{ tt('clientActivate.logout') }}</button>
     </div>
   </div>
+
+  <!-- Pending trial modal -->
+  <Teleport to="body">
+    <Transition name="ca-modal-fade">
+      <div v-if="isPendingTrial" class="ca-modal-overlay">
+        <div class="ca-modal-box">
+          <div class="ca-modal-icon-wrap">
+            <AppIcon name="Clock" :size="28"/>
+          </div>
+          <h2 class="ca-modal-title">{{ tt('clientActivate.pendingTitle') }}</h2>
+          <p class="ca-modal-body">{{ tt('clientActivate.pendingSub') }}</p>
+          <div class="ca-modal-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span>{{ tt('clientActivate.pendingNote') }}</span>
+          </div>
+          <button class="ca-modal-logout" @click="logout">{{ tt('clientActivate.logout') }}</button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -69,8 +85,11 @@ const selectedTariffId = ref(null)
 const loadingPlan = ref(true)
 const paying = ref(false)
 const error = ref('')
+const isPendingTrial = ref(false)
 
 function tName(tr) {
+  // Backend i18n interceptor name_i18n ni name stringga aylantiradi
+  if (typeof tr?.name === 'string' && tr.name) return tr.name
   const n = tr?.name_i18n
   return (typeof n === 'string' ? n : (n?.uz || n?.ru || n?.en)) || tr?.slug || tt('clientActivate.tariffFallback')
 }
@@ -84,8 +103,14 @@ async function load() {
       subscriptionsApi.getMine().catch(() => null),
       tariffsApi.list().catch(() => []),
     ])
-    tariffs.value = Array.isArray(list) ? [...list].sort((a, b) => (a.price_monthly ?? 0) - (b.price_monthly ?? 0)) : []
-    // Joriy tarif bo'lsa oldindan tanlanadi, bo'lmasa birinchisi
+    // Pending trial: status=trial, trial_ends_at=null
+    if (sub?.status === 'trial' && !sub?.trial_ends_at) {
+      isPendingTrial.value = true
+      return
+    }
+    // trial tarifni ro'yxatdan chiqarib tashlash
+    const filtered = Array.isArray(list) ? list.filter(tr => tr.slug !== 'trial') : []
+    tariffs.value = [...filtered].sort((a, b) => (a.price_monthly ?? 0) - (b.price_monthly ?? 0))
     selectedTariffId.value = sub?.tariff_id || tariffs.value[0]?.id || null
   } catch (e) {
     error.value = e?.response?.data?.message ?? tt('clientActivate.loadError')
@@ -99,7 +124,6 @@ async function pay() {
   error.value = ''
   paying.value = true
   try {
-    // Tarif FAQAT to'lov muvaffaqiyatli bo'lganda faollashadi (deferred)
     const { payment_url } = await paymentsApi.initiateTariff(selectedTariffId.value)
     if (!payment_url) throw new Error(tt('clientActivate.noPaymentUrl'))
     window.location.href = payment_url
@@ -151,7 +175,6 @@ onMounted(load)
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 
-/* Tarif ro'yxati */
 .ca-tariffs {
   position: relative; width: 100%; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
@@ -200,4 +223,47 @@ onMounted(load)
 .ca-spinner { width: 15px; height: 15px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: ca-spin .7s linear infinite; display: inline-block; }
 .ca-spinner-light { border-color: rgba(255,255,255,.4); border-top-color: #fff; }
 @keyframes ca-spin { to { transform: rotate(360deg); } }
+
+/* Pending trial modal */
+.ca-modal-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(10, 15, 30, 0.65);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.ca-modal-box {
+  width: 100%; max-width: 400px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 32px 28px 24px;
+  box-shadow: 0 30px 90px -20px rgba(15,23,42,.5);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.ca-modal-icon-wrap {
+  width: 60px; height: 60px; border-radius: 18px; margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in oklab, #f59e0b 12%, transparent);
+  color: #f59e0b;
+}
+.ca-modal-title { font-size: 18px; font-weight: 800; color: var(--text); margin: 0 0 10px; }
+.ca-modal-body { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 0 0 18px; }
+.ca-modal-note {
+  width: 100%; box-sizing: border-box;
+  display: flex; align-items: flex-start; gap: 10px; text-align: left;
+  padding: 12px 14px; border-radius: 10px; margin-bottom: 20px;
+  background: color-mix(in oklab, #f59e0b 8%, transparent);
+  border: 1px solid color-mix(in oklab, #f59e0b 30%, transparent);
+  font-size: 12.5px; color: #f59e0b; line-height: 1.55;
+}
+.ca-modal-logout {
+  background: none; border: none; color: var(--muted);
+  font-size: 13px; cursor: pointer; text-decoration: underline;
+}
+.ca-modal-logout:hover { color: var(--text); }
+
+.ca-modal-fade-enter-active, .ca-modal-fade-leave-active { transition: opacity .22s ease; }
+.ca-modal-fade-enter-from, .ca-modal-fade-leave-to { opacity: 0; }
+
+@media (max-width: 480px) {
+  .ca-modal-box { padding: 24px 18px 20px; }
+}
 </style>
