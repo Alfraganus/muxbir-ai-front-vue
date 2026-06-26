@@ -101,6 +101,13 @@ function enforceSubscription() {
   if (store.workspace !== 'client') return
   if (quota.subscriptionActive !== false) return
   const p = route.path
+  // Pending trial userni /client/activate'ga redirect qilmaymiz — modal o'zi ko'rsatadi.
+  // Agar activate sahifasida bo'lsa, overview'ga qaytaramiz (modal u yerda ishlaydi).
+  const pendingTrial = quota.tariffSlug === 'trial' && quota.subscriptionStatus === 'trial' && quota.daysLeft === null
+  if (pendingTrial) {
+    if (p === '/client/activate') router.replace('/client/overview')
+    return
+  }
   if (p.startsWith('/client/') && p !== '/client/activate') {
     router.replace('/client/activate')
   }
