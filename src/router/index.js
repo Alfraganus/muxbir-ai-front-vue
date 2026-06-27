@@ -77,7 +77,8 @@ const routes = [
   { path: '/support',          component: SupportConsole },
 ]
 
-const PUBLIC_PATHS = ['/signin', '/signup', '/auth/magic', '/meta/delete', '/privacy', '/terms']
+const ALWAYS_PUBLIC = ['/privacy', '/terms', '/meta/delete']
+const PUBLIC_PATHS = ['/signin', '/signup', '/auth/magic', ...ALWAYS_PUBLIC]
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -127,6 +128,7 @@ router.beforeEach(async (to, from) => {
   // ISTISNO: kompaniyasiz company_role user /client/ dan /signup ga redirect bo'lganida
   // onboardingni davom ettirishiga ruxsat beramiz (login→/client/overview→no-company→/signup).
   if (isPublic) {
+    if (ALWAYS_PUBLIC.includes(to.path)) return undefined
     const role = getUserRole()
     if (
       to.path === '/signup' &&

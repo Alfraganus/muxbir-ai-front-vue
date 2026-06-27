@@ -100,12 +100,26 @@
                   </VInput>
                   <StrengthBar :password="f1.password" :labels="strengthLabels"/>
                 </VField>
+                <VField :label="tt('onb.field.passwordConfirm')" :error="e.password_confirm" required>
+                  <VInput v-model="f1.password_confirm" :type="showPassConfirm ? 'text' : 'password'" placeholder="••••••••••" :error="!!e.password_confirm" @input="clearErr('password_confirm')">
+                    <template #suffix>
+                      <button @click="showPassConfirm=!showPassConfirm" type="button" class="oz-eye-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                          <path v-if="!showPassConfirm" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                          <circle v-if="!showPassConfirm" cx="12" cy="12" r="3"/>
+                          <path v-if="showPassConfirm" d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                          <line v-if="showPassConfirm" x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      </button>
+                    </template>
+                  </VInput>
+                </VField>
                 <label class="oz-terms">
                   <input type="checkbox" v-model="f1.accept_terms" style="accent-color:var(--accent);margin-top:2px;flex-shrink:0"/>
                   <span>
-                    <span style="color:var(--accent);font-weight:500">{{ tt('onb.terms.link') }}</span>
+                    <a @click.prevent.stop="openUrl('/#/terms')" style="color:var(--accent);font-weight:500;text-decoration:none;cursor:pointer">{{ tt('onb.terms.link') }}</a>
                     {{ tt('onb.terms.and') }}
-                    <span style="color:var(--accent);font-weight:500">{{ tt('onb.terms.privacy') }}</span>{{ tt('onb.terms.accept') }}
+                    <a @click.prevent.stop="openUrl('/#/privacy')" style="color:var(--accent);font-weight:500;text-decoration:none;cursor:pointer">{{ tt('onb.terms.privacy') }}</a>{{ tt('onb.terms.accept') }}
                   </span>
                 </label>
                 <p v-if="e.accept_terms" style="margin:0;font-size:11.5px;color:var(--danger)">{{ e.accept_terms }}</p>
@@ -134,9 +148,6 @@
                 <VField :label="tt('onb.field.companyName')" :error="e.company_name" required>
                   <VInput v-model="f2.name" placeholder="OOO Olcha Express" :error="!!e.company_name" @input="clearErr('company_name')"/>
                 </VField>
-                <VField :label="tt('onb.field.location')">
-                  <VInput v-model="f2.location" :placeholder="tt('onb.field.locationPh')"/>
-                </VField>
                 <VField :label="tt('onb.field.businessType')">
                   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
                     <button v-for="bt in businessTypes" :key="bt.id"
@@ -154,7 +165,7 @@
                 <VField :label="tt('onb.field.phones')">
                   <div style="display:flex;flex-direction:column;gap:8px">
                     <div v-for="(_, i) in f2.phones" :key="i" style="display:flex;gap:8px;align-items:center">
-                      <VInput v-model="f2.phones[i]" :mono="true" placeholder="+998 __ ___ __ __" style="flex:1"/>
+                      <VInput :modelValue="f2.phones[i]" @update:modelValue="v => f2.phones[i] = formatPhone(v)" :mono="true" placeholder="+998 90 123 45 67" style="flex:1"/>
                       <button v-if="i > 0" @click="f2.phones.splice(i,1)" class="oz-rm-btn">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
                       </button>
@@ -583,17 +594,6 @@
               <p style="margin:0;color:var(--muted);font-size:13.5px">
                 {{ tt('onb.step5.sub') }}
               </p>
-              <!-- Billing toggle -->
-              <div style="display:inline-flex;margin-top:18px;padding:3px;background:var(--panel);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow-sm)">
-                <button v-for="o in [{id:'monthly',label:tt('onb.plan.monthly')},{id:'yearly',label:tt('onb.plan.yearly')}]" :key="o.id"
-                  @click="billingCycle=o.id"
-                  :style="{
-                    height:'30px',padding:'0 16px',fontSize:'12px',fontWeight:500,
-                    background: billingCycle===o.id ? 'var(--accent)' : 'transparent',
-                    color: billingCycle===o.id ? 'white' : 'var(--muted)',
-                    border:'none',borderRadius:'999px',cursor:'pointer',transition:'all .18s',
-                  }">{{ o.label }}</button>
-              </div>
             </div>
 
             <div style="max-width:520px;margin:0 auto 16px"><ApiError :msg="apiError"/></div>
@@ -900,7 +900,10 @@ const progressPct = computed(() => ((step.value - 1) / (visibleSteps.value.lengt
 
 // ── Step 1 ────────────────────────────────────────────────────
 const showPass = ref(false)
-const f1 = ref({ full_name: '', username: '', password: '', accept_terms: false })
+const showPassConfirm = ref(false)
+const f1 = ref({ full_name: '', username: '', password: '', password_confirm: '', accept_terms: false })
+
+function openUrl(url) { window.open(url, '_blank', 'noopener') }
 
 function validateStep1() {
   const errs = {}
@@ -911,6 +914,8 @@ function validateStep1() {
   else if (!/^[a-zA-Z0-9._-]+$/.test(uname)) errs.username = tt('onb.err.usernameChars')
   if (!f1.value.password) errs.password = tt('onb.err.password')
   else if (f1.value.password.length < 6) errs.password = tt('onb.err.passwordMin')
+  if (!f1.value.password_confirm) errs.password_confirm = tt('onb.err.passwordConfirm')
+  else if (f1.value.password && f1.value.password !== f1.value.password_confirm) errs.password_confirm = tt('onb.err.passwordMatch')
   if (!f1.value.accept_terms) errs.accept_terms = tt('onb.err.terms')
   e.value = errs
   return Object.keys(errs).length === 0
@@ -949,7 +954,18 @@ async function loadOnboardingState() {
 }
 
 // ── Step 2 ────────────────────────────────────────────────────
-const f2 = ref({ name: '', location: '', business_type_id: null, phones: [''] })
+const f2 = ref({ name: '', business_type_id: null, phones: [''] })
+
+function formatPhone(raw) {
+  const digits = raw.replace(/\D/g, '')
+  if (!digits) return ''
+  const parts = ['+' + digits.slice(0, 3)]
+  if (digits.length > 3) parts.push(digits.slice(3, 5))
+  if (digits.length > 5) parts.push(digits.slice(5, 8))
+  if (digits.length > 8) parts.push(digits.slice(8, 10))
+  if (digits.length > 10) parts.push(digits.slice(10, 13))
+  return parts.join(' ')
+}
 const businessTypes = ref([])
 const companyId = ref(null)
 
@@ -968,7 +984,6 @@ async function submitStep2() {
     const phones = f2.value.phones.filter(p => p.trim())
     const company = await companiesApi.create({
       name: f2.value.name,
-      location: f2.value.location || undefined,
       business_type_id: f2.value.business_type_id || undefined,
       phones,
     })

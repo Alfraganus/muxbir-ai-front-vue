@@ -233,7 +233,7 @@
         </div>
 
         <p class="signin-terms">
-          {{ t('signin.terms') }} <a>{{ t('signin.termsLink') }}</a> {{ t('signin.and') }} <a>{{ t('signin.privacyLink') }}</a>{{ t('signin.termsEnd') }}
+          {{ t('signin.terms') }} <a href="/#/terms" target="_blank">{{ t('signin.termsLink') }}</a> {{ t('signin.and') }} <a href="/#/privacy" target="_blank">{{ t('signin.privacyLink') }}</a>{{ t('signin.termsEnd') }}
         </p>
       </div>
 

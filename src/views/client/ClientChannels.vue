@@ -417,14 +417,6 @@
                         </span>
                       </button>
                     </div>
-                    <div v-if="autoDeliveryMode === 'direct'"
-                      style="margin-top:8px;padding:9px 11px;border-radius:7px;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);color:#854d0e;font-size:11.5px;line-height:1.5;">
-                      ⚡ <span v-html="tt('cc.delivery.direct.warnShort')"></span>
-                    </div>
-                    <div v-else-if="autoDeliveryMode === 'two_stage'"
-                      style="margin-top:8px;padding:9px 11px;border-radius:7px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);color:var(--text);font-size:11.5px;line-height:1.5;">
-                      🤖 <span v-html="tt('cc.delivery.twoStage.infoShort')"></span>
-                    </div>
                   </div>
 
                   <!-- Yuborish rejimi -->
@@ -899,16 +891,8 @@
                       </span>
                     </button>
                   </div>
-                  <div class="cc-info-box" :class="autoDeliveryMode === 'direct' ? 'warn' : 'info'">
-                    <template v-if="autoDeliveryMode === 'approval'">
-                      💡 <span v-html="tt('cc.delivery.approval.infoFull')"></span>
-                    </template>
-                    <template v-else-if="autoDeliveryMode === 'two_stage'">
-                      🤖 <span v-html="tt('cc.delivery.twoStage.infoFull')"></span>
-                    </template>
-                    <template v-else>
-                      ⚡ <span v-html="tt('cc.delivery.direct.warnFull')"></span>
-                    </template>
+                  <div v-if="autoDeliveryMode === 'approval'" class="cc-info-box info">
+                    💡 <span v-html="tt('cc.delivery.approval.infoFull')"></span>
                   </div>
                 </div>
 
@@ -1283,53 +1267,7 @@
                     </div>
                   </div>
 
-                  <!-- Test rejim -->
-                  <div class="cc-field" style="border-top:1px dashed var(--border);padding-top:12px;margin-top:4px;">
-                    <label class="cc-toggle-row">
-                      <input type="checkbox" v-model="autoTestShowOriginal"/>
-                      <span v-html="tt('cc.ai.testModeLabel')"></span>
-                    </label>
-                    <div class="cc-info-box info" style="margin-top:8px;">
-                      🔬 {{ tt('cc.ai.testModeHintPre') }}
-                      (<span style="color:#d97706;">🟡 ORIGINAL</span> → <span style="color:#16a34a;">🟢 AI VERSION</span>).
-                      {{ tt('cc.ai.testModeHintPost') }}
-                    </div>
-                  </div>
-
-                  <!-- AI Solishtirish rejimi -->
-                  <div class="cc-field" style="border-top:1px dashed var(--border);padding-top:12px;margin-top:4px;">
-                    <label class="cc-toggle-row">
-                      <input type="checkbox" v-model="compareEnabled"/>
-                      <span v-html="tt('cc.ai.compareModeLabel')"></span>
-                    </label>
-                    <div v-if="compareEnabled" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
-                      <div v-for="(pair, idx) in comparePairsList" :key="idx"
-                        style="display:flex;gap:8px;align-items:center;">
-                        <select v-model="pair.provider" class="cc-select" style="flex:0 0 150px;"
-                          @change="onComparePairChange(idx)">
-                          <option v-for="p in AI_PROVIDERS" :key="p.id" :value="p.id">{{ p.label }}</option>
-                        </select>
-                        <select v-model="pair.model" class="cc-select mono" style="flex:1;">
-                          <option v-for="m in (AI_MODELS_BY_PROVIDER[pair.provider] || [])" :key="m.id" :value="m.id">
-                            {{ m.label }}
-                          </option>
-                        </select>
-                        <button v-if="comparePairsList.length > 1" type="button"
-                          @click="comparePairsList.splice(idx, 1)"
-                          style="flex:0 0 26px;height:26px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;">
-                          <AppIcon name="Close" :size="10"/>
-                        </button>
-                      </div>
-                      <button v-if="comparePairsList.length < 5" type="button"
-                        @click="comparePairsList.push({ provider: 'openai', model: 'gpt-4o-mini' })"
-                        style="align-self:flex-start;padding:5px 10px;border:1px dashed var(--border);border-radius:7px;background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px;">
-                        {{ tt('cc.ai.addProvider') }}
-                      </button>
-                    </div>
-                    <div v-if="compareEnabled" class="cc-info-box info" style="margin-top:8px;">
-                      🔀 {{ tt('cc.ai.compareHint') }}
-                    </div>
-                  </div>
+                  <!-- Test rejim va AI solishtirish rejimi yashirilgan -->
                 </div>
 
               </div>
@@ -1702,11 +1640,11 @@ const autoTestShowOriginal = ref(false) // test rejim toggle
 const autoOutputLanguage = ref('uz_lat')
 const OUTPUT_LANG_OPTIONS = computed(() => LANG_OPTIONS.value.map((l) => ({ id: l.value, label: l.label })))
 const autoFilters = ref({
-  time_range: '24h',
+  time_range: '6h',
   source_type: 'all',
-  per_channel: 3,
+  per_channel: 5,
   similarity_threshold: 0.5,
-  sort_mode: 'best', // 'best' — yuqori ballli postlar; 'latest' — eng oxirgi maqolalar (posted_at)
+  sort_mode: 'latest',
   include_videos: true,
   require_media: false,
   min_length: 50,
@@ -1726,7 +1664,7 @@ const autoScheduleTimes = ref([])       // ['08:00', '18:30']
 const autoBatchCount = ref(10)          // scheduled: har vaqt uchun post soni
 const autoCollectLeadMinutes = ref(60)  // scheduled: necha daqiqa oldin yig'ish
 const autoIntervalBatchCount = ref(1)   // interval: tayyor turadigan buffer
-const autoIntervalCollectBefore = ref(10) // interval: necha daqiqa oldin taklif yuborilsin
+const autoIntervalCollectBefore = ref(2) // interval: necha daqiqa oldin taklif yuborilsin
 const newScheduleTime = ref('08:00')    // UI: vaqt qo'shish inputi
 
 function addScheduleTime() {
@@ -2327,7 +2265,7 @@ async function openAutoSettings(channel, opts = {}) {
   autoBatchCount.value = channel.auto_batch_count || 10
   autoCollectLeadMinutes.value = channel.auto_collect_lead_minutes ?? 60
   autoIntervalBatchCount.value = channel.auto_interval_batch_count || 1
-  autoIntervalCollectBefore.value = channel.auto_interval_collect_before_minutes ?? 10
+  autoIntervalCollectBefore.value = channel.auto_interval_collect_before_minutes ?? 2
   autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
   autoTestShowOriginal.value = !!channel.test_show_original
   compareEnabled.value = !!channel.compare_mode_enabled
@@ -2337,11 +2275,11 @@ async function openAutoSettings(channel, opts = {}) {
   const f = channel.auto_filters || {}
   const fTypes = Array.isArray(f.source_types) ? f.source_types : []
   autoFilters.value = {
-    time_range: f.time_range || '24h',
+    time_range: f.time_range || '6h',
     source_type: fTypes.length === 1 ? fTypes[0] : 'all',
-    per_channel: f.per_channel ?? 3,
+    per_channel: f.per_channel ?? 5,
     similarity_threshold: f.similarity_threshold ?? 0.5,
-    sort_mode: f.sort_mode === 'latest' ? 'latest' : 'best',
+    sort_mode: f.sort_mode === 'best' ? 'best' : 'latest',
     include_videos: f.include_videos !== false,
     require_media: !!f.require_media,
     min_length: f.min_length ?? 50,

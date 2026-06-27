@@ -31,6 +31,7 @@
     <template v-else-if="name === 'Bolt'"><path d="M13 2 4 13h6l-1 9 9-11h-6z"/></template>
     <template v-else-if="name === 'Eye'"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></template>
     <template v-else-if="name === 'Edit'"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></template>
+    <template v-else-if="name === 'Save'"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5z"/><polyline points="15 3 15 8 6 8 6 3"/><rect x="7" y="14" width="10" height="6" rx="1"/></template>
     <template v-else-if="name === 'Trash'"><path d="M3.5 6.5h17M9 6.5V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 6.5l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/></template>
     <template v-else-if="name === 'Copy'"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></template>
     <template v-else-if="name === 'Arrow'"><path d="M4 12h15m-6-6 6 6-6 6"/></template>

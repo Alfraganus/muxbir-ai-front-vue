@@ -333,7 +333,7 @@ const config = reactive({
   categories: ['all'],
   customSource: '',
   includeVideos: false,
-  sortMode: 'best', // 'best' — eng yaxshi postlar; 'latest' — eng yangi postlar
+  sortMode: 'latest', // 'latest' — eng oxirgi postlar (default); 'best' — eng yaxshi postlar
   sourceType: 'all', // 'all' | 'telegram' | 'website'
   allowUndated: false, // website manbalar: sanasi aniqlanmagan postlarni ham olish
 })

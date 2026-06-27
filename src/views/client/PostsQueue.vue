@@ -148,13 +148,33 @@
             </div>
           </div>
 
-          <!-- Modal footer actions (only for pending) -->
-          <div v-if="detailPost.status === 'pending_approval'" class="pq-modal-footer">
-            <AppButton variant="ghost" size="md" :disabled="modalActing" @click="modalReject">
+          <!-- Modal footer actions -->
+          <div v-if="['pending_approval','approved'].includes(detailPost.status)" class="pq-modal-footer">
+            <AppButton
+              v-if="detailPost.status === 'pending_approval'"
+              variant="ghost" size="md"
+              :disabled="modalActing || savingText"
+              @click="modalReject"
+            >
               <template #icon><AppIcon name="Close" :size="13"/></template>
               {{ tt('queue.reject') }}
             </AppButton>
-            <AppButton variant="primary" size="md" :loading="modalActing" @click="modalApprove">
+            <AppButton
+              variant="secondary" size="md"
+              :loading="savingText"
+              :disabled="modalActing"
+              @click="saveText"
+            >
+              <template #icon><AppIcon name="Save" :size="13"/></template>
+              {{ tt('queue.save') }}
+            </AppButton>
+            <AppButton
+              v-if="detailPost.status === 'pending_approval'"
+              variant="primary" size="md"
+              :loading="modalActing"
+              :disabled="savingText"
+              @click="modalApprove"
+            >
               <template #icon><AppIcon name="Check" :size="13"/></template>
               {{ tt('queue.approve') }}
             </AppButton>
@@ -192,6 +212,7 @@ const detailPost = ref(null)
 const detailText = ref('')
 const aiLoading = ref(null)
 const modalActing = ref(false)
+const savingText = ref(false)
 const compareSelectedIdx = ref(-1)
 
 const tabs = computed(() => [
@@ -341,7 +362,25 @@ function openDetail(post) {
   detailText.value = post.ai_text ?? ''
   aiLoading.value = null
   modalActing.value = false
+  savingText.value = false
   compareSelectedIdx.value = -1
+}
+
+async function saveText() {
+  if (!detailPost.value) return
+  const trimmed = detailText.value.trim()
+  if (!trimmed) return
+  savingText.value = true
+  try {
+    await queueApi.updateText(companyId.value, detailPost.value.id, trimmed)
+    detailPost.value = { ...detailPost.value, ai_text: trimmed }
+    toast.success(tt('queue.saveSuccess'))
+    await silentRefresh()
+  } catch (e) {
+    toast.error(e?.response?.data?.message ?? tt('queue.saveError'))
+  } finally {
+    savingText.value = false
+  }
 }
 
 function selectCompareVersion(result, idx) {

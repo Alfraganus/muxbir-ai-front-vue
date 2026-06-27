@@ -178,6 +178,7 @@ const isOnboarding = computed(() =>
 // Paywall va operator console ham to'liq ekran (sidebar/topbar'siz)
 const isFullScreen = computed(() =>
   isOnboarding.value || route.path === '/client/activate' || route.path === '/support'
+  || route.path === '/terms' || route.path === '/privacy' || route.path === '/meta/delete'
 )
 
 /**

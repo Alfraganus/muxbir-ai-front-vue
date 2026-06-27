@@ -210,7 +210,7 @@
                 <AppIcon v-else name="Check" :size="15"/>
                 <span>{{ isEdit ? tt('pe.savePostEdit') : tt('pe.savePost') }}</span>
               </button>
-              <button v-if="isEdit && form.platform === 'telegram'"
+              <button v-if="isEdit"
                       class="pe-tb-btn pe-tb-btn-publish"
                       :disabled="publishing || activating"
                       @click="onPublishClick" type="button">
@@ -600,41 +600,6 @@
           </select>
         </div>
 
-        <!-- Provider -->
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('pe.aire.step2') }}</span>
-          <div style="display:flex;gap:8px;">
-            <label v-for="p in aiProviders" :key="p.id"
-                   :style="{
-                     flex: '1', display: 'flex', alignItems: 'center', gap: '8px',
-                     padding: '10px 12px', cursor: 'pointer',
-                     border: '1px solid ' + (aiRewriteForm.provider === p.id ? 'var(--accent)' : 'var(--border-2)'),
-                     borderRadius: '7px',
-                     background: aiRewriteForm.provider === p.id ? 'rgba(99,102,241,.06)' : 'var(--bg)',
-                   }">
-              <input v-model="aiRewriteForm.provider" type="radio" :value="p.id" :disabled="aiShortening"
-                     style="margin:0;cursor:pointer;"/>
-              <div style="display:flex;flex-direction:column;gap:1px;">
-                <span style="font-size:12.5px;font-weight:600;color:var(--text);">{{ p.label }}</span>
-                <span style="font-size:10.5px;color:var(--muted);">{{ p.note }}</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <!-- Model -->
-        <label style="display:flex;flex-direction:column;gap:6px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('pe.aire.step3') }}</span>
-          <select v-model="aiRewriteForm.model" :disabled="aiShortening"
-                  style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
-                         background:var(--bg);color:var(--text);font-size:13px;
-                         font-family:'JetBrains Mono',monospace;">
-            <option v-for="m in aiAvailableModels" :key="m.id" :value="m.id">
-              {{ m.label }} {{ m.noteKey ? '— ' + tt(m.noteKey) : '' }}
-            </option>
-          </select>
-        </label>
-
         <!-- Chiqish tili -->
         <div style="display:flex;flex-direction:column;gap:6px;">
           <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('pe.aire.step4') }}</span>
@@ -861,8 +826,8 @@ const aiSavedPrefs = (() => {
 })()
 const aiRewriteForm = reactive({
   groupId:  aiSavedPrefs.groupId  || '',
-  provider: aiSavedPrefs.provider || 'openai',
-  model:    aiSavedPrefs.model    || 'gpt-4o-mini',
+  provider: 'gemini',
+  model:    'gemini-3.1-pro',
   // Chiqish tili — AI matnni shu tilda qaytaradi VA shu til tabiga joylaydi (uz | uz_cyr | ru | en)
   outputLanguage: aiSavedPrefs.outputLanguage || 'uz',
   // Default: yoqilgan — lekin admin tavsiya etgan prompt mavjud bo'lmasa
@@ -1440,11 +1405,6 @@ async function saveAll() {
   formError.value = ''
   const anyTitle = LANGS.some(l => translations[l].title && translations[l].title.trim())
   if (!anyTitle) { formError.value = tt('pe.err.noTitle'); return }
-  // Telegram platformasi tanlangan bo'lsa, kanal majburiy — bo'lmasa xato.
-  if (form.platform === 'telegram' && !form.telegram_channel_ids.length) {
-    formError.value = tt('pe.err.noChannel')
-    return
-  }
   if (!company.value) return
 
   saving.value = true
@@ -1591,10 +1551,10 @@ async function confirmPublishLang() {
 async function publishNow(lang) {
   if (!isEdit.value || !post.value) return
   if (!form.telegram_channel_ids.length && !selectedMetaChannelIds.value.length) {
-    formError.value = tt('pe.tg.noConnected')
+    formError.value = tt('pe.err.noChannelShort')
     return
   }
-  // Avval saqlaymiz — eng so'nggi o'zgarishlar Telegramga borishi uchun
+  // Avval saqlaymiz — eng so'nggi o'zgarishlar kanalga borishi uchun
   formError.value = ''
   await saveAll()
   if (formError.value) return
@@ -1677,13 +1637,7 @@ async function openAiRewrite(mode = 'rewrite') {
   // o'rtasida ham ishonchli sinxronizatsiya uchun).
   try {
     const saved = JSON.parse(localStorage.getItem(AI_REWRITE_LS_KEY) || '{}')
-    if (saved.provider && aiModelsByProvider[saved.provider]) {
-      aiRewriteForm.provider = saved.provider
-    }
-    if (saved.model && (aiModelsByProvider[aiRewriteForm.provider] || [])
-        .some(m => m.id === saved.model)) {
-      aiRewriteForm.model = saved.model
-    }
+    // provider/model foydalanuvchi tanlamaydi — doim gemini/gemini-3.1-pro
     if (saved.groupId) {
       aiRewriteForm.groupId = saved.groupId
     }
@@ -1795,8 +1749,6 @@ async function runAiRewrite() {
     try {
       localStorage.setItem(AI_REWRITE_LS_KEY, JSON.stringify({
         groupId: aiRewriteForm.groupId,
-        provider: aiRewriteForm.provider,
-        model: aiRewriteForm.model,
         outputLanguage: target,
         useRecommended: aiRewriteForm.useRecommended,
       }))
