@@ -60,7 +60,7 @@
           <div class="ca-modal-contacts">
             <p class="ca-modal-contacts-label">{{ tt('app.pendingTrialContactsLabel') }}</p>
             <a class="ca-modal-contact-row" href="https://t.me/madatov_e" target="_blank" rel="noopener noreferrer">
-              <span class="ca-modal-contact-name">Eldor Madatov</span>
+              <span class="ca-modal-contact-name">Eldorbek Madatov</span>
               <span class="ca-modal-contact-detail">@madatov_e · +998 94 305 95 95</span>
             </a>
             <a class="ca-modal-contact-row" href="https://t.me/andisoft" target="_blank" rel="noopener noreferrer">

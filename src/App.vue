@@ -66,7 +66,7 @@
             <div class="pt-contacts">
               <p class="pt-contacts-label">{{ tt('app.pendingTrialContactsLabel') }}</p>
               <a class="pt-contact-row" href="https://t.me/madatov_e" target="_blank" rel="noopener noreferrer">
-                <span class="pt-contact-name">Eldor Madatov</span>
+                <span class="pt-contact-name">Eldorbek Madatov</span>
                 <span class="pt-contact-detail">@madatov_e · +998 94 305 95 95</span>
               </a>
               <a class="pt-contact-row" href="https://t.me/andisoft" target="_blank" rel="noopener noreferrer">
