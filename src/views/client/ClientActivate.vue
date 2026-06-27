@@ -57,6 +57,17 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
             <span>{{ tt('clientActivate.pendingNote') }}</span>
           </div>
+          <div class="ca-modal-contacts">
+            <p class="ca-modal-contacts-label">{{ tt('app.pendingTrialContactsLabel') }}</p>
+            <a class="ca-modal-contact-row" href="https://t.me/madatov_e" target="_blank" rel="noopener noreferrer">
+              <span class="ca-modal-contact-name">Eldor Madatov</span>
+              <span class="ca-modal-contact-detail">@madatov_e · +998 94 305 95 95</span>
+            </a>
+            <a class="ca-modal-contact-row" href="https://t.me/andisoft" target="_blank" rel="noopener noreferrer">
+              <span class="ca-modal-contact-name">G'ulomjon Sulaymonov</span>
+              <span class="ca-modal-contact-detail">@andisoft · +998 99 906 61 12</span>
+            </a>
+          </div>
           <button class="ca-modal-logout" @click="logout">{{ tt('clientActivate.logout') }}</button>
         </div>
       </div>
@@ -255,6 +266,26 @@ onMounted(load)
   border: 1px solid color-mix(in oklab, #f59e0b 30%, transparent);
   font-size: 12.5px; color: #f59e0b; line-height: 1.55;
 }
+.ca-modal-contacts {
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; margin-bottom: 18px; text-align: left;
+}
+.ca-modal-contacts-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); padding: 7px 14px 6px; margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.ca-modal-contact-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 9px 14px; text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  transition: background .14s;
+}
+.ca-modal-contact-row:last-child { border-bottom: none; }
+.ca-modal-contact-row:hover { background: var(--surface, rgba(0,0,0,.04)); }
+.ca-modal-contact-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.ca-modal-contact-detail { font-size: 12px; color: var(--accent, #6366f1); }
 .ca-modal-logout {
   background: none; border: none; color: var(--muted);
   font-size: 13px; cursor: pointer; text-decoration: underline;
