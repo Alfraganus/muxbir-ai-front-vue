@@ -150,9 +150,10 @@
           </div>
 
           <!-- Modal footer actions -->
-          <div v-if="['pending_approval','approved'].includes(detailPost.status)" class="pq-modal-footer">
+          <!-- 2-bosqich (publish): har doim Saqlash ko'rinadi; boshqalar: status shartiga ko'ra -->
+          <div v-if="detailPost.flow_stage === 'publish' || ['pending_approval','approved'].includes(detailPost.status)" class="pq-modal-footer">
             <AppButton
-              v-if="detailPost.status === 'pending_approval'"
+              v-if="detailPost.status === 'pending_approval' && detailPost.flow_stage !== 'publish'"
               variant="ghost" size="md"
               :disabled="modalActing || savingText"
               @click="modalReject"
@@ -171,7 +172,7 @@
               {{ tt('queue.save') }}
             </AppButton>
             <AppButton
-              v-if="detailPost.status === 'pending_approval'"
+              v-if="detailPost.status === 'pending_approval' && detailPost.flow_stage !== 'publish'"
               variant="primary" size="md"
               :loading="modalActing"
               :disabled="savingText"
