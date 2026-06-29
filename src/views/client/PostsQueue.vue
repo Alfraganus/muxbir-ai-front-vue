@@ -401,7 +401,7 @@ async function aiRewrite(mode) {
     const res = await queueApi.rewrite(companyId.value, detailPost.value.id, mode)
     detailText.value = res.ai_text ?? detailText.value
   } catch (e) {
-    console.error(e)
+    toast.error(e?.response?.data?.message ?? tt('queue.rewriteError'))
   } finally {
     aiLoading.value = null
   }
