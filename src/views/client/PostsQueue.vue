@@ -191,6 +191,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useAppStore } from '@/stores/app.js'
+import { useQuotaStore } from '@/stores/quota.js'
 import { queueApi } from '@/api/queue.js'
 import { useToast } from '@/composables/useToast.js'
 import PageHeader from '@/components/layout/PageHeader.vue'
@@ -201,6 +202,7 @@ import AppTabs from '@/components/ui/AppTabs.vue'
 import QueuePostCard from '@/components/queue/QueuePostCard.vue'
 
 const store = useAppStore()
+const quotaStore = useQuotaStore()
 const toast = useToast()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
@@ -400,6 +402,7 @@ async function aiRewrite(mode) {
   try {
     const res = await queueApi.rewrite(companyId.value, detailPost.value.id, mode)
     detailText.value = res.ai_text ?? detailText.value
+    quotaStore.refresh() // kredit yechildi — UI ni darhol yangilaymiz
   } catch (e) {
     toast.error(e?.response?.data?.message ?? tt('queue.rewriteError'))
   } finally {
