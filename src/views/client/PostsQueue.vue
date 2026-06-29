@@ -130,6 +130,7 @@
                 class="pq-textarea"
                 rows="8"
                 :placeholder="tt('queue.textPh')"
+                :readonly="detailPost.flow_stage === 'preview'"
               />
             </div>
 
@@ -160,6 +161,7 @@
               {{ tt('queue.reject') }}
             </AppButton>
             <AppButton
+              v-if="detailPost.flow_stage !== 'preview'"
               variant="secondary" size="md"
               :loading="savingText"
               :disabled="modalActing"
@@ -561,6 +563,7 @@ onBeforeUnmount(() => clearInterval(pollTimer))
   outline: none;
 }
 .pq-textarea:focus { border-color: var(--accent); }
+.pq-textarea[readonly] { background: var(--panel-2); color: var(--text-2); cursor: default; resize: none; }
 
 .pq-ai-chip {
   display: inline-flex;
