@@ -133,8 +133,8 @@
               />
             </div>
 
-            <!-- AI actions -->
-            <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;">
+            <!-- AI actions — faqat 2-bosqich (publish) va oddiy postlarda ko'rinadi -->
+            <div v-if="detailPost.flow_stage !== 'preview'" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;">
               <button class="pq-ai-chip" :disabled="!!aiLoading" @click="aiRewrite('shorten')">
                 <span v-if="aiLoading === 'shorten'" class="cp-spinner-xs"/>
                 <AppIcon v-else name="Layers" :size="12"/>
@@ -359,7 +359,10 @@ async function approveAll() {
 
 function openDetail(post) {
   detailPost.value = post
-  detailText.value = post.ai_text ?? ''
+  // 1-bosqich (Flash taklifi): preview_summary ko'rinadi; 2-bosqich va boshqa postlar: ai_text
+  detailText.value = post.flow_stage === 'preview'
+    ? (post.preview_summary || post.ai_text || '')
+    : (post.ai_text ?? '')
   aiLoading.value = null
   modalActing.value = false
   savingText.value = false
