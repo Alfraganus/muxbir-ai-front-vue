@@ -12,6 +12,8 @@
 
     <!-- Onboarding / paywall: full-screen, no shell -->
     <template v-if="isFullScreen">
+      <!-- Impersonatsiyada paywall (/client/activate) ham full-screen — admin qayta olishi uchun banner shu yerda ham kerak -->
+      <ImpersonationBanner/>
       <RouterView/>
     </template>
 
@@ -25,6 +27,7 @@
         </div>
         <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;">
           <AppTopbar/>
+          <ImpersonationBanner/>
           <TariffExpiryBanner v-if="store.workspace === 'client'"/>
           <StorageQuotaBanner v-if="store.workspace === 'client'"/>
           <div style="flex:1;display:flex;min-height:0;overflow:hidden;">
@@ -92,6 +95,7 @@ import { companiesApi } from '@/api/companies.js'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import StorageQuotaBanner from '@/components/layout/StorageQuotaBanner.vue'
+import ImpersonationBanner from '@/components/layout/ImpersonationBanner.vue'
 import TariffExpiryBanner from '@/components/billing/TariffExpiryBanner.vue'
 import AppToast from '@/components/ui/AppToast.vue'
 import LiveChatWidget from '@/components/support/LiveChatWidget.vue'

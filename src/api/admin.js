@@ -13,6 +13,9 @@ export const adminApi = {
     http.patch(`/admin/companies/${id}`, payload).then((r) => r.data),
   resetCompanyPassword: (id, new_password) =>
     http.post(`/admin/companies/${id}/reset-password`, { new_password }).then((r) => r.data),
+  // Impersonatsiya: kompaniya egasi sifatida login token juftligini qaytaradi
+  loginAsCompany: (id) =>
+    http.post(`/admin/companies/${id}/login-as`).then((r) => r.data),
   deleteCompany: (id) =>
     http.delete(`/admin/companies/${id}`).then((r) => r.data),
 

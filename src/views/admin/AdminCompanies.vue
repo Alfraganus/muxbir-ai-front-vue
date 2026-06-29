@@ -76,6 +76,10 @@
                 <template #icon><AppIcon name="Check" :size="11"/></template>
                 {{ tt('adminCompanies.approveTrial') }}
               </AppButton>
+              <AppButton variant="secondary" size="sm" :loading="loginAsBusyId === c.id" :disabled="loginAsBusyId !== null" @click="loginAs(c)" :title="tt('adminCompanies.loginAsTitle', { name: c.name })">
+                <template #icon><AppIcon name="Arrow" :size="11"/></template>
+                {{ tt('adminCompanies.loginAs', { name: c.name }) }}
+              </AppButton>
               <AppButton variant="ghost" size="sm" @click="openEditModal(c)">
                 <template #icon><AppIcon name="Edit" :size="11"/></template>
                 {{ tt('adminCompanies.edit') }}
@@ -280,6 +284,7 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
@@ -293,8 +298,11 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import { adminApi } from '@/api/admin.js'
 import { tariffsApi } from '@/api/tariffs.js'
 import { useAppStore } from '@/stores/app.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 const store = useAppStore()
+const authStore = useAuthStore()
+const router = useRouter()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
 
@@ -531,6 +539,25 @@ async function approveTrial(c) {
     if (idx !== -1) companies.value.splice(idx, 1, updated)
   } catch (e) {
     alert(e.response?.data?.message || tt('adminCompanies.approveTrialError'))
+  }
+}
+
+const loginAsBusyId = ref(null)
+
+async function loginAs(c) {
+  if (!c || loginAsBusyId.value) return
+  if (!confirm(tt('adminCompanies.loginAsConfirm', { name: c.name }))) return
+  loginAsBusyId.value = c.id
+  try {
+    const data = await adminApi.loginAsCompany(c.id)
+    // Joriy admin sessiyasini zaxiraga olib, kompaniya tokenlariga o'tamiz.
+    // App.vue accessToken kuzatuvchisi workspace/kompaniya/kvotani qayta yuklaydi.
+    authStore.startImpersonation(data, c.name)
+    await router.push('/client/overview')
+  } catch (e) {
+    alert(e.response?.data?.message || tt('adminCompanies.loginAsError'))
+  } finally {
+    loginAsBusyId.value = null
   }
 }
 
