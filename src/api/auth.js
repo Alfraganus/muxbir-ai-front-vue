@@ -10,4 +10,6 @@ export const authApi = {
   sendMagicLink: (email) => http.post('/auth/magic-link', { email }).then(r => r.data),
   verifyMagicLink: (token) => http.post('/auth/magic-link/verify', { token }).then(r => r.data),
   telegramAuth: (data) => http.post('/auth/telegram', data).then(r => r.data),
+  changePassword: (current_password, new_password) =>
+    http.patch('/users/me/password', { current_password, new_password }).then(r => r.data),
 }

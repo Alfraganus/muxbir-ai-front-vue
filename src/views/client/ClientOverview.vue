@@ -23,6 +23,25 @@
       @refresh="refreshSetup"
     />
 
+    <!-- Profil kartasi — har doim ko'rinadi -->
+    <AppPanel :title="tt('ov.profile.title')">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;">
+            {{ userInitial }}
+          </div>
+          <div>
+            <div style="font-size:13.5px;font-weight:600;color:var(--text);">{{ userEmail }}</div>
+            <div style="font-size:11.5px;color:var(--muted);">{{ tt('ov.profile.email') }}</div>
+          </div>
+        </div>
+        <AppButton variant="secondary" size="sm" @click="showPassModal = true">
+          <template #icon><AppIcon name="Lock" :size="12"/></template>
+          {{ tt('ov.profile.changePass') }}
+        </AppButton>
+      </div>
+    </AppPanel>
+
     <div v-if="loading" class="ov-state"><span class="ov-spin"/> {{ tt('ov.loading') }}</div>
     <div v-else-if="error" class="ov-state" style="color:var(--danger);">{{ error }}</div>
 
@@ -136,15 +155,40 @@
         </div>
       </div>
     </template>
+
+    <!-- Parol o'zgartirish modal -->
+    <AppModal v-model="showPassModal" :title="tt('ov.profile.changePass')" width="400px">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div v-if="passError" style="padding:10px 12px;border-radius:8px;background:rgba(239,68,68,.1);color:var(--danger,#EF4444);font-size:13px;">{{ passError }}</div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:5px;">{{ tt('ov.profile.currentPass') }}</div>
+          <AppInput v-model="passForm.current" type="password" :placeholder="tt('ov.profile.currentPass')"/>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:5px;">{{ tt('ov.profile.newPass') }}</div>
+          <AppInput v-model="passForm.newPass" type="password" :placeholder="tt('ov.profile.newPass')"/>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:5px;">{{ tt('ov.profile.confirmPass') }}</div>
+          <AppInput v-model="passForm.confirm" type="password" :placeholder="tt('ov.profile.confirmPass')"/>
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" size="sm" @click="showPassModal = false">{{ tt('ov.profile.cancel') }}</AppButton>
+        <AppButton variant="primary" size="sm" :loading="passSaving" @click="submitPassword">{{ tt('ov.profile.save') }}</AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useAppStore } from '@/stores/app.js'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
+import AppModal from '@/components/ui/AppModal.vue'
+import AppInput from '@/components/ui/AppInput.vue'
 import AppKPI from '@/components/ui/AppKPI.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import DonutChart from '@/components/charts/DonutChart.vue'
@@ -154,6 +198,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import SetupChecklistCard from '@/components/setup/SetupChecklistCard.vue'
 import { companiesApi } from '@/api/companies.js'
 import { analyticsApi } from '@/api/analytics.js'
+import { authApi } from '@/api/auth.js'
 import { useSetupStatus } from '@/composables/useSetupStatus.js'
 
 const store = useAppStore()
@@ -164,6 +209,34 @@ const loading = ref(true)
 const error = ref('')
 const company = ref(null)
 const d = ref(null)
+
+// Profil
+const userEmail = ref('')
+const userInitial = computed(() => (userEmail.value || '?')[0].toUpperCase())
+
+// Parol modal
+const showPassModal = ref(false)
+const passSaving = ref(false)
+const passError = ref('')
+const passForm = ref({ current: '', newPass: '', confirm: '' })
+
+watch(showPassModal, (v) => { if (!v) { passForm.value = { current: '', newPass: '', confirm: '' }; passError.value = '' } })
+
+async function submitPassword() {
+  passError.value = ''
+  if (!passForm.value.current) { passError.value = tt('ov.profile.errCurrent'); return }
+  if (passForm.value.newPass.length < 6) { passError.value = tt('ov.profile.errMin'); return }
+  if (passForm.value.newPass !== passForm.value.confirm) { passError.value = tt('ov.profile.errMatch'); return }
+  passSaving.value = true
+  try {
+    await authApi.changePassword(passForm.value.current, passForm.value.newPass)
+    showPassModal.value = false
+  } catch (e) {
+    passError.value = e?.response?.data?.message || 'Xato yuz berdi'
+  } finally {
+    passSaving.value = false
+  }
+}
 
 // Setup holati (Telegram API, session, bot, kanal, manba, chat) — 60s polling
 const {
@@ -232,8 +305,12 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
+    const [meRes, cs] = await Promise.all([
+      authApi.me().catch(() => null),
+      company.value ? Promise.resolve(null) : companiesApi.getMy().catch(() => []),
+    ])
+    if (meRes) userEmail.value = meRes.email || ''
     if (!company.value) {
-      const cs = await companiesApi.getMy().catch(() => [])
       const list = Array.isArray(cs) ? cs : [cs].filter(Boolean)
       company.value = list[0] || null
     }
