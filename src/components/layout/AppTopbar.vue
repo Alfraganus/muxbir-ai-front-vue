@@ -51,13 +51,42 @@
             </div>
           </div>
           <div class="topbar-menu-sep" />
-          <button class="topbar-menu-item" @click="onLogout">
+          <button class="topbar-menu-item" @click="menuOpen = false; showPassModal = true">
+            <AppIcon name="Shield" :size="13" />
+            <span>{{ store.t('ov.profile.changePass') }}</span>
+          </button>
+          <button class="topbar-menu-item topbar-menu-item--danger" @click="onLogout">
             <AppIcon name="Close" :size="13" />
             <span>{{ store.t('topbar.logout') }}</span>
           </button>
         </div>
       </Transition>
     </div>
+
+    <!-- Parol o'zgartirish modal -->
+    <AppModal v-model="showPassModal" :title="store.t('ov.profile.changePass')" width="380px">
+      <div style="display:flex;flex-direction:column;gap:13px;">
+        <div v-if="passError" style="padding:9px 12px;border-radius:8px;background:rgba(239,68,68,.1);color:var(--danger,#EF4444);font-size:13px;">{{ passError }}</div>
+        <div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:5px;">{{ store.t('ov.profile.currentPass') }}</div>
+          <AppInput v-model="passForm.current" type="password" :placeholder="store.t('ov.profile.currentPass')"/>
+        </div>
+        <div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:5px;">{{ store.t('ov.profile.newPass') }}</div>
+          <AppInput v-model="passForm.newPass" type="password" :placeholder="store.t('ov.profile.newPass')"/>
+        </div>
+        <div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:5px;">{{ store.t('ov.profile.confirmPass') }}</div>
+          <AppInput v-model="passForm.confirm" type="password" :placeholder="store.t('ov.profile.confirmPass')"/>
+        </div>
+      </div>
+      <template #footer>
+        <button @click="showPassModal = false" style="padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-size:13px;">{{ store.t('ov.profile.cancel') }}</button>
+        <button @click="submitPassword" :disabled="passSaving" style="padding:7px 14px;border-radius:6px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:13px;font-weight:500;" :style="{ opacity: passSaving ? 0.7 : 1 }">
+          {{ passSaving ? '...' : store.t('ov.profile.save') }}
+        </button>
+      </template>
+    </AppModal>
   </header>
 
   <!-- Logout splash overlay -->
@@ -76,13 +105,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
+import AppModal from '@/components/ui/AppModal.vue'
+import AppInput from '@/components/ui/AppInput.vue'
 import LangSwitcher from './LangSwitcher.vue'
 import { useAppStore } from '@/stores/app.js'
 import { useAuthStore } from '@/stores/auth.js'
+import { authApi } from '@/api/auth.js'
 
 defineProps({ breadcrumb: Array })
 const store = useAppStore()
@@ -91,6 +123,27 @@ const router = useRouter()
 
 const menuOpen = ref(false)
 const showLogoutSplash = ref(false)
+
+const showPassModal = ref(false)
+const passSaving = ref(false)
+const passError = ref('')
+const passForm = ref({ current: '', newPass: '', confirm: '' })
+watch(showPassModal, (v) => { if (!v) { passForm.value = { current: '', newPass: '', confirm: '' }; passError.value = '' } })
+async function submitPassword() {
+  passError.value = ''
+  if (!passForm.value.current) { passError.value = store.t('ov.profile.errCurrent'); return }
+  if (passForm.value.newPass.length < 6) { passError.value = store.t('ov.profile.errMin'); return }
+  if (passForm.value.newPass !== passForm.value.confirm) { passError.value = store.t('ov.profile.errMatch'); return }
+  passSaving.value = true
+  try {
+    await authApi.changePassword(passForm.value.current, passForm.value.newPass)
+    showPassModal.value = false
+  } catch (e) {
+    passError.value = e?.response?.data?.message || 'Xato yuz berdi'
+  } finally {
+    passSaving.value = false
+  }
+}
 
 const displayName = computed(() => {
   const u = authStore.user
@@ -218,6 +271,11 @@ const vClickOutside = {
   cursor: pointer; text-align: left;
 }
 .topbar-menu-item:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.topbar-menu-item--danger { color: var(--danger); }
+.topbar-menu-item--danger:hover {
   background: var(--danger-bg);
   color: var(--danger);
 }
