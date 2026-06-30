@@ -34,6 +34,49 @@
       <QuotaUsageCard />
     </div>
 
+    <!-- Client foydalanuvchi info + parol -->
+    <div v-if="workspace === 'client'" style="flex-shrink:0;border-top:1px solid var(--border-2);padding:10px 12px 12px;">
+      <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--panel);margin-bottom:7px;">
+        <AppAvatar :name="adminName" :size="28" />
+        <div style="display:flex;flex-direction:column;min-width:0;flex:1;">
+          <span style="font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ adminName }}</span>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ adminEmail }}</span>
+        </div>
+      </div>
+      <button @click="showPassModal = true"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;font-size:12.5px;font-weight:500;transition:background 0.15s;"
+              onmouseover="this.style.background='var(--panel-2)'"
+              onmouseout="this.style.background='transparent'">
+        <AppIcon name="Shield" :size="13" />
+        {{ tt('ov.profile.changePass') }}
+      </button>
+    </div>
+
+    <!-- Parol o'zgartirish modal -->
+    <AppModal v-if="workspace === 'client'" v-model="showPassModal" :title="tt('ov.profile.changePass')" width="380px">
+      <div style="display:flex;flex-direction:column;gap:13px;">
+        <div v-if="passError" style="padding:9px 12px;border-radius:8px;background:rgba(239,68,68,.1);color:var(--danger,#EF4444);font-size:13px;">{{ passError }}</div>
+        <div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:5px;">{{ tt('ov.profile.currentPass') }}</div>
+          <AppInput v-model="passForm.current" type="password" :placeholder="tt('ov.profile.currentPass')"/>
+        </div>
+        <div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:5px;">{{ tt('ov.profile.newPass') }}</div>
+          <AppInput v-model="passForm.newPass" type="password" :placeholder="tt('ov.profile.newPass')"/>
+        </div>
+        <div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:5px;">{{ tt('ov.profile.confirmPass') }}</div>
+          <AppInput v-model="passForm.confirm" type="password" :placeholder="tt('ov.profile.confirmPass')"/>
+        </div>
+      </div>
+      <template #footer>
+        <button @click="showPassModal = false" style="padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-size:13px;">{{ tt('ov.profile.cancel') }}</button>
+        <button @click="submitPassword" :disabled="passSaving" style="padding:7px 14px;border-radius:6px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:13px;font-weight:500;opacity:1;" :style="passSaving ? 'opacity:0.7' : ''">
+          {{ passSaving ? '...' : tt('ov.profile.save') }}
+        </button>
+      </template>
+    </AppModal>
+
     <!-- Logout for admin -->
     <div v-if="workspace === 'super'" style="padding:0 12px 12px;border-top:1px solid var(--border-2);padding-top:12px;">
       <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);">
@@ -65,6 +108,8 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import AppProgress from '@/components/ui/AppProgress.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import AppModal from '@/components/ui/AppModal.vue'
+import AppInput from '@/components/ui/AppInput.vue'
 import { useAuthStore } from '@/stores/auth.js'
 import WorkspaceSwitcher from './WorkspaceSwitcher.vue'
 import NavItem from './NavItem.vue'
@@ -73,6 +118,7 @@ import QuotaUsageCard from './QuotaUsageCard.vue'
 import { useAppStore } from '@/stores/app.js'
 import { queueApi } from '@/api/queue.js'
 import { useStorageStore } from '@/stores/storage.js'
+import { authApi } from '@/api/auth.js'
 import { useAiUsageStore } from '@/stores/aiUsage.js'
 import { usePostsUsageStore } from '@/stores/postsUsage.js'
 import { useQuotaStore } from '@/stores/quota.js'
@@ -94,6 +140,28 @@ const adminName = computed(() => {
   return u?.full_name || u?.fullName || u?.name || u?.email || 'Admin'
 })
 const adminEmail = computed(() => authStore.user?.email || '')
+
+// Client parol o'zgartirish
+const showPassModal = ref(false)
+const passSaving = ref(false)
+const passError = ref('')
+const passForm = ref({ current: '', newPass: '', confirm: '' })
+watch(showPassModal, (v) => { if (!v) { passForm.value = { current: '', newPass: '', confirm: '' }; passError.value = '' } })
+async function submitPassword() {
+  passError.value = ''
+  if (!passForm.value.current) { passError.value = tt('ov.profile.errCurrent'); return }
+  if (passForm.value.newPass.length < 6) { passError.value = tt('ov.profile.errMin'); return }
+  if (passForm.value.newPass !== passForm.value.confirm) { passError.value = tt('ov.profile.errMatch'); return }
+  passSaving.value = true
+  try {
+    await authApi.changePassword(passForm.value.current, passForm.value.newPass)
+    showPassModal.value = false
+  } catch (e) {
+    passError.value = e?.response?.data?.message || 'Xato yuz berdi'
+  } finally {
+    passSaving.value = false
+  }
+}
 
 async function onAdminLogout() {
   try { await authStore.logout() } catch {}
