@@ -25,20 +25,20 @@
 
     <!-- Profil kartasi — har doim ko'rinadi -->
     <AppPanel :title="tt('ov.profile.title')">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;">
-            {{ userInitial }}
-          </div>
-          <div>
-            <div style="font-size:13.5px;font-weight:600;color:var(--text);">{{ userEmail }}</div>
-            <div style="font-size:11.5px;color:var(--muted);">{{ tt('ov.profile.email') }}</div>
-          </div>
-        </div>
+      <template #action>
         <AppButton variant="secondary" size="sm" @click="showPassModal = true">
-          <template #icon><AppIcon name="Lock" :size="12"/></template>
+          <template #icon><AppIcon name="Shield" :size="12"/></template>
           {{ tt('ov.profile.changePass') }}
         </AppButton>
+      </template>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;">
+          {{ userInitial }}
+        </div>
+        <div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--text);">{{ userEmail }}</div>
+          <div style="font-size:11.5px;color:var(--muted);">{{ tt('ov.profile.email') }}</div>
+        </div>
       </div>
     </AppPanel>
 
