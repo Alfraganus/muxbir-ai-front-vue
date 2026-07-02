@@ -235,6 +235,25 @@
           </div>
         </div>
 
+        <!-- Gemini API key section -->
+        <div style="display:flex;flex-direction:column;gap:10px;
+                    padding-top:14px;border-top:1px dashed var(--border-2);">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
+                      text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">
+            <AppIcon name="Bolt" :size="12"/>
+            {{ tt('adminCompanies.geminiSection') }}
+          </div>
+          <div style="font-size:11.5px;color:var(--text-2);line-height:1.5;">
+            {{ tt('adminCompanies.geminiHint') }}
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">{{ tt('adminCompanies.fieldGeminiApiKey') }}</label>
+            <input v-model="editForm.gemini_api_key" :style="inputStyle" class="mono"
+                   spellcheck="false" autocomplete="off"
+                   :placeholder="tt('adminCompanies.geminiPlaceholder')"/>
+          </div>
+        </div>
+
         <!-- Password reset section -->
         <div style="display:flex;flex-direction:column;gap:10px;
                     padding:14px;border-radius:10px;
@@ -329,6 +348,7 @@ const editForm = reactive({
   name: '', slug: '', country: '', location: '', status: 'active',
   phones: [],
   owner_full_name: '', owner_email: '',
+  gemini_api_key: '',
   new_password: '',
 })
 
@@ -483,6 +503,7 @@ function openEditModal(c) {
   editForm.phones = (c.phones || []).map(p => p.phone)
   editForm.owner_full_name = c.owner?.full_name || ''
   editForm.owner_email = c.owner?.email || ''
+  editForm.gemini_api_key = c.gemini_api_key || ''
   editForm.new_password = ''
   editOpen.value = true
 }
@@ -509,6 +530,7 @@ async function submitEdit() {
       phones: editForm.phones.map(p => p.trim()).filter(Boolean),
       owner_full_name: editForm.owner_full_name.trim(),
       owner_email: editForm.owner_email.trim(),
+      gemini_api_key: editForm.gemini_api_key.trim() || null,
     })
     if (editForm.new_password) {
       await adminApi.resetCompanyPassword(editSelected.value.id, editForm.new_password)
