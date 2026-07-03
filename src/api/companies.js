@@ -81,4 +81,12 @@ export const companiesApi = {
   },
   removeAiPromptAttachment: (id) =>
     http.delete(`/companies/${id}/ai-prompt-attachment`).then(r => r.data),
+
+  // API kalitlar (tashqi tizimlar uchun)
+  listApiKeys: (id) =>
+    http.get(`/companies/${id}/api-keys`).then(r => r.data),
+  createApiKey: (id, payload) =>
+    http.post(`/companies/${id}/api-keys`, payload).then(r => r.data),
+  revokeApiKey: (id, keyId) =>
+    http.delete(`/companies/${id}/api-keys/${keyId}`).then(r => r.data),
 }

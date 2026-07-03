@@ -7,6 +7,7 @@
   <ClientTelegramApi  v-if="tab === 'telegram-api'"/>
   <ClientAiPrompt     v-else-if="tab === 'ai-prompt'"/>
   <ClientTimezone     v-else-if="tab === 'timezone'"/>
+  <ClientApiKeys      v-else-if="tab === 'api-keys'"/>
 </template>
 
 <script setup>
@@ -18,6 +19,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import ClientTelegramApi from './ClientTelegramApi.vue'
 import ClientAiPrompt from './ClientAiPrompt.vue'
 import ClientTimezone from './ClientTimezone.vue'
+import ClientApiKeys from './ClientApiKeys.vue'
 
 const store = useAppStore()
 const route = useRoute()
@@ -28,8 +30,9 @@ const tabs = computed(() => [
   { value: 'telegram-api', label: tt('settings.tab.telegram') },
   { value: 'ai-prompt',    label: tt('settings.tab.ai') },
   { value: 'timezone',     label: tt('settings.tab.timezone') },
+  { value: 'api-keys',     label: tt('settings.tab.apiKeys') },
 ])
 
-const validTabs = ['telegram-api', 'ai-prompt', 'timezone']
+const validTabs = ['telegram-api', 'ai-prompt', 'timezone', 'api-keys']
 const tab = ref(validTabs.includes(route.query.tab) ? route.query.tab : 'telegram-api')
 </script>
