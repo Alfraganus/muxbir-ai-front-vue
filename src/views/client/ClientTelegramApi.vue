@@ -35,9 +35,9 @@
 
       <div v-if="state.is_saved" style="display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:12px;">
         <span style="color:var(--muted);">api_id:</span>
-        <span style="font-family:'JetBrains Mono',monospace;">{{ state.api_id }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;">{{ apiIdDisplay }}</span>
         <span style="color:var(--muted);">api_hash:</span>
-        <span style="font-family:'JetBrains Mono',monospace;">{{ state.api_hash_masked }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;">{{ apiHashDisplay }}</span>
         <template v-if="state.phone || session.phone_masked">
           <span style="color:var(--muted);">{{ tt('clientTelegramApi.phoneLabel') }}</span>
           <span style="font-family:'JetBrains Mono',monospace;">{{ session.phone_masked || state.phone }}</span>
@@ -81,9 +81,9 @@
 
       <div style="display:grid;grid-template-columns:160px 1fr;gap:8px 14px;font-size:12.5px;">
         <span style="color:var(--muted);">api_id:</span>
-        <span style="font-family:'JetBrains Mono',monospace;">{{ state.api_id }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;">{{ apiIdDisplay }}</span>
         <span style="color:var(--muted);">api_hash:</span>
-        <span style="font-family:'JetBrains Mono',monospace;">{{ state.api_hash_masked }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;">{{ apiHashDisplay }}</span>
         <span style="color:var(--muted);">{{ tt('clientTelegramApi.phoneLabel') }}</span>
         <span style="font-family:'JetBrains Mono',monospace;">{{ session.phone_masked || state.phone }}</span>
         <span style="color:var(--muted);">{{ tt('clientTelegramApi.sessionCreatedLabel') }}</span>
@@ -197,6 +197,11 @@
             <span v-html="tt('clientTelegramApi.step3Desc')"></span>
           </p>
 
+          <div style="padding:10px 12px;border-radius:6px;background:rgba(99,102,241,.08);
+                       border:1px solid rgba(99,102,241,.2);font-size:12px;">
+            {{ tt('clientTelegramApi.apiOptionalInfo') }}
+          </div>
+
           <label style="display:flex;flex-direction:column;gap:5px;">
             <span style="font-size:12px;font-weight:600;">api_id <span style="color:var(--muted);font-weight:400;">{{ tt('clientTelegramApi.apiIdHint') }}</span></span>
             <input v-model="form.api_id" type="text" placeholder="12345678" autocomplete="off"
@@ -212,7 +217,7 @@
           </label>
 
           <label style="display:flex;flex-direction:column;gap:5px;">
-            <span style="font-size:12px;font-weight:600;">{{ tt('clientTelegramApi.phoneFieldLabel') }} <span style="color:var(--muted);font-weight:400;">{{ tt('clientTelegramApi.phoneFieldHint') }}</span></span>
+            <span style="font-size:12px;font-weight:600;">{{ tt('clientTelegramApi.phoneFieldLabel') }} <span style="color:var(--accent);font-weight:400;">*</span> <span style="color:var(--muted);font-weight:400;">{{ tt('clientTelegramApi.phoneFieldHint') }}</span></span>
             <input v-model="form.phone" type="text" placeholder="+998901234567" autocomplete="off"
                    style="padding:9px 12px;border:1px solid var(--border-2);border-radius:6px;
                           background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;"/>
@@ -402,6 +407,9 @@ const canGoBack = computed(() => {
   return step.value > 0 && step.value < 3
 })
 
+const apiIdDisplay = computed(() => state.api_id || tt('clientTelegramApi.defaultApp'))
+const apiHashDisplay = computed(() => state.api_hash_masked || tt('clientTelegramApi.defaultApp'))
+
 function formatDate(d) {
   if (!d) return ''
   try { return new Date(d).toLocaleString('uz-UZ', { dateStyle: 'medium', timeStyle: 'short' }) }
@@ -474,13 +482,17 @@ async function saveCredsAndSendCode() {
   const apiId = form.api_id.trim()
   const apiHash = form.api_hash.trim()
   const phone = form.phone.trim().replace(/\s+/g, '')
-  if (!/^\d{4,12}$/.test(apiId)) {
-    error.value = tt('clientTelegramApi.errApiId')
-    return
-  }
-  if (!/^[a-f0-9]{32}$/i.test(apiHash)) {
-    error.value = tt('clientTelegramApi.errApiHash')
-    return
+  // api_id/api_hash ixtiyoriy — bo'sh qoldirilsa serverdagi standart (fallback)
+  // ilova credentials'i ishlatiladi. Kiritilgan bo'lsa, formati tekshiriladi.
+  if (apiId || apiHash) {
+    if (!/^\d{4,12}$/.test(apiId)) {
+      error.value = tt('clientTelegramApi.errApiId')
+      return
+    }
+    if (!/^[a-f0-9]{32}$/i.test(apiHash)) {
+      error.value = tt('clientTelegramApi.errApiHash')
+      return
+    }
   }
   if (!/^\+\d{8,15}$/.test(phone)) {
     error.value = tt('clientTelegramApi.errPhone')

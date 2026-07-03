@@ -11,7 +11,7 @@ export const SETUP_CHECK_META = {
     order: 1,
     icon: 'Telegram',
     title: 'Telegram API ulanish',
-    hint: 'my.telegram.org dan api_id va api_hash kiritilsin',
+    hint: 'Telefon raqami kiritilsin (api_id/api_hash ixtiyoriy — bo\'sh qoldirsa standart ishlatiladi)',
     link: '/client/telegram-api',
   },
   telegram_session: {
