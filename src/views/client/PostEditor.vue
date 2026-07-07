@@ -1337,17 +1337,23 @@ function iconStyle(p) {
 
 /**
  * Til "to'liq tayyor" (is_complete) ekanini AVTOMATIK aniqlaydi:
- * sarlavha va asosiy matn bo'lsa — tayyor. Qo'lda toggle qilish shart emas.
+ * sarlavha va asosiy matn bo'lsa — tayyor. Telegram (content_json) yoki
+ * website (website_content_json) versiyalaridan BIRORTASI to'liq bo'lsa
+ * yetarli — faqat website versiyasi generatsiya qilingan tillar ham
+ * "tayyor" hisoblanib, e'lon qilish uchun tanlanadigan bo'lsin.
  */
 function trComplete(tr) {
-  return !!(tr && tr.title && tr.title.trim()) && hasContent(tr?.content_json)
+  if (!tr) return false
+  const telegramReady = !!(tr.title && tr.title.trim()) && hasContent(tr.content_json)
+  const websiteReady = !!(tr.website_title && tr.website_title.trim()) && hasContent(tr.website_content_json)
+  return telegramReady || websiteReady
 }
 
 function langState(l) {
   const tr = translations[l]
   if (!tr) return 'empty'
   if (trComplete(tr)) return 'complete'
-  if (tr.title || tr.short_description || hasContent(tr.content_json)) return 'draft'
+  if (tr.title || tr.short_description || hasContent(tr.content_json) || hasWebsiteContent(l)) return 'draft'
   return 'empty'
 }
 function hasContent(json) {
@@ -1634,12 +1640,17 @@ function onPublishClick() {
     alert(tt('pe.err.noChannelAlert'))
     return
   }
-  // Default til: kompaniya sozlamasi → joriy tab → birinchi to'ldirilgan til
+  // Default til: JORIY TAB (foydalanuvchi hozir tahrirlayotgan til/versiya)
+  // → kompaniya sozlamasi (eslab qolingan oxirgi tanlov) → birinchi to'ldirilgan
+  // til. Joriy tab birinchi o'rinda — aks holda eslab qolingan eski til
+  // (masalan avval "uz"da e'lon qilingan bo'lsa) foydalanuvchi hozir
+  // "uz_cyr"ni ko'rib turgan bo'lsa ham default bo'lib qolib, xato tilda
+  // e'lon qilinishiga olib kelardi.
   const avail = publishableLangs.value
   const def = company.value?.default_publish_lang
   publishLang.value =
-    (def && avail.includes(def)) ? def
-    : (avail.includes(activeLang.value) ? activeLang.value : (avail[0] || 'uz'))
+    avail.includes(activeLang.value) ? activeLang.value
+    : ((def && avail.includes(def)) ? def : (avail[0] || 'uz'))
   showPublishLang.value = true
 }
 
@@ -1671,7 +1682,11 @@ async function publishNow(lang) {
 
   publishing.value = true
   try {
-    const res = await postsApi.publish(company.value.id, postId.value, lang)
+    // Joriy ochiq versiya (website/telegram) — backend shu versiyaning
+    // sarlavha+matnini ustun qo'yib yuboradi (masalan website tabida
+    // turib e'lon qilinsa, to'liq maqola matni ketadi, telegram uchun
+    // alohida qisqartirilgan versiya bo'lmasa ham).
+    const res = await postsApi.publish(company.value.id, postId.value, lang, viewVersion.value)
     post.value = res
     if (res?.status) form.status = res.status
     // Kompaniya default tilini lokal obyektda ham yangilab qo'yamiz
