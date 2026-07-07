@@ -76,6 +76,12 @@ export const postsApi = {
     http.post(`/companies/${companyId}/posts/${postId}/ai/tags`, { lang, apply },
               { timeout: 60000 }).then(r => r.data),
 
+  /** AI: post uchun WEBSITE (to'liq maqola) versiyasini yaratadi — 200 kredit.
+   *  Manba yetarli bo'lmasa 400 + code:'INSUFFICIENT_MATERIAL'; kredit yetmasa 402. */
+  generateWebsiteVersion: (companyId, postId, lang = 'uz') =>
+    http.post(`/companies/${companyId}/posts/${postId}/website-version`, { lang },
+              { timeout: 120000 }).then(r => r.data),
+
   publish: (companyId, postId, lang) =>
     http.post(`/companies/${companyId}/posts/${postId}/publish`,
               lang ? { lang } : null,

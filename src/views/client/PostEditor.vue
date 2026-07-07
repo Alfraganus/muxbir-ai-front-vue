@@ -122,9 +122,26 @@
             </div>
           </div>
 
+          <!-- ─── Versiya tanlash: Telegram (qisqa) / Veb-sayt (to'liq maqola) ─── -->
+          <div class="pe-ver-toggle">
+            <span class="pe-ver-toggle-label">{{ tt('wv.toggle.label') }}</span>
+            <div class="pe-ver-seg">
+              <button type="button" class="pe-ver-btn" :class="{ active: !isWebsiteView }" @click="viewVersion = 'telegram'">
+                <AppIcon name="Telegram" :size="12"/>
+                <span>{{ tt('wv.toggle.telegram') }}</span>
+              </button>
+              <button type="button" class="pe-ver-btn" :class="{ active: isWebsiteView }" @click="viewVersion = 'website'">
+                <AppIcon name="Globe2" :size="12"/>
+                <span>{{ tt('wv.toggle.website') }}</span>
+                <span v-if="activeHasWebsite" class="pe-ver-dot"/>
+              </button>
+            </div>
+          </div>
+
           <!-- ─── AI amallar + til holati (sarlavha tepasida) ─── -->
           <div class="pe-toolbar pe-toolbar-ai">
             <div class="pe-toolbar-left">
+              <template v-if="!isWebsiteView">
               <button class="pe-chip pe-chip-ai" :disabled="aiShortening" @click="openAiRewrite('rewrite')" :title="tt('pe.ai.rewriteTitle')">
                 <span class="pe-chip-ic pe-chip-ic-ai">
                   <AppIcon name="Sparkle" :size="11"/>
@@ -146,6 +163,15 @@
                 <span class="pe-chip-text">{{ aiTagging ? tt('pe.ai.analyzing') : tt('pe.ai.tags') }}</span>
                 <span class="pe-chip-cost">{{ AI_CREDIT_COST.tags }} {{ tt('pe.creditShort') }}</span>
               </button>
+              </template>
+              <!-- Website versiyasi: joriy til uchun qayta generatsiya (200 kredit) -->
+              <button v-if="isWebsiteView && activeHasWebsite" class="pe-chip pe-chip-ai" :disabled="wvGenerating" @click="generateWebsiteHere" :title="tt('wv.editor.generateBtn')">
+                <span class="pe-chip-ic pe-chip-ic-ai">
+                  <AppIcon name="Globe2" :size="11"/>
+                </span>
+                <span class="pe-chip-text">{{ wvGenerating ? tt('wv.loader.title') : tt('wv.editor.generateBtn') }}</span>
+                <span class="pe-chip-cost">200 {{ tt('pe.creditShort') }}</span>
+              </button>
               <!-- Joriy til avtomatik holati — faqat o'qish uchun (qo'lda toggle yo'q) -->
               <span class="pe-chip pe-chip-auto" :class="{ 'pe-chip-on': isActiveComplete }"
                     :title="isActiveComplete ? tt('pe.lang.completeTitle') : tt('pe.lang.draftTitle')">
@@ -161,14 +187,27 @@
             </div>
           </div>
 
+          <!-- Website versiyasi bo'sh — generatsiya qilish uchun taklif -->
+          <div v-if="isWebsiteView && !activeHasWebsite && isEdit" class="pe-wv-empty">
+            <span class="pe-wv-empty-icon"><AppIcon name="Globe2" :size="22"/></span>
+            <div class="pe-wv-empty-text">
+              <span class="pe-wv-empty-title">{{ tt('wv.editor.websiteEmptyTitle') }}</span>
+              <span class="pe-wv-empty-sub">{{ tt('wv.editor.websiteEmptySub') }}</span>
+            </div>
+            <button type="button" class="pe-wv-empty-btn" :disabled="wvGenerating" @click="generateWebsiteHere">
+              <AppIcon name="Sparkle" :size="13"/>
+              {{ wvGenerating ? tt('wv.loader.title') : tt('wv.editor.generateBtn') }}
+            </button>
+          </div>
+
           <!-- Composition "paper" — title + short desc + editor as one unified surface -->
-          <div class="pe-paper">
+          <div v-else class="pe-paper" :class="{ 'pe-paper-website': isWebsiteView }">
             <label class="pe-label pe-paper-label">{{ tt('pe.field.titleLabel') }}</label>
-            <input v-model="activeTr.title"
+            <input v-model="boundTitle"
               :placeholder="tt('pe.field.langTitlePh')"
               class="pe-paper-title"/>
 
-            <!-- Qisqa tavsif — hozircha yashirilgan -->
+            <!-- Qisqa tavsif — hozircha yashirilgan (faqat telegram versiyasida) -->
             <div v-if="false" class="pe-paper-short-wrap">
               <textarea v-model="activeTr.short_description"
                 :placeholder="tt('pe.field.langShortDescPh')"
@@ -180,7 +219,7 @@
             <label class="pe-label pe-paper-label pe-paper-label-content">{{ tt('pe.field.contentLabel') }}</label>
 
             <div class="pe-paper-editor">
-              <RichEditor :key="`${activeLang}-${editorReloadKey}`" v-model="activeTr.content_json" :placeholder="tt('pe.field.langContentPh')"/>
+              <RichEditor :key="`${viewVersion}-${activeLang}-${editorReloadKey}`" v-model="boundContent" :placeholder="tt('pe.field.langContentPh')"/>
             </div>
           </div>
 
@@ -712,6 +751,15 @@
       :hint="tt('pe.loader.hint')"
     />
 
+    <!-- ─── Website versiyasi — sahifa bo'ylab loader ─── -->
+    <AiFullPageLoader
+      :model-value="wvGenerating"
+      :title="tt('wv.loader.title')"
+      :subtitle="tt('wv.loader.subtitle')"
+      :steps="[tt('wv.loader.step1'), tt('wv.loader.step2'), tt('wv.loader.step3')]"
+      :hint="tt('wv.loader.hint')"
+    />
+
     <!-- ─── Video yuklab olinmoqda — sahifani yopmang ─── -->
     <transition name="pe-vp-fade">
       <div v-if="post?.video_processing" class="pe-vp-overlay">
@@ -775,6 +823,9 @@ const quotaStore = useQuotaStore()
  */
 function aiErrorMessage(e) {
   const data = e?.response?.data || {}
+  if (data.code === 'INSUFFICIENT_MATERIAL') {
+    return tt('wv.err.insufficientMaterial')
+  }
   if (e?.response?.status === 402 || data.code === 'INSUFFICIENT_CREDITS') {
     const need = data.required != null ? `${data.required} ${tt('pe.credit')}` : tt('pe.credit')
     const have = data.balance != null ? `${data.balance} ${tt('pe.credit')}` : '0'
@@ -1173,10 +1224,10 @@ async function removeGallery(i) {
 const editorReloadKey = ref(0)
 
 const translations = reactive({
-  uz:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
-  uz_cyr: { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
-  ru:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
-  en:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false },
+  uz:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false, website_title: '', website_content_json: { html: '' } },
+  uz_cyr: { title: '', short_description: '', content_json: { html: '' }, is_complete: false, website_title: '', website_content_json: { html: '' } },
+  ru:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false, website_title: '', website_content_json: { html: '' } },
+  en:     { title: '', short_description: '', content_json: { html: '' }, is_complete: false, website_title: '', website_content_json: { html: '' } },
 })
 const activeLang = ref(
   (typeof route.query.lang === 'string' && route.query.lang in translations)
@@ -1184,6 +1235,61 @@ const activeLang = ref(
     : (store.lang in translations ? store.lang : 'uz')
 )
 const activeTr = computed(() => translations[activeLang.value])
+
+// ── Versiya: 'telegram' (qisqa) yoki 'website' (to'liq maqola) ──
+// URL '?platform=website' bilan kelsa website versiyasi ochiladi.
+const viewVersion = ref(route.query.platform === 'website' ? 'website' : 'telegram')
+const isWebsiteView = computed(() => viewVersion.value === 'website')
+
+/** Joriy versiya + til uchun website kontenti bormi. */
+function hasWebsiteContent(l) {
+  const tr = translations[l]
+  return !!(tr && (hasContent(tr.website_content_json) || (tr.website_title || '').trim()))
+}
+const activeHasWebsite = computed(() => hasWebsiteContent(activeLang.value))
+
+// Editor va sarlavha ushbu computed'larga bog'lanadi — versiyaga qarab
+// telegram (content_json/title) yoki website (website_content_json/website_title) maydonini o'qiydi/yozadi.
+const boundTitle = computed({
+  get() {
+    return isWebsiteView.value ? activeTr.value.website_title : activeTr.value.title
+  },
+  set(v) {
+    if (isWebsiteView.value) activeTr.value.website_title = v
+    else activeTr.value.title = v
+  },
+})
+const boundContent = computed({
+  get() {
+    return isWebsiteView.value ? activeTr.value.website_content_json : activeTr.value.content_json
+  },
+  set(v) {
+    if (isWebsiteView.value) activeTr.value.website_content_json = v
+    else activeTr.value.content_json = v
+  },
+})
+
+// Website versiyasini editor ichidan generatsiya qilish (joriy til, 200 kredit)
+const wvGenerating = ref(false)
+async function generateWebsiteHere() {
+  if (!company.value || !isEdit.value || wvGenerating.value) return
+  wvGenerating.value = true
+  aiError.value = ''
+  try {
+    const res = await postsApi.generateWebsiteVersion(company.value.id, postId.value, activeLang.value)
+    const tr = translations[activeLang.value]
+    if (tr) {
+      tr.website_title = res?.website_title || ''
+      tr.website_content_json = res?.website_content_json || { html: '' }
+    }
+    editorReloadKey.value++
+    if (typeof quotaStore?.refresh === 'function') quotaStore.refresh()
+  } catch (e) {
+    aiError.value = aiErrorMessage(e)
+  } finally {
+    wvGenerating.value = false
+  }
+}
 
 const connectedTgChannels = computed(() =>
   allChannels.value.filter(c => {
@@ -1324,6 +1430,8 @@ async function loadInitial() {
           translations[l].title = tr.title || ''
           translations[l].short_description = tr.short_description || ''
           translations[l].content_json = tr.content_json || { html: '' }
+          translations[l].website_title = tr.website_title || ''
+          translations[l].website_content_json = tr.website_content_json || { html: '' }
           editorReloadKey.value++ // har yangi tarjima yuklanganda editor'ni yangi kontent bilan qayta yaratamiz
           translations[l].is_complete = !!tr.is_complete
         }
@@ -1456,12 +1564,14 @@ async function saveAll() {
     if (isEdit.value) {
       for (const l of LANGS) {
         const tr = translations[l]
-        const hasAny = tr.title || tr.short_description || hasContent(tr.content_json)
+        const hasAny = tr.title || tr.short_description || hasContent(tr.content_json) || hasWebsiteContent(l)
         if (hasAny) {
           await postsApi.upsertTranslation(company.value.id, postId.value, l, {
             title: tr.title || null,
             short_description: tr.short_description || null,
             content_json: tr.content_json || null,
+            website_title: tr.website_title || null,
+            website_content_json: tr.website_content_json || null,
             is_complete: trComplete(tr),
           })
         }
@@ -2715,6 +2825,111 @@ async function aiGenerateTags() {
     0 10px 26px -18px rgba(99, 102, 241, 0.5);
 }
 .pe-toolbar-ai .pe-toolbar-left { justify-content: flex-end; }
+
+/* ─── Versiya tanlash (Telegram / Veb-sayt) ─── */
+.pe-ver-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.pe-ver-toggle-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.pe-ver-seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--border-2);
+  border-radius: 9px;
+  background: var(--panel-2, rgba(99,102,241,.04));
+}
+.pe-ver-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .14s, color .14s, box-shadow .14s;
+}
+.pe-ver-btn:hover { color: var(--text); }
+.pe-ver-btn.active {
+  background: var(--panel);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(15,23,42,0.12);
+}
+.pe-ver-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--success);
+}
+
+/* ─── Website versiyasi bo'sh — generatsiya taklifi ─── */
+.pe-wv-empty {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 20px;
+  border: 1px dashed var(--border-2);
+  border-radius: 14px;
+  background: var(--panel);
+  flex-wrap: wrap;
+}
+.pe-wv-empty-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(100,116,139,.12);
+  color: #64748B;
+}
+.pe-wv-empty-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 180px;
+}
+.pe-wv-empty-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.pe-wv-empty-sub { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.pe-wv-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter .14s, transform .12s;
+}
+.pe-wv-empty-btn:hover:not(:disabled) { filter: brightness(1.05); transform: translateY(-1px); }
+.pe-wv-empty-btn:disabled { opacity: .6; cursor: default; }
+
+/* Website versiyasi paper'ida chap accent chizig'i — vizual farqlash uchun */
+.pe-paper-website { border-left: 3px solid #64748B; }
+
 /* pe-paper ichidagi form label'lar (Sarlavha / Asosiy matn) */
 .pe-paper-label {
   display: block;

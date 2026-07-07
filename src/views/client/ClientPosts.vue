@@ -81,10 +81,24 @@
                 </div>
               </div>
             </td>
-            <td style="padding:10px 14px;vertical-align:middle;">
-              <span class="cp-platform-pill" :style="{ color: platformColor(p.platform), background: platformColor(p.platform) + '14' }">
-                {{ tt('pe.platform.' + p.platform) }}
-              </span>
+            <td style="padding:10px 14px;vertical-align:middle;" @click.stop>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="cp-platform-pill cp-platform-pill-btn"
+                      :style="{ color: platformColor(p.platform), background: platformColor(p.platform) + '14' }"
+                      :title="tt('wv.tg.tooltip')"
+                      @click="goEdit(p, null, p.platform)">
+                  {{ tt('pe.platform.' + p.platform) }}
+                </span>
+                <!-- Website versiyasi indikatori: tayyor bo'lsa ochadi, yo'q bo'lsa modal -->
+                <button type="button" class="cp-web-btn" :class="{ ready: p.website_generated }"
+                        :title="p.website_generated ? tt('wv.icon.ready') : tt('wv.icon.notReady')"
+                        @click="onWebsiteClick(p)">
+                  <AppIcon name="Globe2" :size="13"/>
+                  <span class="cp-web-badge" :class="p.website_generated ? 'on' : 'off'">
+                    <AppIcon :name="p.website_generated ? 'Check' : 'Plus'" :size="7"/>
+                  </span>
+                </button>
+              </div>
             </td>
 
             <!-- Manba (qaerdan olingan: qalampir.uz, daryo.uz, t.me/...) -->
@@ -185,6 +199,46 @@
         @goto="(p) => { showFromUrl = false; router.push(p) }"
       />
     </AppModal>
+
+    <!-- Website versiyasi — tasdiqlash modali -->
+    <AppModal v-model="wvModalOpen"
+              :title="tt('wv.modal.title')"
+              :subtitle="tt('wv.modal.subtitle')"
+              width="480px">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="width:40px;height:40px;border-radius:10px;flex:none;background:rgba(100,116,139,.12);color:#64748B;display:inline-flex;align-items:center;justify-content:center;">
+            <AppIcon name="Globe2" :size="18"/>
+          </span>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:14px;font-weight:600;color:var(--text);">{{ tt('wv.modal.question') }}</span>
+            <span style="font-size:12.5px;color:var(--muted);line-height:1.5;">{{ tt('wv.modal.body') }}</span>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#92400e;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:9px 11px;">
+          {{ tt('wv.modal.cost', { n: WV_COST }) }}
+        </div>
+      </div>
+      <template #footer>
+        <button type="button" @click="wvModalOpen = false"
+                style="padding:8px 14px;border-radius:6px;background:transparent;color:var(--muted);border:1px solid var(--border-2);cursor:pointer;font-size:12.5px;">
+          {{ tt('pe.cancel') }}
+        </button>
+        <button type="button" @click="confirmWebsite"
+                style="padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:12.5px;font-weight:600;">
+          {{ tt('wv.modal.confirm') }}
+        </button>
+      </template>
+    </AppModal>
+
+    <!-- Website versiyasi yaratilmoqda — to'liq-ekran loader -->
+    <AiFullPageLoader
+      :model-value="wvGenerating"
+      :title="tt('wv.loader.title')"
+      :subtitle="tt('wv.loader.subtitle')"
+      :steps="[tt('wv.loader.step1'), tt('wv.loader.step2'), tt('wv.loader.step3')]"
+      :hint="tt('wv.loader.hint')"
+    />
   </div>
 </template>
 
@@ -198,6 +252,7 @@ import AppTabs from '@/components/ui/AppTabs.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppModal from '@/components/ui/AppModal.vue'
+import AiFullPageLoader from '@/components/ui/AiFullPageLoader.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import ArticleFromUrlForm from '@/components/posts/ArticleFromUrlForm.vue'
 import { useAppStore } from '@/stores/app.js'
@@ -408,8 +463,54 @@ function statusTone(s) {
   return 'muted'
 }
 
-function goEdit(p, lang) {
-  router.push({ path: `/client/posts/${p.id}/edit`, query: lang ? { lang } : {} })
+function goEdit(p, lang, platform) {
+  const query = {}
+  if (lang) query.lang = lang
+  if (platform) query.platform = platform
+  router.push({ path: `/client/posts/${p.id}/edit`, query })
+}
+
+// ── Website versiyasi ─────────────────────────────────────
+const wvModalOpen = ref(false)
+const wvTarget = ref(null)          // modal ochilgan post
+const wvGenerating = ref(false)     // to'liq-ekran loader
+const WV_COST = 200
+
+function onWebsiteClick(p) {
+  if (p.website_generated) {
+    // Tayyor — website versiyasini ochamiz
+    goEdit(p, null, 'website')
+    return
+  }
+  // Hali yo'q — tasdiqlash modalini ochamiz
+  wvTarget.value = p
+  wvModalOpen.value = true
+}
+
+async function confirmWebsite() {
+  const p = wvTarget.value
+  if (!p || !company.value) return
+  wvModalOpen.value = false
+  wvGenerating.value = true
+  try {
+    await postsApi.generateWebsiteVersion(company.value.id, p.id)
+    p.website_generated = true
+    wvGenerating.value = false
+    goEdit(p, null, 'website')
+  } catch (e) {
+    wvGenerating.value = false
+    const data = e?.response?.data || {}
+    if (data.code === 'INSUFFICIENT_MATERIAL') {
+      alert(tt('wv.err.insufficientMaterial'))
+    } else if (e?.response?.status === 402 || data.code === 'INSUFFICIENT_CREDITS') {
+      const need = data.required != null ? data.required : WV_COST
+      const have = data.balance != null ? data.balance : 0
+      alert(tt('pe.err.insufficientCredits', { need, have }))
+    } else {
+      const msg = data.message
+      alert(Array.isArray(msg) ? msg.join('. ') : (msg || tt('wv.err.generic')))
+    }
+  }
 }
 
 async function onStatusChange(p, newStatus) {
@@ -537,6 +638,49 @@ async function removePost(p) {
   border-radius: 4px;
   text-transform: uppercase;
 }
+.cp-platform-pill-btn {
+  cursor: pointer;
+  transition: transform .12s, filter .12s;
+}
+.cp-platform-pill-btn:hover { transform: translateY(-1px); filter: brightness(0.95); }
+
+/* Website versiyasi indikatori */
+.cp-web-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--border-2);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s, transform .12s;
+}
+.cp-web-btn:hover { transform: translateY(-1px); border-color: #64748B; color: #64748B; }
+.cp-web-btn.ready {
+  color: var(--success);
+  border-color: color-mix(in oklab, var(--success) 40%, transparent);
+  background: color-mix(in oklab, var(--success) 10%, transparent);
+}
+.cp-web-btn.ready:hover { border-color: var(--success); color: var(--success); }
+.cp-web-badge {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  border: 1.5px solid var(--panel);
+}
+.cp-web-badge.on { background: var(--success); }
+.cp-web-badge.off { background: #94a3b8; }
 
 .cp-lang-chip {
   display: inline-flex;
