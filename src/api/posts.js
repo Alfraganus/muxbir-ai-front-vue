@@ -40,6 +40,15 @@ export const postsApi = {
               { timeout: 120000 })
       .then(r => r.data),
 
+  /** Discover manbadan tanlangan til + platformada AI post yaratadi (telegram 140 / website 200 kredit).
+   *  Import + AI qayta yozish sekin bo'lishi mumkin → uzun timeout.
+   *  Xatolar: 402 (INSUFFICIENT_CREDITS), 400 { code:'INSUFFICIENT_MATERIAL' }. */
+  createFromSourceVersion: (companyId, sourcePostId, lang = 'uz', platform = 'telegram') =>
+    http.post(`/companies/${companyId}/posts/from-source-version`,
+              { source_post_id: sourcePostId, lang, platform },
+              { timeout: 180000 })
+      .then(r => r.data),
+
   /** TEST: t.me post URL media'sini (rasm/video) muxbirAI bot orqali test kanalga yuboradi.
    *  MTProto yuklab olish + Telegram yuborish sekin bo'lishi mumkin → uzun timeout. */
   testMediaRelay: (companyId, url) =>

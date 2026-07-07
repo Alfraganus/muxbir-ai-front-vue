@@ -100,14 +100,16 @@
 
       <!-- Footer actions -->
       <div class="dc-foot">
-        <a v-if="isWeb && post.articleUrl" class="dc-ghost" :href="post.articleUrl" target="_blank" rel="noopener" @click.stop>
-          <AppIcon name="Globe" :size="11"/>
-          {{ tt('discoverCard.article') }}
-        </a>
-        <button v-else class="dc-ghost" @click.stop="$emit('preview')">
+        <!-- Ko'rish — telegram postlarda ilova ichidagi preview -->
+        <button v-if="!isWeb" class="dc-ghost" @click.stop="$emit('preview')">
           <AppIcon name="Eye" :size="11"/>
           {{ tt('discoverCard.view') }}
         </button>
+        <!-- Manbadan o'qish — asl manbani (t.me post / maqola) yangi oynada ochadi -->
+        <a v-if="sourceUrl" class="dc-ghost" :href="sourceUrl" target="_blank" rel="noopener" @click.stop>
+          <AppIcon name="Globe" :size="11"/>
+          {{ tt('dvsel.readSource') }}
+        </a>
         <div style="flex:1"/>
         <button class="dc-select" :class="{ on: selected }" @click.stop="$emit('toggle')">
           <AppIcon :name="selected ? 'Check' : 'Plus'" :size="11"/>
@@ -137,6 +139,8 @@ defineEmits(['toggle', 'preview'])
 
 const imgFailed = ref(false)
 const isWeb = computed(() => !!props.post.isWebsite)
+// "Manbadan o'qish" havolasi: website uchun maqola URL, telegram uchun t.me post URL.
+const sourceUrl = computed(() => isWeb.value ? (props.post.articleUrl || null) : (props.post.tmePostUrl || null))
 // Website rasmi bor va yuklanmay qolmagan bo'lsa — <img> ko'rsatamiz.
 const hasImg = computed(() => isWeb.value && !!props.post.imageUrl && !imgFailed.value)
 

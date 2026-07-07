@@ -223,7 +223,7 @@
             :source="s"
             :rank="i + 1"
             :selected="!!selected[p.id]"
-            @toggle="pickAndEdit(p.id)"
+            @toggle="openVersionModal(p.id)"
             @preview="previewing = p"/>
         </div>
       </section>
@@ -257,7 +257,58 @@
       :source="sourceOf(previewing)"
       :is-selected="!!selected[previewing.id]"
       @close="previewing = null"
-      @toggle="() => { const id = previewing.id; previewing = null; pickAndEdit(id) }"/>
+      @toggle="() => { const id = previewing.id; previewing = null; openVersionModal(id) }"/>
+
+    <!-- ─── Til + platforma tanlash modali ─── -->
+    <AppModal v-model="versionModalOpen"
+              :title="tt('dvsel.modal.title')"
+              :subtitle="tt('dvsel.modal.subtitle')"
+              width="520px">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <!-- Til -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('dvsel.lang.label') }}</span>
+          <div class="dvsel-grid">
+            <label v-for="l in VERSION_LANGS" :key="l"
+                   class="dvsel-opt" :class="{ on: versionForm.lang === l }">
+              <input type="radio" v-model="versionForm.lang" :value="l" style="margin:0;cursor:pointer;"/>
+              <span>{{ tt('pe.lang.' + l) }}</span>
+            </label>
+          </div>
+        </div>
+        <!-- Platforma -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text);">{{ tt('dvsel.platform.label') }}</span>
+          <div class="dvsel-grid dvsel-grid-2">
+            <label v-for="p in ['telegram', 'website']" :key="p"
+                   class="dvsel-opt dvsel-opt-plat" :class="{ on: versionForm.platform === p }">
+              <input type="radio" v-model="versionForm.platform" :value="p" style="margin:0;cursor:pointer;"/>
+              <AppIcon :name="p === 'website' ? 'Globe' : 'Telegram'" :size="14"/>
+              <span style="flex:1;">{{ tt('pe.platform.' + p) }}</span>
+              <span class="dvsel-cost">{{ VERSION_COST[p] }} {{ tt('pe.creditShort') }}</span>
+            </label>
+          </div>
+        </div>
+        <!-- Narx + xato -->
+        <div style="font-size:12px;color:#92400e;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:9px 11px;">
+          {{ tt('dvsel.cost', { n: versionCost }) }}
+        </div>
+        <div v-if="versionError"
+             style="font-size:12.5px;color:#ef4444;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:10px 12px;line-height:1.5;">
+          {{ versionError }}
+        </div>
+      </div>
+      <template #footer>
+        <button type="button" @click="versionModalOpen = false"
+                style="padding:8px 14px;border-radius:6px;background:transparent;color:var(--muted);border:1px solid var(--border-2);cursor:pointer;font-size:12.5px;">
+          {{ tt('discoverPreview.close') }}
+        </button>
+        <button type="button" @click="confirmVersion"
+                style="padding:8px 16px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:12.5px;font-weight:600;">
+          {{ tt('dvsel.confirm') }}
+        </button>
+      </template>
+    </AppModal>
 
     <!-- ─── Loading overlay (Tanlash bosilganda) ─── -->
     <transition name="cd-pick-fade">
@@ -290,6 +341,7 @@ import { useRouter } from 'vue-router'
 import { channelsApi } from '@/api/channels.js'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import AppModal from '@/components/ui/AppModal.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import DiscoverCard from '@/components/discover/DiscoverCard.vue'
 import DiscoverPreview from '@/components/discover/DiscoverPreview.vue'
@@ -706,26 +758,60 @@ const selectedAvg = computed(() => {
 const picking = ref(false)
 function toggle(id) { selected.value = { ...selected.value, [id]: !selected.value[id] } }
 
+// ── Til + platforma tanlash modali (Tanlash bosilganda) ───────────
+const VERSION_LANGS = ['uz', 'uz_cyr', 'ru', 'en']
+const VERSION_COST = { telegram: 140, website: 200 }
+const versionModalOpen = ref(false)
+const versionTargetId = ref(null)
+const versionForm = reactive({ lang: 'uz', platform: 'telegram' })
+const versionError = ref('')
+const versionCost = computed(() => VERSION_COST[versionForm.platform] || 0)
+
+/** Tanlash bosilganda — til/platforma tanlash modalini ochamiz. */
+function openVersionModal(id) {
+  if (picking.value) return
+  versionTargetId.value = id
+  versionError.value = ''
+  versionForm.lang = VERSION_LANGS.includes(store.lang) ? store.lang : 'uz'
+  versionModalOpen.value = true
+}
+
 /**
- * Discover'dan postni tanlaganda — yangi qoralama post yaratamiz
- * (rasm rasmga, matn content blokka) va editor sahifasiga o'tamiz.
+ * Til + platforma tasdiqlanganda — manbadan AI post yaratamiz (platformaga qarab
+ * telegram=140 / website=200 kredit) va editor sahifasiga o'tamiz.
+ * Xato bo'lsa modal ichida alert ko'rsatiladi (kredit yechilmaydi).
  */
-async function pickAndEdit(id) {
-  if (picking.value || !company.value) return
+async function confirmVersion() {
+  const id = versionTargetId.value
+  if (!id || !company.value) return
+  versionError.value = ''
+  versionModalOpen.value = false
   picking.value = true
   selected.value = { ...selected.value, [id]: true }
   try {
-    const created = await postsApi.createFromSource(company.value.id, id)
-    if (created?.id) {
-      router.push(`/client/posts/${created.id}/edit`)
+    const res = await postsApi.createFromSourceVersion(company.value.id, id, versionForm.lang, versionForm.platform)
+    if (res?.post_id) {
+      router.push({
+        path: `/client/posts/${res.post_id}/edit`,
+        query: { platform: versionForm.platform, lang: versionForm.lang },
+      })
     }
   } catch (e) {
-    console.error('pickAndEdit failed', e)
-    selected.value = { ...selected.value, [id]: false }
-    const msg = e?.response?.data?.message || tt('clientDiscover.errCreatePost')
-    alert(Array.isArray(msg) ? msg.join('. ') : msg)
-  } finally {
     picking.value = false
+    selected.value = { ...selected.value, [id]: false }
+    const data = e?.response?.data || {}
+    if (data.code === 'INSUFFICIENT_MATERIAL') {
+      versionError.value = tt('wv.err.insufficientMaterial')
+    } else if (e?.response?.status === 402 || data.code === 'INSUFFICIENT_CREDITS') {
+      const need = data.required != null ? data.required : versionCost.value
+      const have = data.balance != null ? data.balance : 0
+      versionError.value = tt('pe.err.insufficientCredits', { need, have })
+    } else {
+      const msg = data.message
+      versionError.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('clientDiscover.errCreatePost'))
+    }
+    // Xatoni modal ichida ko'rsatamiz
+    versionModalOpen.value = true
   }
 }
 function clearSelection() { selected.value = {} }
@@ -986,6 +1072,41 @@ function scoreColor(v) {
   transition: opacity 0.2s ease, transform 0.25s cubic-bezier(.4,.0,.2,1);
 }
 .cd-bar-enter-from, .cd-bar-leave-to { opacity: 0; transform: translate(-50%, 20px); }
+
+/* ───── Til + platforma tanlash modali ───── */
+.dvsel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.dvsel-grid-2 { grid-template-columns: 1fr 1fr; }
+.dvsel-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  transition: border-color .12s, background .12s;
+}
+.dvsel-opt.on {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+}
+.dvsel-cost {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .dvsel-grid { grid-template-columns: 1fr 1fr; }
+}
 
 /* ───── Pick (Tanlash) loading overlay ───── */
 .cd-pick-overlay {

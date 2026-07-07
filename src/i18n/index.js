@@ -302,6 +302,15 @@ export const DICT = {
     'wv.editor.websiteEmptySub': 'Bu til uchun to\'liq website maqolasini yarating (200 kredit).',
     'wv.editor.generateBtn': 'Website versiyasini yaratish',
 
+    // Discover: til + platforma tanlash (dvsel.*)
+    'dvsel.readSource': 'Manbadan o\'qish',
+    'dvsel.modal.title': 'Til va platformani tanlang',
+    'dvsel.modal.subtitle': 'Post qaysi tilda va qaysi platformada tayyorlansin',
+    'dvsel.lang.label': 'Til',
+    'dvsel.platform.label': 'Platforma',
+    'dvsel.cost': 'Muvaffaqiyatli yaratilsa {n} kredit yechiladi.',
+    'dvsel.confirm': 'Tanlash va yaratish',
+
     // PostEditor
     'pe.titleNew': 'Yangi post yaratish',
     'pe.titleEdit': 'Postni tahrirlash',
@@ -3001,6 +3010,15 @@ export const DICT = {
     'wv.editor.websiteEmptySub': 'Создайте полную статью для сайта на этом языке (200 кредитов).',
     'wv.editor.generateBtn': 'Создать версию для сайта',
 
+    // Discover: выбор языка + платформы (dvsel.*)
+    'dvsel.readSource': 'Читать из источника',
+    'dvsel.modal.title': 'Выберите язык и платформу',
+    'dvsel.modal.subtitle': 'На каком языке и для какой платформы подготовить пост',
+    'dvsel.lang.label': 'Язык',
+    'dvsel.platform.label': 'Платформа',
+    'dvsel.cost': 'При успешном создании спишется {n} кредитов.',
+    'dvsel.confirm': 'Выбрать и создать',
+
     'pe.titleNew': 'Создание поста',
     'pe.titleEdit': 'Редактирование поста',
     'pe.back': 'Назад',
@@ -5698,6 +5716,15 @@ export const DICT = {
     'wv.editor.websiteEmptyTitle': 'No website version yet',
     'wv.editor.websiteEmptySub': 'Generate a full website article for this language (200 credits).',
     'wv.editor.generateBtn': 'Generate website version',
+
+    // Discover: language + platform selection (dvsel.*)
+    'dvsel.readSource': 'Read from source',
+    'dvsel.modal.title': 'Choose language and platform',
+    'dvsel.modal.subtitle': 'In which language and for which platform to prepare the post',
+    'dvsel.lang.label': 'Language',
+    'dvsel.platform.label': 'Platform',
+    'dvsel.cost': '{n} credits will be charged on success.',
+    'dvsel.confirm': 'Select and create',
 
     'pe.titleNew': 'Create new post',
     'pe.titleEdit': 'Edit post',
