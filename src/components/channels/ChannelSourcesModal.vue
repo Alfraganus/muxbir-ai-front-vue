@@ -92,45 +92,67 @@
         </div>
         <div v-else class="csm-list">
           <div v-for="s in filteredSources" :key="s.id" class="csm-row">
-            <label class="csm-toggle">
-              <input type="checkbox" :checked="s.is_active" @change="toggleActive(s)" />
-              <span :style="{ color: s.is_active ? '#16a34a' : 'var(--muted)' }">
-                {{ s.is_active ? tt('channelSourcesModal.enabled') : tt('channelSourcesModal.disabled') }}
-              </span>
-            </label>
-
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span class="csm-type-badge" :class="s.source_type === 'website' ? 'web' : 'tg'">
-                  <AppIcon :name="s.source_type === 'website' ? 'Globe' : 'Telegram'" :size="10"/>
-                  {{ s.source_type === 'website' ? 'Website' : 'Telegram' }}
+            <div class="csm-row-main">
+              <label class="csm-toggle">
+                <input type="checkbox" :checked="s.is_active" @change="toggleActive(s)" />
+                <span :style="{ color: s.is_active ? '#16a34a' : 'var(--muted)' }">
+                  {{ s.is_active ? tt('channelSourcesModal.enabled') : tt('channelSourcesModal.disabled') }}
                 </span>
-                <a v-if="s.source_type === 'website'" :href="s.username_raw || ('https://' + s.username_normalized)" target="_blank" class="csm-handle">
-                  {{ s.username_normalized }}
-                </a>
-                <a v-else :href="`https://t.me/${s.username_normalized}`" target="_blank" class="csm-handle">
-                  @{{ s.username_normalized }}
-                </a>
-                <span v-if="s.title && s.title !== s.username_normalized" style="font-size:12px;color:var(--text);">— {{ s.title }}</span>
-                <span v-if="s.subscriber_count > 0" class="csm-badge">
-                  {{ tt('channelSourcesModal.subscribers', { n: formatNumber(s.subscriber_count) }) }}
-                </span>
-              </div>
-              <div style="font-size:11px;color:var(--muted);">
-                <span v-if="s.last_scanned_at">{{ tt('channelSourcesModal.lastScan', { date: formatDate(s.last_scanned_at) }) }}</span>
-                <span v-else>{{ tt('channelSourcesModal.notScanned') }}</span>
-                <span v-if="s.last_error" style="color:#ef4444;margin-left:6px;">· ⚠ {{ s.last_error }}</span>
-              </div>
-              <label v-if="s.source_type === 'website'" class="csm-check csm-check-sm">
-                <input type="checkbox" :checked="s.allow_undated" @change="toggleUndated(s)" />
-                <span>{{ tt('channelSourcesModal.allowUndated') }}</span>
               </label>
+
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="csm-type-badge" :class="s.source_type === 'website' ? 'web' : 'tg'">
+                    <AppIcon :name="s.source_type === 'website' ? 'Globe' : 'Telegram'" :size="10"/>
+                    {{ s.source_type === 'website' ? 'Website' : 'Telegram' }}
+                  </span>
+                  <a v-if="s.source_type === 'website'" :href="s.username_raw || ('https://' + s.username_normalized)" target="_blank" class="csm-handle">
+                    {{ s.username_normalized }}
+                  </a>
+                  <a v-else :href="`https://t.me/${s.username_normalized}`" target="_blank" class="csm-handle">
+                    @{{ s.username_normalized }}
+                  </a>
+                  <span v-if="sourceDisplayName(s) && sourceDisplayName(s) !== s.username_normalized" style="font-size:12px;color:var(--text);">— {{ sourceDisplayName(s) }}</span>
+                  <span v-if="s.subscriber_count > 0" class="csm-badge">
+                    {{ tt('channelSourcesModal.subscribers', { n: formatNumber(s.subscriber_count) }) }}
+                  </span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);">
+                  <span v-if="s.last_scanned_at">{{ tt('channelSourcesModal.lastScan', { date: formatDate(s.last_scanned_at) }) }}</span>
+                  <span v-else>{{ tt('channelSourcesModal.notScanned') }}</span>
+                  <span v-if="s.last_error" style="color:#ef4444;margin-left:6px;">· ⚠ {{ s.last_error }}</span>
+                </div>
+                <label v-if="s.source_type === 'website'" class="csm-check csm-check-sm">
+                  <input type="checkbox" :checked="s.allow_undated" @change="toggleUndated(s)" />
+                  <span>{{ tt('channelSourcesModal.allowUndated') }}</span>
+                </label>
+              </div>
+
+              <button @click="toggleEditNames(s)" class="csm-btn-ghost" :title="tt('channelSourcesModal.editNames')">
+                <AppIcon name="Edit" :size="12"/>
+              </button>
+              <button @click="scanOne(s)" :disabled="scanningId === s.id" class="csm-btn-ghost" :title="tt('channelSourcesModal.scanNow')">
+                {{ scanningId === s.id ? '…' : tt('channelSourcesModal.scanBtn') }}
+              </button>
+              <button @click="remove(s)" class="csm-btn-danger" :title="tt('channelSourcesModal.removeBtn')">{{ tt('channelSourcesModal.removeBtn') }}</button>
             </div>
 
-            <button @click="scanOne(s)" :disabled="scanningId === s.id" class="csm-btn-ghost" :title="tt('channelSourcesModal.scanNow')">
-              {{ scanningId === s.id ? '…' : tt('channelSourcesModal.scanBtn') }}
-            </button>
-            <button @click="remove(s)" class="csm-btn-danger" :title="tt('channelSourcesModal.removeBtn')">{{ tt('channelSourcesModal.removeBtn') }}</button>
+            <div v-if="editingNamesId === s.id" class="csm-names-edit">
+              <div class="csm-names-hint">{{ tt('channelSourcesModal.namesHint') }}</div>
+              <div class="csm-names-grid">
+                <div v-for="f in NAME_LANG_FIELDS" :key="f.key" class="csm-name-field">
+                  <label class="csm-name-label">{{ f.label }}</label>
+                  <input type="text" v-model="nameDraft[f.key]" class="csm-input" :placeholder="f.label"/>
+                </div>
+              </div>
+              <div v-if="nameEditError" class="csm-err">{{ nameEditError }}</div>
+              <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button type="button" class="csm-btn-ghost" @click="cancelEditNames">{{ tt('channelSourcesModal.namesCancel') }}</button>
+                <button type="button" class="csm-btn-accent" :disabled="savingNames" @click="saveNames(s)">
+                  {{ savingNames ? tt('channelSourcesModal.namesSaving') : tt('channelSourcesModal.namesSave') }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -167,6 +189,25 @@ const newAllowUndated = ref(false) // website: sanasiz postlarga ruxsat
 const sources = ref([])
 const scanningId = ref(null)
 const tgApi = reactive({ loaded: false, is_saved: false })
+
+// ── Manba nomini tilga qarab tahrirlash (display_names: uz/uz_cyr/ru/en) ──
+const editingNamesId = ref(null)
+const nameDraft = reactive({ uz: '', uz_cyr: '', ru: '', en: '' })
+const savingNames = ref(false)
+const nameEditError = ref(null)
+const NAME_LANG_FIELDS = computed(() => [
+  { key: 'uz', label: tt('cc.lang.uzLat') },
+  { key: 'uz_cyr', label: tt('cc.lang.uzCyr') },
+  { key: 'ru', label: tt('cc.lang.ru') },
+  { key: 'en', label: tt('cc.lang.en') },
+])
+
+/** Ro'yxatda ko'rsatiladigan manba nomi — joriy UI tiliga qarab (uz/ru/en), bo'lmasa fallback. */
+function sourceDisplayName(s) {
+  const names = s.display_names
+  if (names) return names[store.lang] || names.uz || ''
+  return s.title || ''
+}
 
 // Telegram manba uchun TG API saqlanmagan bo'lsa — qo'shishni bloklash
 const telegramLocked = computed(() => newType.value === 'telegram' && tgApi.loaded && !tgApi.is_saved)
@@ -271,6 +312,49 @@ async function remove(s) {
     alert(e?.response?.data?.message ?? e.message)
   }
 }
+
+function toggleEditNames(s) {
+  if (editingNamesId.value === s.id) {
+    editingNamesId.value = null
+    return
+  }
+  nameEditError.value = null
+  const base = s.title || s.username_normalized
+  nameDraft.uz = s.display_names?.uz || base
+  nameDraft.uz_cyr = s.display_names?.uz_cyr || nameDraft.uz
+  nameDraft.ru = s.display_names?.ru || base
+  nameDraft.en = s.display_names?.en || base
+  editingNamesId.value = s.id
+}
+
+function cancelEditNames() {
+  editingNamesId.value = null
+}
+
+async function saveNames(s) {
+  if (!nameDraft.uz.trim() || !nameDraft.ru.trim() || !nameDraft.en.trim()) {
+    nameEditError.value = tt('channelSourcesModal.namesRequired')
+    return
+  }
+  savingNames.value = true
+  nameEditError.value = null
+  try {
+    await channelsApi.updateSource(props.companyId, props.channel.id, s.id, {
+      name_i18n: {
+        uz: nameDraft.uz.trim(),
+        uz_cyr: nameDraft.uz_cyr.trim(),
+        ru: nameDraft.ru.trim(),
+        en: nameDraft.en.trim(),
+      },
+    })
+    editingNamesId.value = null
+    await reload()
+  } catch (e) {
+    nameEditError.value = e?.response?.data?.message ?? e.message
+  } finally {
+    savingNames.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -354,9 +438,18 @@ async function remove(s) {
 }
 .csm-list { display: flex; flex-direction: column; gap: 8px; }
 .csm-row {
-  display: flex; align-items: center; gap: 10px; padding: 11px;
+  display: flex; flex-direction: column; gap: 10px; padding: 11px;
   border: 1px solid var(--border-2); border-radius: 8px; background: var(--bg);
 }
+.csm-row-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.csm-names-edit {
+  display: flex; flex-direction: column; gap: 10px;
+  padding-top: 10px; border-top: 1px solid var(--border-2);
+}
+.csm-names-hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.csm-names-grid { display: flex; flex-direction: column; gap: 8px; }
+.csm-name-field { display: flex; flex-direction: column; gap: 4px; }
+.csm-name-label { font-size: 11px; font-weight: 600; color: var(--muted); }
 .csm-toggle {
   display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
   user-select: none; font-size: 11px; color: var(--muted); white-space: nowrap;
