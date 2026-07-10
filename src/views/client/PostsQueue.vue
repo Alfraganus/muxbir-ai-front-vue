@@ -52,13 +52,14 @@
         :key="p.id"
         :post="p"
         :active-tab="activeTab"
-        @approve="doApprove(p)"
-        @reject="doReject(p)"
-        @approve-preview="doApprovePreview(p)"
-        @reject-preview="doRejectPreview(p)"
-        @confirm-publish="doConfirmPublish(p)"
-        @decline-publish="doDeclinePublish(p)"
-        @open="openDetail(p)"
+        @approve="doApprove($event)"
+        @reject="doReject($event)"
+        @approve-preview="doApprovePreview($event)"
+        @reject-preview="doRejectPreview($event)"
+        @reject-group="doRejectGroup($event)"
+        @confirm-publish="doConfirmPublish($event)"
+        @decline-publish="doDeclinePublish($event)"
+        @open="openDetail($event)"
       />
     </div>
 
@@ -315,6 +316,19 @@ async function doRejectPreview(post) {
   post._acting = true
   try {
     await queueApi.rejectPreview(companyId.value, post.id)
+    await load()
+  } catch (e) {
+    toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')
+  } finally {
+    post._acting = false
+  }
+}
+
+async function doRejectGroup(post) {
+  if (!confirm(tt('queue.confirm.rejectGroup'))) return
+  post._acting = true
+  try {
+    await queueApi.rejectGroup(companyId.value, post.group_id)
     await load()
   } catch (e) {
     toast.error(e?.response?.data?.message ?? 'Xatolik yuz berdi')

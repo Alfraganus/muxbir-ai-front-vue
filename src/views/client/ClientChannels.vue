@@ -894,6 +894,25 @@
                   <div v-if="autoDeliveryMode === 'approval'" class="cc-info-box info">
                     💡 <span v-html="tt('cc.delivery.approval.infoFull')"></span>
                   </div>
+
+                  <!-- 2-bosqichda bitta taklifda nechta variant (candidate) ko'rsatilsin -->
+                  <div v-if="autoDeliveryMode === 'two_stage'" class="cc-field" style="margin-top:12px;">
+                    <label class="cc-field-label">
+                      <AppIcon name="Layers" :size="11" :style="{verticalAlign:'middle',marginRight:'4px'}"/>
+                      {{ tt('cc.settings.twoStageBufferLabel') }}
+                    </label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <div class="cc-num-input" style="width:auto;">
+                        <button type="button" @click="twoStageBufferCount = Math.max(1, twoStageBufferCount - 1)">−</button>
+                        <input type="number" min="1" max="3" v-model.number="twoStageBufferCount" style="width:44px;"/>
+                        <button type="button" @click="twoStageBufferCount = Math.min(3, twoStageBufferCount + 1)">+</button>
+                      </div>
+                      <span style="font-size:12.5px;color:var(--text-2);">{{ tt('cc.settings.twoStageBufferUnit') }}</span>
+                    </div>
+                    <div class="cc-field-hint" style="margin-top:6px;">
+                      {{ tt('cc.settings.twoStageBufferHint') }}
+                    </div>
+                  </div>
                 </div>
 
                 <!-- ═══ 2. REJALASHTIRISH ═══ -->
@@ -1665,6 +1684,7 @@ const autoBatchCount = ref(10)          // scheduled: har vaqt uchun post soni
 const autoCollectLeadMinutes = ref(60)  // scheduled: necha daqiqa oldin yig'ish
 const autoIntervalBatchCount = ref(1)   // interval: tayyor turadigan buffer
 const autoIntervalCollectBefore = ref(2) // interval: necha daqiqa oldin taklif yuborilsin
+const twoStageBufferCount = ref(1)      // two_stage: bitta taklifda nechta variant (1-3)
 const newScheduleTime = ref('08:00')    // UI: vaqt qo'shish inputi
 
 function addScheduleTime() {
@@ -1771,6 +1791,7 @@ function resetAutoSettings() {
   autoCollectLeadMinutes.value = 60
   autoIntervalBatchCount.value = 1
   autoIntervalCollectBefore.value = 10
+  twoStageBufferCount.value = 1
   autoWindowEnabled.value = false
   autoActiveFromHour.value = 8
   autoActiveToHour.value = 22
@@ -2266,6 +2287,7 @@ async function openAutoSettings(channel, opts = {}) {
   autoCollectLeadMinutes.value = channel.auto_collect_lead_minutes ?? 60
   autoIntervalBatchCount.value = channel.auto_interval_batch_count || 1
   autoIntervalCollectBefore.value = channel.auto_interval_collect_before_minutes ?? 2
+  twoStageBufferCount.value = Math.max(1, Math.min(3, channel.two_stage_buffer_count || 1))
   autoCategoryIds.value = Array.isArray(channel.auto_category_ids) ? [...channel.auto_category_ids] : []
   autoTestShowOriginal.value = !!channel.test_show_original
   compareEnabled.value = !!channel.compare_mode_enabled
@@ -2355,6 +2377,7 @@ async function saveAutoSettings() {
       auto_collect_lead_minutes: autoCollectLeadMinutes.value,
       auto_interval_batch_count: autoIntervalBatchCount.value,
       auto_interval_collect_before_minutes: autoIntervalCollectBefore.value,
+      two_stage_buffer_count: twoStageBufferCount.value,
       auto_category_ids: [...autoCategoryIds.value],
       auto_filters: {
         time_range: autoFilters.value.time_range,
@@ -2680,6 +2703,7 @@ async function submitAdd() {
           auto_collect_lead_minutes: autoCollectLeadMinutes.value,
           auto_interval_batch_count: autoIntervalBatchCount.value,
       auto_interval_collect_before_minutes: autoIntervalCollectBefore.value,
+      two_stage_buffer_count: twoStageBufferCount.value,
           auto_category_ids: [...autoCategoryIds.value],
           auto_filters: {
             time_range: autoFilters.value.time_range,

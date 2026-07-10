@@ -36,9 +36,12 @@ export const queueApi = {
   approvePreview: (companyId, postId) =>
     http.post(`/companies/${companyId}/auto-queue/${postId}/approve-preview`,
       null, { timeout: 120000 }).then(r => r.data),
-  // 1-bosqich bekor: boshqa post topiladi (charge yo'q)
+  // 1-bosqich bekor: faqat shu candidate (qolgan variantlar guruhda qoladi)
   rejectPreview: (companyId, postId) =>
     http.post(`/companies/${companyId}/auto-queue/${postId}/reject-preview`).then(r => r.data),
+  // Guruhlangan taklifda BARCHA variantlarni bekor qilish (charge yo'q)
+  rejectGroup: (companyId, groupId) =>
+    http.post(`/companies/${companyId}/auto-queue/groups/${groupId}/reject`).then(r => r.data),
   // 2-bosqich tasdiq: kanalga chiqarish (oylik limit −1)
   confirmPublish: (companyId, postId) =>
     http.post(`/companies/${companyId}/auto-queue/${postId}/confirm-publish`).then(r => r.data),

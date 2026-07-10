@@ -1,5 +1,48 @@
 <template>
-  <div class="qpc-wrap" @click="$emit('open', post)">
+  <!-- Guruhlangan taklif: 2-3 flash candidate, har biri mustaqil -->
+  <div v-if="post.is_group" class="qpc-group-wrap">
+    <div class="qpc-group-head">
+      <span class="qpc-chip qpc-chip-blue">
+        <AppIcon name="Telegram" :size="10"/>
+        {{ post.channel_name }}
+      </span>
+      <span class="qpc-chip qpc-chip-stage">
+        {{ tt('qpc.groupBadge', { n: post.candidates.length }) }}
+      </span>
+      <span v-if="post.prepared_at" class="qpc-chip qpc-chip-muted">{{ timeAgo(post.prepared_at) }}</span>
+    </div>
+
+    <div class="qpc-candidates">
+      <div v-for="(c, idx) in post.candidates" :key="c.id" class="qpc-candidate">
+        <div v-if="c.cover_url" class="qpc-cand-cover" :style="{ backgroundImage: `url(${c.cover_url})` }"/>
+        <div v-else class="qpc-cand-cover empty"><AppIcon name="Send" :size="13"/></div>
+        <div class="qpc-cand-body">
+          <div class="qpc-cand-meta">
+            <span class="qpc-cand-num">{{ tt('qpc.variantN', { n: idx + 1 }) }}</span>
+            <span v-if="c.source_name" class="qpc-chip">{{ c.source_name }}</span>
+          </div>
+          <div class="qpc-cand-text">{{ shortText(c.preview_summary || c.ai_text) }}</div>
+        </div>
+        <div v-if="activeTab === 'pending'" class="qpc-cand-actions">
+          <button class="qpc-lbtn qpc-lbtn-danger" :disabled="c._acting" @click.stop="$emit('reject-preview', c)">
+            {{ tt('qpc.toss') }}
+          </button>
+          <button class="qpc-lbtn qpc-lbtn-success" :disabled="c._acting" @click.stop="$emit('approve-preview', c)">
+            <span v-if="c._acting" class="cp-spinner-xs"/>
+            <template v-else>{{ tt('qpc.write') }}</template>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button v-if="activeTab === 'pending'" type="button" class="qpc-group-cancel" :disabled="post._acting" @click.stop="$emit('reject-group', post)">
+      <AppIcon name="Close" :size="12"/>
+      {{ tt('qpc.cancelGroup') }}
+    </button>
+  </div>
+
+  <!-- Yakka post (guruhsiz) — eski xatti-harakat -->
+  <div v-else class="qpc-wrap" @click="$emit('open', post)">
     <!-- Cover -->
     <div class="qpc-cover">
       <div v-if="post.cover_url" class="qpc-cover-img" :style="{ backgroundImage: `url(${post.cover_url})` }"/>
@@ -100,6 +143,7 @@ const props = defineProps({
 defineEmits([
   'approve', 'reject', 'open',
   'approve-preview', 'reject-preview', 'confirm-publish', 'decline-publish',
+  'reject-group',
 ])
 
 const isTwoStage = computed(() =>
@@ -272,4 +316,78 @@ function timeAgo(iso) {
   display: inline-block;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Guruhlangan taklif (2-3 candidate) ── */
+.qpc-group-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+}
+.qpc-group-head { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.qpc-candidates { display: flex; flex-direction: column; gap: 8px; }
+.qpc-candidate {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.qpc-cand-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+}
+.qpc-cand-cover.empty {
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.qpc-cand-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.qpc-cand-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.qpc-cand-num { font-size: 10.5px; font-weight: 700; color: var(--accent); }
+.qpc-cand-text {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.qpc-cand-actions { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; width: 84px; }
+.qpc-cand-actions .qpc-lbtn { min-height: 26px; padding: 4px 8px; font-size: 10.5px; }
+.qpc-group-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(239,68,68,.3);
+  background: rgba(239,68,68,.06);
+  color: #ef4444;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.qpc-group-cancel:hover:not(:disabled) { background: rgba(239,68,68,.12); }
+.qpc-group-cancel:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .qpc-candidate { flex-wrap: wrap; }
+  .qpc-cand-actions { flex-direction: row; width: 100%; }
+  .qpc-cand-actions .qpc-lbtn { flex: 1; }
+}
 </style>
