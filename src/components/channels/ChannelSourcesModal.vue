@@ -74,6 +74,12 @@
           </label>
         </div>
 
+        <!-- Manba o'zbek OAV hisoblanadimi (telegram va website uchun) -->
+        <label class="csm-check">
+          <input type="checkbox" v-model="newIsUzbekMedia" :disabled="adding" />
+          <span>{{ tt('channelSourcesModal.uzbekMediaAdd') }}</span>
+        </label>
+
         <div class="csm-hint">
           {{ newType === 'website'
             ? tt('channelSourcesModal.websiteHint')
@@ -125,6 +131,10 @@
                 <label v-if="s.source_type === 'website'" class="csm-check csm-check-sm">
                   <input type="checkbox" :checked="s.allow_undated" @change="toggleUndated(s)" />
                   <span>{{ tt('channelSourcesModal.allowUndated') }}</span>
+                </label>
+                <label class="csm-check csm-check-sm">
+                  <input type="checkbox" :checked="s.is_uzbek_media" @change="toggleUzbekMedia(s)" />
+                  <span>{{ tt('channelSourcesModal.uzbekMedia') }}</span>
                 </label>
               </div>
 
@@ -186,6 +196,7 @@ const newType = ref('telegram')   // 'telegram' | 'website'
 const newValue = ref('')
 const newFeedUrl = ref('')        // website: ixtiyoriy RSS feed URL
 const newAllowUndated = ref(false) // website: sanasiz postlarga ruxsat
+const newIsUzbekMedia = ref(false) // telegram/website: manba o'zbek OAV hisoblanadimi
 const sources = ref([])
 const scanningId = ref(null)
 const tgApi = reactive({ loaded: false, is_saved: false })
@@ -258,12 +269,14 @@ async function addOne() {
           url: val,
           feed_url: newFeedUrl.value.trim() || undefined,
           allow_undated: newAllowUndated.value,
+          is_uzbek_media: newIsUzbekMedia.value,
         }
-      : { source_type: 'telegram', username: val }
+      : { source_type: 'telegram', username: val, is_uzbek_media: newIsUzbekMedia.value }
     await channelsApi.addSource(props.companyId, props.channel.id, payload)
     newValue.value = ''
     newFeedUrl.value = ''
     newAllowUndated.value = false
+    newIsUzbekMedia.value = false
     await reload()
   } catch (e) {
     addError.value = e?.response?.data?.message ?? e.message
@@ -284,6 +297,15 @@ async function toggleActive(s) {
 async function toggleUndated(s) {
   try {
     await channelsApi.updateSource(props.companyId, props.channel.id, s.id, { allow_undated: !s.allow_undated })
+    await reload()
+  } catch (e) {
+    alert(e?.response?.data?.message ?? e.message)
+  }
+}
+
+async function toggleUzbekMedia(s) {
+  try {
+    await channelsApi.updateSource(props.companyId, props.channel.id, s.id, { is_uzbek_media: !s.is_uzbek_media })
     await reload()
   } catch (e) {
     alert(e?.response?.data?.message ?? e.message)
