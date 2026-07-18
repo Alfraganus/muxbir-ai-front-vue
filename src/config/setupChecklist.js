@@ -54,8 +54,8 @@ export const SETUP_CHECK_META = {
     order: 7,
     icon: 'Users',
     title: 'Telegram chat ID kiritish',
-    hint: 'Tasdiq xabarlari boradigan chat ID kiritilsin',
-    link: '/client/telegram-chats',
+    hint: 'Tasdiq xabarlari boradigan chat ID kanal menyusidan kiritilsin',
+    link: '/client/channels',
   },
 }
 

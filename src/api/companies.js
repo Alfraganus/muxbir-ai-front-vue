@@ -32,15 +32,8 @@ export const companiesApi = {
   clearTelegramApi: (id) =>
     http.delete(`/companies/${id}/telegram-api`).then(r => r.data),
 
-  // Telegram chat ID'lari (Muxbir AI bot 2-bosqichli oqimi)
-  listTelegramChats: (id) =>
-    http.get(`/companies/${id}/telegram-chats`).then(r => r.data),
-  addTelegramChat: (id, payload) =>
-    http.post(`/companies/${id}/telegram-chats`, payload).then(r => r.data),
-  updateTelegramChat: (id, chatRowId, patch) =>
-    http.patch(`/companies/${id}/telegram-chats/${chatRowId}`, patch).then(r => r.data),
-  removeTelegramChat: (id, chatRowId) =>
-    http.delete(`/companies/${id}/telegram-chats/${chatRowId}`).then(r => r.data),
+  // Eslatma: Telegram chat ID'lari endi HAR KANALDA alohida boshqariladi —
+  // channelsApi.listChats / addChat / updateChat / removeChat (2-bosqichli oqim).
 
   // Ilova ishlashi uchun zarur sozlamalar holati (dashboard checklist)
   getSetupStatus: (id) =>

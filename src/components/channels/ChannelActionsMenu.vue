@@ -18,6 +18,10 @@
           <span class="cam-ic" style="--c:#22C55E"><AppIcon name="Layers" :size="15"/></span>
           <span class="cam-txt"><b>{{ tt('channelActionsMenu.sourcesTitle') }}</b><small>{{ tt('channelActionsMenu.sourcesDesc') }}</small></span>
         </button>
+        <button class="cam-item" @click="pick('chats')">
+          <span class="cam-ic" style="--c:#2AABEE"><AppIcon name="Telegram" :size="15"/></span>
+          <span class="cam-txt"><b>{{ tt('channelActionsMenu.chatsTitle') }}</b><small>{{ tt('channelActionsMenu.chatsDesc') }}</small></span>
+        </button>
         <button v-if="mode === 'auto' && active" class="cam-item" @click="pick('settings')">
           <span class="cam-ic" style="--c:#F59E0B"><AppIcon name="Settings" :size="15"/></span>
           <span class="cam-txt"><b>{{ tt('channelActionsMenu.settingsTitle') }}</b><small>{{ tt('channelActionsMenu.settingsDesc') }}</small></span>
@@ -52,7 +56,7 @@ const props = defineProps({
   channel: { type: Object, required: true },
   active: { type: Boolean, default: true },
 })
-const emit = defineEmits(['posts', 'signature', 'sources', 'settings', 'toggle-mode', 'remove'])
+const emit = defineEmits(['posts', 'signature', 'sources', 'chats', 'settings', 'toggle-mode', 'remove'])
 
 const open = ref(false)
 const mode = computed(() => props.channel?.posting_mode || 'auto')

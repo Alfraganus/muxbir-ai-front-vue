@@ -209,12 +209,11 @@ const clientMain = computed(() => [
   { id: 'channels',   icon: 'Telegram', label: tt('nav.client.channels'),       path: '/client/channels', count: channelsCount.value ?? undefined },
   { id: 'posts',      icon: 'Send',     label: tt('nav.client.posts'),          path: '/client/posts', count: postsUsage.used || undefined },
   { id: 'queue',      icon: 'Check',    label: tt('nav.client.queue'),          path: '/client/queue', count: counts.value?.pending || undefined },
-  { id: 'tg-chats',   icon: 'Telegram', label: tt('nav.client.tgChats'),        path: '/client/telegram-chats' },
   { id: 'discover',   icon: 'Sparkle',  label: tt('nav.client.discover'),       path: '/client/discover' },
   { id: 'categories', icon: 'Tag',      label: tt('nav.client.categories'),     path: '/client/categories' },
   { id: 'settings',   icon: 'Settings', label: tt('nav.client.settings'),       path: '/client/settings' },
-  // Manbalar — sozlamalar ostida (har kanalning manbalari Kanallar > Manbalar orqali boshqariladi)
-  { id: 'sources',    icon: 'Globe2',   label: tt('nav.client.sources'),        path: null },
+  // Eslatma: "Telegram chatlar" va "Manbalar" endi har kanalning o'zida
+  // boshqariladi (Kanallar > kanal menyusi) — sidebar'dan olib tashlandi.
 ])
 
 // Jadval (schedule), Komanda (team), Tarif va to'lov (billing) — dummy sahifalar,

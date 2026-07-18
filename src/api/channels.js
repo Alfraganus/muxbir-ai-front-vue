@@ -63,6 +63,23 @@ export const channelsApi = {
   scanSource: (companyId, channelId, sourceId) =>
     http.post(`/companies/${companyId}/channels/${channelId}/sources/${sourceId}/scan`).then(r => r.data),
 
+  // ── Kanalning tasdiqlash Telegram chatlari (2-bosqichli oqim, har kanal alohida) ──
+  /** Kanal chatlari ro'yxati */
+  listChats: (companyId, channelId) =>
+    http.get(`/companies/${companyId}/channels/${channelId}/telegram-chats`).then(r => r.data),
+
+  /** Kanalga yangi chat ID qo'shish. payload: { chat_id, title? } */
+  addChat: (companyId, channelId, payload) =>
+    http.post(`/companies/${companyId}/channels/${channelId}/telegram-chats`, payload).then(r => r.data),
+
+  /** Chat yorlig'i/faolligini yangilash (is_active, title) */
+  updateChat: (companyId, channelId, chatRowId, patch) =>
+    http.patch(`/companies/${companyId}/channels/${channelId}/telegram-chats/${chatRowId}`, patch).then(r => r.data),
+
+  /** Chatni o'chirish */
+  removeChat: (companyId, channelId, chatRowId) =>
+    http.delete(`/companies/${companyId}/channels/${channelId}/telegram-chats/${chatRowId}`).then(r => r.data),
+
   // ── Meta (Facebook / Instagram) ──────────────────────────────────────────
   /** Meta OAuth URL ni olish (Facebook/Instagram ulash uchun) */
   getMetaOAuthUrl: (companyId) =>

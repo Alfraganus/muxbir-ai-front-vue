@@ -82,7 +82,7 @@
             </div>
             <ChannelActionsMenu
               :channel="c" :active="isActive(c)"
-              @posts="gotoPosts(c)" @signature="openSignature(c)" @sources="openSources(c)"
+              @posts="gotoPosts(c)" @signature="openSignature(c)" @sources="openSources(c)" @chats="openChats(c)"
               @settings="openAutoSettings(c)" @toggle-mode="togglePostingMode(c)" @remove="removeChannel(c)"/>
           </div>
 
@@ -193,6 +193,10 @@
               <AppButton variant="secondary" size="md" @click="openSources(c)">
                 <template #icon><AppIcon name="Layers" :size="14"/></template>
                 {{ tt('cc.foot.sources') }}
+              </AppButton>
+              <AppButton variant="secondary" size="md" @click="openChats(c)">
+                <template #icon><AppIcon name="Telegram" :size="14"/></template>
+                {{ tt('cc.foot.chats') }}
               </AppButton>
               <AppButton variant="secondary" size="md" @click="openDispatchLogs(c)" :title="tt('cc.foot.logsTitle')">
                 <template #icon><AppIcon name="Terminal" :size="14"/></template>
@@ -1494,6 +1498,14 @@
       @close="sourcesModalChannel = null"
     />
 
+    <!-- ─── Kanal tasdiqlash chatlari modal ─── -->
+    <ChannelChatsModal
+      v-if="chatsModalChannel && company"
+      :company-id="company.id"
+      :channel="chatsModalChannel"
+      @close="chatsModalChannel = null"
+    />
+
     <!-- ─── So'nggi postlar (3 kun) modal ─── -->
     <Teleport to="body">
       <Transition name="cc-modal">
@@ -1555,6 +1567,7 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import SignatureModal from '@/components/channels/SignatureModal.vue'
 import ChannelSourcesModal from '@/components/channels/ChannelSourcesModal.vue'
+import ChannelChatsModal from '@/components/channels/ChannelChatsModal.vue'
 import ChannelActionsMenu from '@/components/channels/ChannelActionsMenu.vue'
 import ChannelInsights from '@/components/channels/ChannelInsights.vue'
 import Sparkline from '@/components/ui/Sparkline.vue'
@@ -2224,6 +2237,12 @@ function closeLogModal() {
 const sourcesModalChannel = ref(null)
 function openSources(channel) {
   sourcesModalChannel.value = channel
+}
+
+// ── Tasdiqlash chatlari modal (har kanal o'z chat ID'lari) ──
+const chatsModalChannel = ref(null)
+function openChats(channel) {
+  chatsModalChannel.value = channel
 }
 
 // ── Imzo (signature) modal ─────────────────────────────────
