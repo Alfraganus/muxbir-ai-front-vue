@@ -170,6 +170,7 @@ const adminNav = computed(() => [
   { id: 'worker',    icon: 'Server',   label: tt('nav.admin.worker'),          path: '/admin/worker-settings' },
   { id: 'ai-prompt', icon: 'Sparkle',  label: tt('nav.admin.aiPrompt'),        path: '/admin/ai-prompt' },
   { id: 'prompts',   icon: 'Edit',     label: tt('nav.admin.prompts'),         path: '/admin/prompts' },
+  { id: 'greetings', icon: 'Sparkle',  label: tt('nav.admin.greetings'),       path: '/admin/greetings' },
   { id: 'tg-sessions', icon: 'Telegram', label: tt('nav.admin.tgSessions'),    path: '/admin/telegram-sessions' },
   { id: 'system',    icon: 'Server',   label: tt('nav.admin.system'),          path: null },
 ])

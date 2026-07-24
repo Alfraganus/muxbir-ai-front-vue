@@ -527,6 +527,13 @@
                     <div class="cc-field-hint">
                       {{ tt('cc.auto.windowHint', { tz: tzLabel }) }}
                     </div>
+                    <label class="cc-window-toggle" style="margin-top:8px;">
+                      <input type="checkbox" v-model="morningGreetingEnabled"/>
+                      <span>{{ tt('cc.auto.morningGreeting') }}</span>
+                    </label>
+                    <div v-if="morningGreetingEnabled" class="cc-field-hint">
+                      {{ tt('cc.auto.morningGreetingHint', { hour: String(autoActiveFromHour ?? 8).padStart(2,'0') }) }}
+                    </div>
                   </div>
 
                   <!-- Kategoriyalar -->
@@ -1079,6 +1086,13 @@
                         {{ tt('cc.settings.windowHintOff') }}
                       </template>
                     </div>
+                    <label class="cc-window-toggle" style="margin-top:8px;">
+                      <input type="checkbox" v-model="morningGreetingEnabled"/>
+                      <span>{{ tt('cc.auto.morningGreeting') }}</span>
+                    </label>
+                    <div v-if="morningGreetingEnabled" class="cc-field-hint">
+                      {{ tt('cc.auto.morningGreetingHint', { hour: String(autoActiveFromHour ?? 8).padStart(2,'0') }) }}
+                    </div>
                   </div>
                 </div>
 
@@ -1560,7 +1574,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -1669,6 +1683,14 @@ const autoInterval = ref(60)
 const autoWindowEnabled = ref(false)
 const autoActiveFromHour = ref(8)
 const autoActiveToHour = ref(22)
+// Ertalabki so'rashuv — yoqilsa faol soatlar oynasi boshlanish ("dan") soatida
+// global admin kalendaridan bugungi salom to'g'ridan-to'g'ri yuboriladi.
+const morningGreetingEnabled = ref(false)
+// Checkbox yoqilganda faol soatlar oynasi ham majburiy yoqiladi (backend shu
+// oynaning boshlanish soatiga qarab yuboradi; oyna o'chiq bo'lsa default 8).
+watch(morningGreetingEnabled, (v) => {
+  if (v && !autoWindowEnabled.value) autoWindowEnabled.value = true
+})
 const autoCategoryIds = ref([])         // []
 const autoTestShowOriginal = ref(false) // test rejim toggle
 // AI chiqish tili: uz_lat | uz_cyr | ru | en (LANG_OPTIONS bilan bir xil set)
@@ -1841,6 +1863,7 @@ function resetAutoSettings() {
   autoWindowEnabled.value = false
   autoActiveFromHour.value = 8
   autoActiveToHour.value = 22
+  morningGreetingEnabled.value = false
   autoCategoryIds.value = []
   autoFilters.value = {
     time_range: '24h',
@@ -2327,6 +2350,7 @@ async function openAutoSettings(channel, opts = {}) {
   autoWindowEnabled.value = hasWindow
   autoActiveFromHour.value = hasWindow ? channel.auto_active_from_hour : 8
   autoActiveToHour.value = hasWindow ? channel.auto_active_to_hour : 22
+  morningGreetingEnabled.value = !!channel.morning_greeting_enabled
   // Yetkazish usuli
   autoDeliveryMode.value = ['direct', 'two_stage'].includes(channel.auto_delivery_mode)
     ? channel.auto_delivery_mode
@@ -2453,6 +2477,7 @@ async function saveAutoSettings() {
       auto_output_language: autoOutputLanguage.value,
       auto_active_from_hour: autoWindowEnabled.value ? autoActiveFromHour.value : null,
       auto_active_to_hour: autoWindowEnabled.value ? autoActiveToHour.value : null,
+      morning_greeting_enabled: morningGreetingEnabled.value,
     })
 
     // posting_mode ENG OXIRIDA yoqiladi — sozlamalar (jumladan tasdiqlash
@@ -2770,6 +2795,7 @@ async function submitAdd() {
           },
           auto_active_from_hour: autoWindowEnabled.value ? autoActiveFromHour.value : null,
           auto_active_to_hour: autoWindowEnabled.value ? autoActiveToHour.value : null,
+          morning_greeting_enabled: morningGreetingEnabled.value,
         })
         addedChannel.value = { ...res.channel, ...updated }
       } catch { /* sozlamalar muvaffaqiyatsiz bo'lsa ham kanal yaratildi */ }

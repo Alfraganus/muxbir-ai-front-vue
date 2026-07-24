@@ -44,4 +44,25 @@ export const adminApi = {
     http.patch(`/admin/prompts/${id}`, payload).then((r) => r.data),
   deletePrompt: (id) =>
     http.delete(`/admin/prompts/${id}`).then((r) => r.data),
+
+  // Ertalabki so'rashuv (morning greeting) — global kalendar (oy+kun), CRUD
+  listGreetings: () =>
+    http.get('/admin/greetings').then((r) => r.data),
+  getGreeting: (id) =>
+    http.get(`/admin/greetings/${id}`).then((r) => r.data),
+  createGreeting: (payload) =>
+    http.post('/admin/greetings', payload).then((r) => r.data),
+  updateGreeting: (id, payload) =>
+    http.patch(`/admin/greetings/${id}`, payload).then((r) => r.data),
+  deleteGreeting: (id) =>
+    http.delete(`/admin/greetings/${id}`).then((r) => r.data),
+  /** Salom uchun rasm/video yuklash. Qaytaradi: { url, media_type }. */
+  uploadGreetingMedia: async (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const { data } = await http.post('/uploads/admin/greeting-media', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
 }

@@ -99,10 +99,13 @@
         <div v-else class="csm-list">
           <div v-for="s in filteredSources" :key="s.id" class="csm-row">
             <div class="csm-row-main">
-              <label class="csm-toggle">
-                <input type="checkbox" :checked="s.is_active" @change="toggleActive(s)" />
+              <label class="csm-switch-row">
+                <span class="csm-switch">
+                  <input type="checkbox" :checked="s.is_active" @change="toggleActive(s)" />
+                  <span class="csm-switch-track"><span class="csm-switch-thumb"/></span>
+                </span>
                 <span :style="{ color: s.is_active ? '#16a34a' : 'var(--muted)' }">
-                  {{ s.is_active ? tt('channelSourcesModal.enabled') : tt('channelSourcesModal.disabled') }}
+                  {{ tt('channelSourcesModal.useThisSource') }}
                 </span>
               </label>
 
@@ -472,9 +475,33 @@ async function saveNames(s) {
 .csm-names-grid { display: flex; flex-direction: column; gap: 8px; }
 .csm-name-field { display: flex; flex-direction: column; gap: 4px; }
 .csm-name-label { font-size: 11px; font-weight: 600; color: var(--muted); }
-.csm-toggle {
-  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+.csm-switch-row {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
   user-select: none; font-size: 11px; color: var(--muted); white-space: nowrap;
+}
+.csm-switch {
+  position: relative; display: inline-block; width: 34px; height: 19px; flex-shrink: 0;
+}
+.csm-switch input {
+  position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; z-index: 1;
+}
+.csm-switch-track {
+  position: absolute; inset: 0; border-radius: 999px;
+  background: var(--border-2); transition: background .15s;
+}
+.csm-switch-thumb {
+  position: absolute; top: 2px; left: 2px; width: 15px; height: 15px;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25);
+  transition: transform .15s;
+}
+.csm-switch input:checked + .csm-switch-track {
+  background: #16a34a;
+}
+.csm-switch input:checked + .csm-switch-track .csm-switch-thumb {
+  transform: translateX(15px);
+}
+.csm-switch input:focus-visible + .csm-switch-track {
+  outline: 2px solid var(--accent); outline-offset: 2px;
 }
 .csm-handle {
   font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600;
