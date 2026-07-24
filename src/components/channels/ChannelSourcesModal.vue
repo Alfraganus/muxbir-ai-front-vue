@@ -104,13 +104,13 @@
                   <input type="checkbox" :checked="s.is_active" @change="toggleActive(s)" />
                   <span class="csm-switch-track"><span class="csm-switch-thumb"/></span>
                 </span>
-                <span :style="{ color: s.is_active ? '#16a34a' : 'var(--muted)' }">
-                  {{ tt('channelSourcesModal.useThisSource') }}
-                </span>
               </label>
 
               <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="csm-switch-label" :style="{ color: s.is_active ? '#16a34a' : 'var(--muted)' }">
+                    {{ tt('channelSourcesModal.useThisSource') }}
+                  </span>
                   <span class="csm-type-badge" :class="s.source_type === 'website' ? 'web' : 'tg'">
                     <AppIcon :name="s.source_type === 'website' ? 'Globe' : 'Telegram'" :size="10"/>
                     {{ s.source_type === 'website' ? 'Website' : 'Telegram' }}
@@ -476,8 +476,11 @@ async function saveNames(s) {
 .csm-name-field { display: flex; flex-direction: column; gap: 4px; }
 .csm-name-label { font-size: 11px; font-weight: 600; color: var(--muted); }
 .csm-switch-row {
-  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
-  user-select: none; font-size: 11px; color: var(--muted); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  user-select: none; flex-shrink: 0;
+}
+.csm-switch-label {
+  font-size: 11px; white-space: nowrap;
 }
 .csm-switch {
   position: relative; display: inline-block; width: 34px; height: 19px; flex-shrink: 0;
