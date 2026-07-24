@@ -628,15 +628,14 @@
                     </div>
                   </div>
 
-                  <div class="cc-auto-row">
-                    <label class="cc-toggle-row">
-                      <input type="checkbox" v-model="autoFilters.include_videos"/>
-                      <span>{{ tt('cc.filter.includeVideos') }}</span>
-                    </label>
-                    <label class="cc-toggle-row">
-                      <input type="checkbox" v-model="autoFilters.require_media"/>
-                      <span>{{ tt('cc.filter.requireMedia') }}</span>
-                    </label>
+                  <div class="cc-field">
+                    <label class="cc-field-label">{{ tt('cc.media.label') }}</label>
+                    <div class="cc-chip-row">
+                      <button v-for="o in MEDIA_MODE_OPTIONS" :key="o.value" type="button"
+                        class="cc-chip" :class="{ active: autoFilters.media_mode === o.value }"
+                        @click="autoFilters.media_mode = o.value">{{ o.label }}</button>
+                    </div>
+                    <div class="cc-field-hint">{{ tt('cc.media.hint') }}</div>
                   </div>
 
                   <div class="cc-auto-row">
@@ -1197,10 +1196,14 @@
                       </div>
                       <div class="cc-field-hint">{{ tt('cc.adv.aiLangHint') }}</div>
                     </div>
-                    <div class="cc-field" style="flex:0 0 160px;">
+                    <div class="cc-field" style="flex:0 0 220px;">
                       <label class="cc-field-label">{{ tt('cc.adv.mediaLabel') }}</label>
-                      <label class="cc-toggle-row"><input type="checkbox" v-model="autoFilters.include_videos"/><span>{{ tt('cc.adv.videoPosts') }}</span></label>
-                      <label class="cc-toggle-row" style="margin-top:5px;"><input type="checkbox" v-model="autoFilters.require_media"/><span>{{ tt('cc.filter.requireMedia') }}</span></label>
+                      <div class="cc-chip-row">
+                        <button v-for="o in MEDIA_MODE_OPTIONS" :key="o.value" type="button"
+                          class="cc-chip" :class="{ active: autoFilters.media_mode === o.value }"
+                          @click="autoFilters.media_mode = o.value">{{ o.label }}</button>
+                      </div>
+                      <div class="cc-field-hint">{{ tt('cc.media.hint') }}</div>
                     </div>
                   </div>
 
@@ -1677,8 +1680,9 @@ const autoFilters = ref({
   per_channel: 5,
   similarity_threshold: 0.5,
   sort_mode: 'latest',
-  include_videos: true,
-  require_media: false,
+  // Media rejimi: 'text_only' | 'text_and_video' | 'video_only'.
+  // Saqlashda uchta boolean'ga (include_videos/require_media/video_only) ochiladi.
+  media_mode: 'text_and_video',
   min_length: 50,
   languages: [],
   keywords: '',
@@ -1742,6 +1746,35 @@ const SORT_MODE_OPTIONS = computed(() => [
   { value: 'latest', label: tt('cc.sort.latest') },
   { value: 'best', label: tt('cc.sort.best') },
 ])
+
+// Auto-post media rejimi (chip menyu). Uchta variant:
+//  - text_only       → faqat textli postlar (video yo'q)
+//  - text_and_video  → textli + videoli aralash (default, eski xatti-harakat)
+//  - video_only      → faqat videoli postlar
+const MEDIA_MODE_OPTIONS = computed(() => [
+  { value: 'text_only',      label: tt('cc.media.textOnly') },
+  { value: 'text_and_video', label: tt('cc.media.textAndVideo') },
+  { value: 'video_only',     label: tt('cc.media.videoOnly') },
+])
+
+// Eski kanallarda media_mode saqlanmagan bo'lishi mumkin — mavjud
+// include_videos/require_media/video_only boolean'laridan kelib chiqamiz.
+function mediaModeFromFilters(f) {
+  if (f && (f.media_mode === 'text_only' || f.media_mode === 'text_and_video' || f.media_mode === 'video_only')) {
+    return f.media_mode
+  }
+  if (f && f.video_only) return 'video_only'
+  if (f && f.include_videos === false) return 'text_only'
+  return 'text_and_video'
+}
+
+// media_mode → backend boolean kontrakti (include_videos/require_media/video_only).
+function mediaFlagsFromMode(mode) {
+  if (mode === 'text_only')  return { include_videos: false, require_media: false, video_only: false }
+  if (mode === 'video_only') return { include_videos: true,  require_media: true,  video_only: true }
+  // text_and_video (default)
+  return { include_videos: true, require_media: false, video_only: false }
+}
 
 // ── AI sozlamalari (prompt + provider + model + recommended) ──
 // Auto-post qayta yozish uchun faqat Gemini Pro modellari qoldirildi.
@@ -1815,8 +1848,7 @@ function resetAutoSettings() {
     per_channel: 3,
     similarity_threshold: 0.5,
     sort_mode: 'best',
-    include_videos: true,
-    require_media: false,
+    media_mode: 'text_and_video',
     min_length: 50,
     languages: [],
     keywords: '',
@@ -2321,8 +2353,7 @@ async function openAutoSettings(channel, opts = {}) {
     per_channel: f.per_channel ?? 5,
     similarity_threshold: f.similarity_threshold ?? 0.5,
     sort_mode: f.sort_mode === 'best' ? 'best' : 'latest',
-    include_videos: f.include_videos !== false,
-    require_media: !!f.require_media,
+    media_mode: mediaModeFromFilters(f),
     min_length: f.min_length ?? 50,
     languages: Array.isArray(f.languages) ? [...f.languages] : [],
     keywords: Array.isArray(f.keywords) ? f.keywords.join(', ') : (f.keywords || ''),
@@ -2404,8 +2435,8 @@ async function saveAutoSettings() {
         per_channel: autoFilters.value.per_channel,
         similarity_threshold: autoFilters.value.similarity_threshold,
         sort_mode: autoFilters.value.sort_mode,
-        include_videos: autoFilters.value.include_videos,
-        require_media: autoFilters.value.require_media,
+        media_mode: autoFilters.value.media_mode,
+        ...mediaFlagsFromMode(autoFilters.value.media_mode),
         min_length: autoFilters.value.min_length,
         languages: [...autoFilters.value.languages],
         keywords: (autoFilters.value.keywords || '')
@@ -2730,8 +2761,8 @@ async function submitAdd() {
             per_channel: autoFilters.value.per_channel,
             similarity_threshold: autoFilters.value.similarity_threshold,
             sort_mode: autoFilters.value.sort_mode,
-            include_videos: autoFilters.value.include_videos,
-            require_media: autoFilters.value.require_media,
+            media_mode: autoFilters.value.media_mode,
+            ...mediaFlagsFromMode(autoFilters.value.media_mode),
             min_length: autoFilters.value.min_length,
             languages: [...autoFilters.value.languages],
             keywords: (autoFilters.value.keywords || '')
