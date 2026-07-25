@@ -531,8 +531,14 @@
                       <input type="checkbox" v-model="morningGreetingEnabled"/>
                       <span>{{ tt('cc.auto.morningGreeting') }}</span>
                     </label>
+                    <div v-if="morningGreetingEnabled" class="cc-window-row" style="margin-top:8px;">
+                      <select v-model.number="morningGreetingHour" class="cc-window-select">
+                        <option v-for="h in HOUR_OPTIONS" :key="'mg'+h.value" :value="h.value">{{ h.label }}</option>
+                      </select>
+                      <span class="cc-window-sep">{{ tt('cc.auto.morningGreetingAt') }}</span>
+                    </div>
                     <div v-if="morningGreetingEnabled" class="cc-field-hint">
-                      {{ tt('cc.auto.morningGreetingHint', { hour: String(autoActiveFromHour ?? 8).padStart(2,'0') }) }}
+                      {{ tt('cc.auto.morningGreetingHint', { hour: String(morningGreetingHour).padStart(2,'0') }) }}
                     </div>
                   </div>
 
@@ -1090,8 +1096,14 @@
                       <input type="checkbox" v-model="morningGreetingEnabled"/>
                       <span>{{ tt('cc.auto.morningGreeting') }}</span>
                     </label>
+                    <div v-if="morningGreetingEnabled" class="cc-window-row" style="margin-top:8px;">
+                      <select v-model.number="morningGreetingHour" class="cc-window-select">
+                        <option v-for="h in HOUR_OPTIONS" :key="'mg2'+h.value" :value="h.value">{{ h.label }}</option>
+                      </select>
+                      <span class="cc-window-sep">{{ tt('cc.auto.morningGreetingAt') }}</span>
+                    </div>
                     <div v-if="morningGreetingEnabled" class="cc-field-hint">
-                      {{ tt('cc.auto.morningGreetingHint', { hour: String(autoActiveFromHour ?? 8).padStart(2,'0') }) }}
+                      {{ tt('cc.auto.morningGreetingHint', { hour: String(morningGreetingHour).padStart(2,'0') }) }}
                     </div>
                   </div>
                 </div>
@@ -1574,7 +1586,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -1683,14 +1695,11 @@ const autoInterval = ref(60)
 const autoWindowEnabled = ref(false)
 const autoActiveFromHour = ref(8)
 const autoActiveToHour = ref(22)
-// Ertalabki so'rashuv — yoqilsa faol soatlar oynasi boshlanish ("dan") soatida
-// global admin kalendaridan bugungi salom to'g'ridan-to'g'ri yuboriladi.
+// Ertalabki so'rashuv — yoqilsa foydalanuvchi belgilagan soatda (faol soatlar
+// oynasidan mustaqil) global admin kalendaridan bugungi salom to'g'ridan-to'g'ri
+// yuboriladi.
 const morningGreetingEnabled = ref(false)
-// Checkbox yoqilganda faol soatlar oynasi ham majburiy yoqiladi (backend shu
-// oynaning boshlanish soatiga qarab yuboradi; oyna o'chiq bo'lsa default 8).
-watch(morningGreetingEnabled, (v) => {
-  if (v && !autoWindowEnabled.value) autoWindowEnabled.value = true
-})
+const morningGreetingHour = ref(8)
 const autoCategoryIds = ref([])         // []
 const autoTestShowOriginal = ref(false) // test rejim toggle
 // AI chiqish tili: uz_lat | uz_cyr | ru | en (LANG_OPTIONS bilan bir xil set)
@@ -1864,6 +1873,7 @@ function resetAutoSettings() {
   autoActiveFromHour.value = 8
   autoActiveToHour.value = 22
   morningGreetingEnabled.value = false
+  morningGreetingHour.value = 8
   autoCategoryIds.value = []
   autoFilters.value = {
     time_range: '24h',
@@ -2351,6 +2361,7 @@ async function openAutoSettings(channel, opts = {}) {
   autoActiveFromHour.value = hasWindow ? channel.auto_active_from_hour : 8
   autoActiveToHour.value = hasWindow ? channel.auto_active_to_hour : 22
   morningGreetingEnabled.value = !!channel.morning_greeting_enabled
+  morningGreetingHour.value = channel.morning_greeting_hour ?? 8
   // Yetkazish usuli
   autoDeliveryMode.value = ['direct', 'two_stage'].includes(channel.auto_delivery_mode)
     ? channel.auto_delivery_mode
@@ -2478,6 +2489,7 @@ async function saveAutoSettings() {
       auto_active_from_hour: autoWindowEnabled.value ? autoActiveFromHour.value : null,
       auto_active_to_hour: autoWindowEnabled.value ? autoActiveToHour.value : null,
       morning_greeting_enabled: morningGreetingEnabled.value,
+      morning_greeting_hour: morningGreetingHour.value,
     })
 
     // posting_mode ENG OXIRIDA yoqiladi — sozlamalar (jumladan tasdiqlash
@@ -2796,6 +2808,7 @@ async function submitAdd() {
           auto_active_from_hour: autoWindowEnabled.value ? autoActiveFromHour.value : null,
           auto_active_to_hour: autoWindowEnabled.value ? autoActiveToHour.value : null,
           morning_greeting_enabled: morningGreetingEnabled.value,
+          morning_greeting_hour: morningGreetingHour.value,
         })
         addedChannel.value = { ...res.channel, ...updated }
       } catch { /* sozlamalar muvaffaqiyatsiz bo'lsa ham kanal yaratildi */ }
