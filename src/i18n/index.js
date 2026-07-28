@@ -1777,7 +1777,7 @@ export const DICT = {
     "cc.auto.from": "dan",
     "cc.auto.to": "gacha",
     "cc.auto.windowHint": "Autopost faqat shu soatlar oralig'ida ishlaydi ({tz}). Masalan 08:00 dan 22:00 gacha.",
-    "cc.auto.morningGreeting": "Ertalabki so'rashuv",
+    "cc.auto.morningGreeting": "Tongi salom",
     "cc.auto.morningGreetingAt": "da yuborilsin",
     "cc.auto.morningGreetingHint": "Har kuni soat {hour}:00'da global kalendardan bugungi salom to'g'ridan-to'g'ri yuboriladi.",
     "cc.auto.categoriesLabel": "Mavzular (kategoriyalar)",
