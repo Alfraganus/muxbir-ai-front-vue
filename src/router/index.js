@@ -23,6 +23,7 @@ import ClientDiscover from '@/views/client/ClientDiscover.vue'
 import ClientAnalytics from '@/views/client/ClientAnalytics.vue'
 import ClientAiPrompt from '@/views/client/ClientAiPrompt.vue'
 import ClientTelegramApi from '@/views/client/ClientTelegramApi.vue'
+import ClientTelegramSessionTest from '@/views/client/ClientTelegramSessionTest.vue'
 import ClientSettings from '@/views/client/ClientSettings.vue'
 import ClientActivate from '@/views/client/ClientActivate.vue'
 import PostsQueue from '@/views/client/PostsQueue.vue'
@@ -70,7 +71,7 @@ const routes = [
   { path: '/client/categories', component: ClientCategories },
   { path: '/client/ai-prompt',  component: ClientAiPrompt },
   { path: '/client/telegram-api', component: ClientTelegramApi },
-  { path: '/test/my-session',  component: ClientTelegramApi },
+  { path: '/test/my-session',  component: ClientTelegramSessionTest },
   { path: '/client/settings', component: ClientSettings },
   { path: '/client/activate', component: ClientActivate },
   { path: '/client/queue',   component: PostsQueue },
