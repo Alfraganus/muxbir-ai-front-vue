@@ -39,19 +39,9 @@ export const companiesApi = {
   getSetupStatus: (id) =>
     http.get(`/companies/${id}/setup-status`).then(r => r.data),
 
-  // Telegram MTProto session (telefon + kod + 2FA)
-  getTelegramSessionStatus: (id) =>
-    http.get(`/companies/${id}/telegram-session/status`).then(r => r.data),
-  sendTelegramCode: (id, phone) =>
-    http.post(`/companies/${id}/telegram-session/send-code`, { phone }).then(r => r.data),
-  resendTelegramCodeSms: (id) =>
-    http.post(`/companies/${id}/telegram-session/resend-code`).then(r => r.data),
-  signInTelegramCode: (id, code) =>
-    http.post(`/companies/${id}/telegram-session/sign-in`, { code }).then(r => r.data),
-  signInTelegram2FA: (id, password) =>
-    http.post(`/companies/${id}/telegram-session/2fa`, { password }).then(r => r.data),
-  revokeTelegramSession: (id) =>
-    http.delete(`/companies/${id}/telegram-session`).then(r => r.data),
+  // Telegram MTProto session — mavjud (saqlangan) sessiya orqali getMe()
+  getTelegramMe: (id) =>
+    http.get(`/companies/${id}/telegram-session/me`).then(r => r.data),
 
   // Eslatma: manbalar endi har kanalda alohida boshqariladi — channelsApi.listSources / addSource / ...
 

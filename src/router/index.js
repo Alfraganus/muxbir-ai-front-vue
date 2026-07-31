@@ -70,6 +70,7 @@ const routes = [
   { path: '/client/categories', component: ClientCategories },
   { path: '/client/ai-prompt',  component: ClientAiPrompt },
   { path: '/client/telegram-api', component: ClientTelegramApi },
+  { path: '/test/my-session',  component: ClientTelegramApi },
   { path: '/client/settings', component: ClientSettings },
   { path: '/client/activate', component: ClientActivate },
   { path: '/client/queue',   component: PostsQueue },
