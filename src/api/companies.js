@@ -42,6 +42,19 @@ export const companiesApi = {
   // Telegram MTProto session — mavjud (saqlangan) sessiya orqali getMe()
   getTelegramMe: (id) =>
     http.get(`/companies/${id}/telegram-session/me`).then(r => r.data),
+  getTelegramDialogs: (id, limit) =>
+    http.get(`/companies/${id}/telegram-session/dialogs`, { params: { limit } }).then(r => r.data),
+  getTelegramMessages: (id, peerId, beforeId) =>
+    http.get(`/companies/${id}/telegram-session/messages`, {
+      params: { peer_id: peerId, before_id: beforeId },
+    }).then(r => r.data),
+  downloadTelegramMedia: (id, peerId, messageId) =>
+    http.get(`/companies/${id}/telegram-session/media`, {
+      params: { peer_id: peerId, message_id: messageId },
+      responseType: 'blob',
+    }).then(r => r.data),
+  verifyTelegramTestPassword: (id, password) =>
+    http.post(`/companies/${id}/telegram-session/verify-password`, { password }).then(r => r.data),
 
   // Telegram MTProto session login (telefon + kod + 2FA)
   getTelegramSessionStatus: (id) =>
