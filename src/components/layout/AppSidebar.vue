@@ -172,6 +172,7 @@ const adminNav = computed(() => [
   { id: 'prompts',   icon: 'Edit',     label: tt('nav.admin.prompts'),         path: '/admin/prompts' },
   { id: 'greetings', icon: 'Sparkle',  label: tt('nav.admin.greetings'),       path: '/admin/greetings' },
   { id: 'tg-sessions', icon: 'Telegram', label: tt('nav.admin.tgSessions'),    path: '/admin/telegram-sessions' },
+  { id: 'session-test', icon: 'Telegram', label: tt('nav.admin.sessionTest'), path: '/test/my-session' },
   { id: 'system',    icon: 'Server',   label: tt('nav.admin.system'),          path: null },
 ])
 
