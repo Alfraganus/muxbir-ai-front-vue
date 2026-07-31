@@ -80,6 +80,9 @@ const routes = [
 
 const ALWAYS_PUBLIC = ['/privacy', '/terms', '/meta/delete']
 const PUBLIC_PATHS = ['/signin', '/signup', '/auth/magic', ...ALWAYS_PUBLIC]
+// Login talab qiladi, lekin /client yoki /admin prefiksiga tegishli emas —
+// shuning uchun rol bo'yicha majburiy redirect'lardan (client/admin overview) ozod.
+const AUTHED_STANDALONE_PATHS = ['/test/my-session']
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -140,6 +143,8 @@ router.beforeEach(async (to, from) => {
     }
     return homePathForRole(getUserRole())
   }
+
+  if (AUTHED_STANDALONE_PATHS.includes(to.path)) return undefined
 
   const role = getUserRole()
   if (isAdminRole(role) && !to.path.startsWith('/admin/')) {
