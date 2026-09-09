@@ -77,6 +77,7 @@ import { useAiUsageStore } from '@/stores/aiUsage.js'
 import { usePostsUsageStore } from '@/stores/postsUsage.js'
 import { useQuotaStore } from '@/stores/quota.js'
 import { COMPANIES } from '@/data/index.js'
+import { isCompanyOwnerRole, getUserRole } from '@/utils/authRole.js'
 
 const props = defineProps({ workspace: String })
 defineEmits(['workspace-change'])
@@ -206,17 +207,24 @@ async function loadChannelsCount() {
   } catch { channelsCount.value = 0 }
 }
 
-const clientMain = computed(() => [
-  { id: 'overview',   icon: 'Home',     label: tt('nav.client.overview'),       path: '/client/overview' },
-  { id: 'channels',   icon: 'Telegram', label: tt('nav.client.channels'),       path: '/client/channels', count: channelsCount.value ?? undefined },
-  { id: 'posts',      icon: 'Send',     label: tt('nav.client.posts'),          path: '/client/posts', count: postsUsage.used || undefined },
-  { id: 'queue',      icon: 'Check',    label: tt('nav.client.queue'),          path: '/client/queue', count: counts.value?.pending || undefined },
-  { id: 'discover',   icon: 'Sparkle',  label: tt('nav.client.discover'),       path: '/client/discover' },
-  { id: 'categories', icon: 'Tag',      label: tt('nav.client.categories'),     path: '/client/categories' },
-  { id: 'settings',   icon: 'Settings', label: tt('nav.client.settings'),       path: '/client/settings' },
+const clientMain = computed(() => {
+  const items = [
+    { id: 'overview',   icon: 'Home',     label: tt('nav.client.overview'),       path: '/client/overview' },
+    { id: 'channels',   icon: 'Telegram', label: tt('nav.client.channels'),       path: '/client/channels', count: channelsCount.value ?? undefined },
+    { id: 'posts',      icon: 'Send',     label: tt('nav.client.posts'),          path: '/client/posts', count: postsUsage.used || undefined },
+    { id: 'queue',      icon: 'Check',    label: tt('nav.client.queue'),          path: '/client/queue', count: counts.value?.pending || undefined },
+    { id: 'discover',   icon: 'Sparkle',  label: tt('nav.client.discover'),       path: '/client/discover' },
+    { id: 'categories', icon: 'Tag',      label: tt('nav.client.categories'),     path: '/client/categories' },
+  ]
+  // Foydalanuvchilar (kompaniya kiritgan qo'shimcha hisoblar) — faqat kompaniya EGASI ko'radi.
+  if (isCompanyOwnerRole(getUserRole())) {
+    items.push({ id: 'users', icon: 'Users', label: tt('nav.client.users'), path: '/client/users' })
+  }
+  items.push({ id: 'settings', icon: 'Settings', label: tt('nav.client.settings'), path: '/client/settings' })
   // Eslatma: "Telegram chatlar" va "Manbalar" endi har kanalning o'zida
   // boshqariladi (Kanallar > kanal menyusi) — sidebar'dan olib tashlandi.
-])
+  return items
+})
 
 // Jadval (schedule), Komanda (team), Tarif va to'lov (billing) — dummy sahifalar,
 // menyudan olib tashlandi. Manbalar yuqorida, sozlamalar ostiga ko'chirildi.

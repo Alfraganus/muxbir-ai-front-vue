@@ -31,7 +31,7 @@ export function resolveRole(userObj) {
 }
 
 const ADMIN_ROLES = new Set(['admin', 'super_admin', 'platform_admin'])
-const COMPANY_ROLES = new Set(['company', 'company_owner', 'company_admin', 'owner'])
+const COMPANY_ROLES = new Set(['company', 'company_owner', 'company_admin', 'owner', 'company_user'])
 
 export function isAdminRole(role) {
   return ADMIN_ROLES.has(role)
@@ -39,6 +39,11 @@ export function isAdminRole(role) {
 
 export function isCompanyRole(role) {
   return COMPANY_ROLES.has(role)
+}
+
+/** Kompaniya EGASI (owner) — company_user emas. Owner-only bo'limlarni ko'rsatish uchun. */
+export function isCompanyOwnerRole(role) {
+  return isCompanyRole(role) && role !== 'company_user'
 }
 
 export function homePathForRole(role) {

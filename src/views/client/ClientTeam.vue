@@ -1,297 +1,291 @@
 <template>
   <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;">
-    <PageHeader :title="tt('team.title')">
+    <PageHeader :title="tt('cu.title')" :subtitle="tt('cu.subtitle')">
       <template #right>
-        <AppButton variant="secondary" size="md"><template #icon><AppIcon name="Eye" :size="13"/></template>{{ tt('team.auditLog') }}</AppButton>
-        <AppButton variant="primary" size="md" @click="inviteOpen = true"><template #icon><AppIcon name="Plus" :size="13"/></template>{{ tt('team.addMember') }}</AppButton>
+        <AppButton variant="primary" size="md" @click="openCreate">
+          <template #icon><AppIcon name="Plus" :size="13"/></template>
+          {{ tt('cu.addButton') }}
+        </AppButton>
       </template>
     </PageHeader>
 
-    <!-- KPIs -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-      <AppKPI :label="tt('team.kpi.seats')" :value="`${TEAM.length}`" :delta="tt('team.kpi.seatsExtra')" delta-tone="warn" :sub="tt('team.kpi.seatsExtraSub')">
-        <template #icon><AppIcon name="Users" :size="14" :style="{color:'var(--muted)'}" /></template>
-      </AppKPI>
-      <AppKPI :label="tt('team.kpi.activeToday')" :value="`${activeToday}`" :delta="tt('team.kpi.activeTodayDelta')" delta-tone="success" :sub="tt('team.kpi.activeTodaySub')">
-        <template #icon><AppIcon name="Bolt" :size="14" :style="{color:'var(--muted)'}" /></template>
-      </AppKPI>
-      <AppKPI :label="tt('team.kpi.pendingInvites')" :value="`${invitedCount}`" :delta="tt('team.kpi.pendingInvitesDelta')" delta-tone="warn" :sub="tt('team.kpi.pendingInvitesSub')">
-        <template #icon><AppIcon name="Send" :size="14" :style="{color:'var(--muted)'}" /></template>
-      </AppKPI>
-      <AppKPI :label="tt('team.kpi.mfa')" value="86%" :delta="tt('team.kpi.mfaDelta')" delta-tone="success" :sub="tt('team.kpi.mfaGoal')">
-        <template #icon><AppIcon name="Shield" :size="14" :style="{color:'var(--muted)'}" /></template>
-      </AppKPI>
-    </div>
+    <!-- Empty state -->
+    <AppPanel v-if="!loading && !users.length" :padding="40">
+      <div style="text-align:center;color:var(--muted);">
+        <AppIcon name="Users" :size="32" :style="{ color: 'var(--muted-2)', marginBottom: '8px' }"/>
+        <div style="font-size:13.5px;font-weight:500;color:var(--text-2);">{{ tt('cu.empty') }}</div>
+      </div>
+    </AppPanel>
 
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <AppTabs v-model="view" :items="viewTabs"/>
-      <div style="flex:1;"/>
-      <AppInput v-model="query" :placeholder="tt('team.search')" :style="{width:'220px'}">
-        <template #icon><AppIcon name="Search" :size="13" :style="{color:'var(--muted)'}" /></template>
-      </AppInput>
-    </div>
+    <!-- Loading -->
+    <div v-else-if="loading" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">…</div>
 
-    <!-- Members table -->
-    <template v-if="view === 'members'">
-      <AppPanel :padding="0">
-        <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+    <!-- List -->
+    <AppPanel v-else :padding="0">
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px;">
           <thead>
             <tr style="border-bottom:1px solid var(--border);">
-              <th style="text-align:left;padding:8px 14px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.member') }}</th>
-              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.role') }}</th>
-              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.channels') }}</th>
-              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.status') }}</th>
-              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.lastActive') }}</th>
-              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('team.col.joined') }}</th>
-              <th style="text-align:left;padding:8px 10px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);"></th>
+              <th style="text-align:left;padding:10px 16px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.name') }}</th>
+              <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.username') }}</th>
+              <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.status') }}</th>
+              <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.channels') }}</th>
+              <th style="text-align:right;padding:10px 16px;width:110px;"></th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(u, i) in filtered" :key="u.id" :style="{ borderTop: i===0?'none':'1px solid var(--border-2)' }">
-              <td style="padding:10px 14px;vertical-align:middle;">
+            <tr v-for="(u, i) in users" :key="u.id" :style="{ borderTop: i === 0 ? 'none' : '1px solid var(--border-2)' }">
+              <td style="padding:12px 16px;vertical-align:middle;">
                 <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="position:relative;">
-                    <AppAvatar :name="u.name" :size="28"/>
-                    <span v-if="u.last.includes('Hozir')" style="position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:999px;background:var(--success);border:2px solid var(--panel);"/>
-                  </div>
-                  <div style="display:flex;flex-direction:column;">
-                    <span style="font-weight:500;">{{ u.name }}</span>
-                    <span class="mono" style="font-size:11px;color:var(--muted);">{{ u.email }}</span>
-                  </div>
+                  <AppAvatar :name="u.full_name" :size="28"/>
+                  <span style="font-weight:500;color:var(--text);">{{ u.full_name }}</span>
                 </div>
               </td>
-              <td style="padding:10px;vertical-align:middle;">
-                <div style="position:relative;display:inline-block;">
-                  <AppBadge :tone="getRoleTone(u.role)">{{ getRoleName(u.role) }}</AppBadge>
-                </div>
+              <td style="padding:12px;vertical-align:middle;" class="mono" >{{ u.username }}</td>
+              <td style="padding:12px;vertical-align:middle;">
+                <AppBadge :tone="u.status === 'active' ? 'success' : 'muted'" :dot="true">
+                  {{ u.status === 'active' ? tt('cu.status.active') : tt('cu.status.inactive') }}
+                </AppBadge>
               </td>
-              <td style="padding:10px;vertical-align:middle;"><span style="font-size:12px;color:var(--text-2);">{{ u.channels }}</span></td>
-              <td style="padding:10px;vertical-align:middle;">
-                <AppBadge v-if="u.status === 'invited'" tone="warn" :dot="true">{{ tt('team.status.invited') }}</AppBadge>
-                <AppBadge v-else tone="success" :dot="true">{{ tt('team.status.active') }}</AppBadge>
+              <td style="padding:12px;vertical-align:middle;font-size:12px;color:var(--text-2);">
+                {{ u.channel_ids.length ? tt('cu.channelsCount', { n: u.channel_ids.length }) : tt('cu.channelsNone') }}
               </td>
-              <td style="padding:10px;vertical-align:middle;">
-                <span class="mono" :style="{ fontSize:'11.5px',color: u.last.includes('Hozir') ? 'var(--success)' : 'var(--muted)' }">{{ u.last }}</span>
-              </td>
-              <td style="padding:10px;vertical-align:middle;" class="mono" style2="font-size:11.5px;color:var(--muted);">{{ u.joined }}</td>
-              <td style="padding:10px;vertical-align:middle;">
-                <div style="display:flex;gap:4px;justify-content:flex-end;">
-                  <AppButton v-if="u.status === 'invited'" variant="ghost" size="sm">{{ tt('team.resend') }}</AppButton>
-                  <MoreMenu/>
-                </div>
+              <td style="padding:12px 16px;vertical-align:middle;text-align:right;">
+                <button class="cu-act" @click="openEdit(u)" :title="tt('cu.edit')">
+                  <AppIcon name="Edit" :size="12"/>
+                </button>
+                <button class="cu-act cu-act-danger" @click="onDelete(u)" :title="tt('cu.delete')">
+                  <AppIcon name="Trash" :size="12"/>
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);background:var(--panel-2);border-radius:0 0 var(--r-lg) var(--r-lg);">
-          <span>{{ tt('team.footer', { total: TEAM.length, active: TEAM.filter(u => u.status === 'active').length }) }}</span>
-          <span>{{ tt('team.footerExtra') }}</span>
-        </div>
-      </AppPanel>
-    </template>
-
-    <!-- Roles view -->
-    <template v-if="view === 'roles'">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-        <AppPanel v-for="r in ROLES" :key="r.id" :padding="0">
-          <div style="padding:16px 18px;border-bottom:1px solid var(--border-2);">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-              <AppBadge :tone="r.tone">{{ r.name }}</AppBadge>
-              <span v-if="r.builtin" class="mono" style="font-size:10px;color:var(--muted);">{{ tt('team.builtin') }}</span>
-            </div>
-            <p style="margin:0;font-size:12.5px;color:var(--text-2);line-height:1.45;">{{ r.desc }}</p>
-          </div>
-          <div style="padding:12px 18px;display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;">
-              <span style="color:var(--muted);">{{ tt('team.roleMembers') }}</span>
-              <span class="tabular" style="font-weight:500;">{{ TEAM.filter(t => t.role === r.id).length }}</span>
-            </div>
-            <AppProgress :value="getGrantCount(r)" :max="ALL_PERMS.length" :tone="r.tone === 'muted' ? 'accent' : r.tone"/>
-          </div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border-2);background:var(--panel-2);display:flex;justify-content:space-between;border-radius:0 0 var(--r-lg) var(--r-lg);">
-            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Users" :size="12"/></template>{{ tt('team.roleMembers') }}</AppButton>
-            <AppButton variant="ghost" size="sm" @click="editingRole = r.id; view = 'matrix'"><template #icon><AppIcon name="Eye" :size="12"/></template>{{ tt('team.roleMatrix') }}</AppButton>
-          </div>
-        </AppPanel>
       </div>
-    </template>
+    </AppPanel>
 
-    <!-- Permission matrix view -->
-    <template v-if="view === 'matrix'">
-      <AppPanel :padding="0">
-        <div style="padding:14px 18px;border-bottom:1px solid var(--border-2);display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <div style="font-size:13px;font-weight:600;">{{ tt('team.matrix.title') }}</div>
-            <div style="font-size:11.5px;color:var(--muted);">{{ tt('team.matrix.sub') }}</div>
-          </div>
-          <AppButton variant="primary" size="md"><template #icon><AppIcon name="Check" :size="13"/></template>{{ tt('team.matrix.save') }}</AppButton>
+    <!-- Create/Edit modal -->
+    <AppModal v-model="modalOpen" :title="form.id ? tt('cu.modal.editTitle') : tt('cu.modal.createTitle')">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label class="cu-label">{{ tt('cu.modal.fullName') }}</label>
+          <input v-model="form.full_name" :placeholder="tt('cu.modal.fullNamePh')" class="cu-input"/>
         </div>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:880px;">
-            <thead>
-              <tr style="border-bottom:1px solid var(--border);background:var(--panel-2);">
-                <th style="text-align:left;padding:12px 18px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);position:sticky;left:0;background:var(--panel-2);z-index:2;width:280px;">{{ tt('team.matrix.col') }}</th>
-                <th v-for="r in ROLES" :key="r.id" :style="{ padding:'10px 8px',fontWeight:500,textAlign:'center',background: r.id===editingRole ? 'var(--accent-bg)' : 'var(--panel-2)' }">
-                  <AppBadge :tone="r.tone">{{ r.name }}</AppBadge>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="g in PERMISSION_GROUPS" :key="g.key">
-                <tr>
-                  <td :colspan="1 + ROLES.length" style="padding:10px 18px 6px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);background:var(--bg-2);border-top:1px solid var(--border-2);">{{ g.label }}</td>
-                </tr>
-                <tr v-for="p in g.perms" :key="p.key" style="border-top:1px solid var(--border-2);">
-                  <td style="padding:10px 18px;position:sticky;left:0;background:var(--panel);z-index:1;">
-                    <div style="font-size:12.5px;">{{ p.label }}</div>
-                    <div class="mono" style="font-size:10.5px;color:var(--muted);">{{ p.key }}</div>
-                  </td>
-                  <td v-for="r in ROLES" :key="r.id" style="padding:8px;text-align:center;">
-                    <span v-if="hasGrant(r, p.key)" style="width:22px;height:22px;border-radius:6px;background:var(--success-bg);color:var(--success);display:inline-flex;align-items:center;justify-content:center;border:1px solid color-mix(in oklab, var(--success) 30%, transparent);">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
-                    </span>
-                    <span v-else style="width:22px;height:22px;border-radius:6px;background:var(--panel-2);color:var(--muted-2);display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);">
-                      <svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg>
-                    </span>
-                  </td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label class="cu-label">{{ tt('cu.modal.username') }}</label>
+          <input v-model="form.username" :placeholder="tt('cu.modal.usernamePh')" class="cu-input mono" :disabled="!!form.id"/>
         </div>
-      </AppPanel>
-    </template>
-
-    <!-- Channel groups view -->
-    <template v-if="view === 'groups'">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-        <AppPanel v-for="g in channelGroups" :key="g.name" :padding="0">
-          <div style="padding:16px 18px;display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span :style="{ width:'8px',height:'8px',borderRadius:'999px',background:g.color }"/>
-              <span style="font-size:13px;font-weight:600;">{{ g.name }}</span>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px;">
-              <span v-for="c in g.channels" :key="c" class="mono" style="font-size:11px;padding:2px 6px;background:var(--panel-2);border:1px solid var(--border);border-radius:4px;color:var(--text-2);">{{ c }}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-              <span style="display:flex;">
-                <span v-for="(_, i) in Array(g.members)" :key="i" :style="{ marginLeft: i===0?'0':'-6px',borderRadius:'999px',border:'2px solid var(--panel)' }">
-                  <AppAvatar :name="'User '+(i+1)" :size="22"/>
-                </span>
-              </span>
-              <span style="font-size:11.5px;color:var(--muted);">{{ g.members }} {{ tt('team.roleMembers') }}</span>
-            </div>
-          </div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border-2);background:var(--panel-2);display:flex;justify-content:space-between;border-radius:0 0 var(--r-lg) var(--r-lg);">
-            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Edit" :size="11"/></template>{{ tt('team.groups.edit') }}</AppButton>
-            <AppButton variant="ghost" size="sm"><template #icon><AppIcon name="Users" :size="11"/></template>{{ tt('team.groups.members') }}</AppButton>
-          </div>
-        </AppPanel>
-        <button style="background:transparent;border:1.5px dashed var(--border);border-radius:var(--r-lg);padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);cursor:pointer;min-height:180px;">
-          <span style="width:36px;height:36px;border-radius:999px;background:var(--panel-2);border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;"><AppIcon name="Plus" :size="16"/></span>
-          <span style="font-size:12.5px;font-weight:500;">{{ tt('team.groups.new') }}</span>
-        </button>
-      </div>
-    </template>
-
-    <!-- Invite drawer -->
-    <div v-if="inviteOpen" style="position:fixed;inset:0;z-index:200;background:color-mix(in oklab, var(--text) 40%, transparent);display:flex;justify-content:flex-end;" @click="inviteOpen = false">
-      <div @click.stop style="width:480px;background:var(--panel);border-left:1px solid var(--border);height:100vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);">
-        <header style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <div style="font-size:14px;font-weight:600;">{{ tt('team.invite.title') }}</div>
-            <div style="font-size:12px;color:var(--muted);">{{ tt('team.invite.sub') }}</div>
-          </div>
-          <button @click="inviteOpen = false" style="width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
-            <AppIcon name="Close" :size="14"/>
-          </button>
-        </header>
-        <div style="flex:1;padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;">
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            <label style="font-size:11px;color:var(--muted);font-weight:500;">{{ tt('team.invite.emailLabel') }}</label>
-            <textarea rows="4" :placeholder="tt('team.invite.emailPh')" style="padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--panel);font-family:var(--font-mono);resize:vertical;outline:none;color:var(--text);"/>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <label style="font-size:11px;color:var(--muted);font-weight:500;">{{ tt('team.invite.roleLabel') }}</label>
-            <label v-for="r in ROLES" :key="r.id"
-              :style="{ display:'flex',alignItems:'flex-start',gap:'10px',padding:'10px 12px',background: inviteRole===r.id ? 'var(--accent-bg)' : 'var(--panel-2)',border:`1px solid ${inviteRole===r.id?'color-mix(in oklab, var(--accent) 30%, transparent)':'var(--border)'}`,borderRadius:'8px',cursor:'pointer' }">
-              <input type="radio" :checked="inviteRole === r.id" @change="inviteRole = r.id" style="accent-color:var(--accent);margin-top:2px;"/>
-              <div style="display:flex;flex-direction:column;gap:2px;">
-                <AppBadge :tone="r.tone">{{ r.name }}</AppBadge>
-                <span style="font-size:11.5px;color:var(--muted);">{{ r.desc }}</span>
-              </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label class="cu-label">{{ tt('cu.modal.password') }}</label>
+          <input v-model="form.password" type="password" class="cu-input"
+            :placeholder="form.id ? tt('cu.modal.passwordPhEdit') : tt('cu.modal.passwordPhCreate')"/>
+        </div>
+        <div v-if="form.id" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
+          <label class="cu-label" style="text-transform:none;letter-spacing:0;font-size:12.5px;">{{ tt('cu.modal.activeLabel') }}</label>
+          <AppToggle v-model="form.is_active"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label class="cu-label">{{ tt('cu.modal.channelsLabel') }}</label>
+          <div v-if="!channels.length" style="font-size:12px;color:var(--muted);padding:8px 0;">{{ tt('cu.modal.noChannels') }}</div>
+          <div v-else style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;">
+            <label v-for="c in channels" :key="c.id" style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;padding:3px 0;">
+              <input type="checkbox" :value="c.id" v-model="form.channel_ids"/>
+              <span>{{ c.display_name || c.username || c.telegram_chat_id }}</span>
             </label>
           </div>
         </div>
-        <footer style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);">
-          <span style="font-size:11.5px;color:var(--muted);">{{ tt('team.invite.validity') }}</span>
-          <div style="display:flex;gap:8px;">
-            <AppButton variant="secondary" size="md" @click="inviteOpen = false">{{ tt('team.invite.cancel') }}</AppButton>
-            <AppButton variant="primary" size="md"><template #icon><AppIcon name="Send" :size="13"/></template>{{ tt('team.invite.send') }}</AppButton>
-          </div>
-        </footer>
+        <div v-if="error" style="padding:9px 12px;background:var(--danger-bg);border:1px solid color-mix(in oklab,var(--danger) 25%,transparent);border-radius:8px;font-size:12px;color:var(--danger);display:flex;align-items:center;gap:6px;">
+          <AppIcon name="Close" :size="12"/> {{ error }}
+        </div>
       </div>
-    </div>
+      <template #footer>
+        <AppButton variant="secondary" size="md" @click="modalOpen = false">{{ tt('cu.modal.cancel') }}</AppButton>
+        <AppButton variant="primary" size="md" :loading="saving" @click="save">
+          {{ form.id ? tt('cu.modal.save') : tt('cu.modal.create') }}
+        </AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useAppStore } from '@/stores/app.js'
+import { companiesApi } from '@/api/companies.js'
+import { channelsApi } from '@/api/channels.js'
+import { companyUsersApi } from '@/api/companyUsers.js'
+import PageHeader from '@/components/layout/PageHeader.vue'
+import AppPanel from '@/components/ui/AppPanel.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
-import AppPanel from '@/components/ui/AppPanel.vue'
-import AppKPI from '@/components/ui/AppKPI.vue'
-import AppTabs from '@/components/ui/AppTabs.vue'
-import AppInput from '@/components/ui/AppInput.vue'
+import AppModal from '@/components/ui/AppModal.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
-import AppStatus from '@/components/ui/AppStatus.vue'
-import AppProgress from '@/components/ui/AppProgress.vue'
-import PageHeader from '@/components/layout/PageHeader.vue'
-import MoreMenu from '@/components/layout/MoreMenu.vue'
-import { TEAM, ROLES, ALL_PERMS, PERMISSION_GROUPS, hasGrant } from '@/data/index.js'
-import { useAppStore } from '@/stores/app.js'
+import AppToggle from '@/components/ui/AppToggle.vue'
 
 const store = useAppStore()
 const t = computed(() => store.t)
 function tt(key, params) { return t.value(key, params) }
 
-const view = ref('members')
-const query = ref('')
-const inviteOpen = ref(false)
-const inviteRole = ref('editor')
-const editingRole = ref(null)
+const company = ref(null)
+const users = ref([])
+const channels = ref([])
+const loading = ref(true)
 
-const viewTabs = computed(() => [
-  { value: 'members', label: tt('team.tab.members'), count: TEAM.length },
-  { value: 'roles',   label: tt('team.tab.roles') },
-  { value: 'matrix',  label: tt('team.tab.matrix') },
-  { value: 'groups',  label: tt('team.tab.groups'), count: 3 },
-])
+const modalOpen = ref(false)
+const saving = ref(false)
+const error = ref('')
+const form = reactive({ id: null, full_name: '', username: '', password: '', is_active: true, channel_ids: [] })
 
-const activeToday = computed(() => TEAM.filter(t =>
-  t.status === 'active' && (t.last.includes('Hozir') || t.last.includes('daq.') || t.last.includes('soat'))
-).length)
-const invitedCount = computed(() => TEAM.filter(t => t.status === 'invited').length)
-
-const filtered = computed(() => TEAM.filter(u =>
-  !query.value || (u.name + u.email).toLowerCase().includes(query.value.toLowerCase())
-))
-
-function getRoleName(roleId) {
-  return ROLES.find(r => r.id === roleId)?.name || roleId
+async function loadAll() {
+  loading.value = true
+  try {
+    if (!company.value) {
+      const cs = await companiesApi.getMy().catch(() => [])
+      const list = Array.isArray(cs) ? cs : [cs].filter(Boolean)
+      company.value = list[0] || null
+    }
+    if (!company.value) return
+    const [u, c] = await Promise.all([
+      companyUsersApi.list(company.value.id),
+      channelsApi.list(company.value.id).catch(() => []),
+    ])
+    users.value = u
+    channels.value = c
+  } catch {
+    error.value = tt('cu.error.loadFailed')
+  } finally {
+    loading.value = false
+  }
 }
-function getRoleTone(roleId) {
-  return ROLES.find(r => r.id === roleId)?.tone || 'muted'
-}
-function getGrantCount(role) {
-  return role.grants === '*' ? ALL_PERMS.length : role.grants.size
+
+function resetForm() {
+  form.id = null
+  form.full_name = ''
+  form.username = ''
+  form.password = ''
+  form.is_active = true
+  form.channel_ids = []
+  error.value = ''
 }
 
-const channelGroups = computed(() => [
-  { name: tt('team.groups.news'),   channels: ['@olcha_daily', '@huduud'],      members: 3, color: 'var(--accent)' },
-  { name: tt('team.groups.market'), channels: ['@bozor_sharhi'],                members: 2, color: 'var(--violet)' },
-  { name: tt('team.groups.tech'),   channels: ['@olcha_promo', '@texno_olcha'], members: 2, color: 'var(--success)' },
-])
+function openCreate() {
+  resetForm()
+  modalOpen.value = true
+}
+
+function openEdit(u) {
+  form.id = u.id
+  form.full_name = u.full_name
+  form.username = u.username || ''
+  form.password = ''
+  form.is_active = u.status === 'active'
+  form.channel_ids = [...u.channel_ids]
+  error.value = ''
+  modalOpen.value = true
+}
+
+async function save() {
+  error.value = ''
+  const full_name = form.full_name.trim()
+  if (!full_name) { error.value = tt('cu.error.fullNameRequired'); return }
+  if (!form.id && form.username.trim().length < 3) { error.value = tt('cu.error.minUsername'); return }
+  if (!form.id && form.password.length < 6) { error.value = tt('cu.error.minPassword'); return }
+  if (form.password && form.password.length < 6) { error.value = tt('cu.error.minPassword'); return }
+  if (!company.value) return
+
+  saving.value = true
+  try {
+    if (form.id) {
+      const payload = { full_name, channel_ids: form.channel_ids, is_active: form.is_active }
+      if (form.password) payload.password = form.password
+      const updated = await companyUsersApi.update(company.value.id, form.id, payload)
+      const i = users.value.findIndex(x => x.id === form.id)
+      if (i >= 0) users.value[i] = updated
+    } else {
+      const created = await companyUsersApi.create(company.value.id, {
+        full_name,
+        username: form.username.trim(),
+        password: form.password,
+        channel_ids: form.channel_ids,
+      })
+      users.value = [...users.value, created]
+    }
+    modalOpen.value = false
+  } catch (e) {
+    const status = e?.response?.status
+    const msg = e?.response?.data?.message
+    if (status === 409) error.value = tt('cu.error.usernameTaken')
+    else error.value = Array.isArray(msg) ? msg.join('. ') : (msg || tt('cu.error.generic'))
+  } finally {
+    saving.value = false
+  }
+}
+
+async function onDelete(u) {
+  if (!confirm(tt('cu.delete.message', { name: u.full_name }))) return
+  try {
+    await companyUsersApi.remove(company.value.id, u.id)
+    users.value = users.value.filter(x => x.id !== u.id)
+  } catch (e) {
+    alert(e?.response?.data?.message || tt('cu.error.generic'))
+  }
+}
+
+onMounted(loadAll)
 </script>
+
+<style scoped>
+.cu-label {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cu-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cu-input:focus {
+  background: var(--panel);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+.cu-input:disabled { opacity: 0.6; cursor: not-allowed; }
+.cu-input.mono { font-family: var(--font-mono, ui-monospace, monospace); }
+
+.cu-act {
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.cu-act:hover {
+  background: var(--panel-2);
+  color: var(--text);
+  border-color: var(--accent);
+}
+.cu-act-danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+</style>

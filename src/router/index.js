@@ -67,7 +67,7 @@ const routes = [
   { path: '/client/billing',   component: ClientBilling },
   { path: '/client/click-test', component: ClientClickTest },
   { path: '/client/test-media-relay', component: TestMediaRelay },
-  { path: '/client/team',      component: ClientTeam },
+  { path: '/client/users',     component: ClientTeam },
   { path: '/client/categories', component: ClientCategories },
   { path: '/client/ai-prompt',  component: ClientAiPrompt },
   { path: '/client/telegram-api', component: ClientTelegramApi },
