@@ -28,6 +28,7 @@
             <tr style="border-bottom:1px solid var(--border);">
               <th style="text-align:left;padding:10px 16px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.name') }}</th>
               <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.username') }}</th>
+              <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.role') }}</th>
               <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.status') }}</th>
               <th style="text-align:left;padding:10px 12px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">{{ tt('cu.col.channels') }}</th>
               <th style="text-align:right;padding:10px 16px;width:110px;"></th>
@@ -43,12 +44,15 @@
               </td>
               <td style="padding:12px;vertical-align:middle;" class="mono" >{{ u.username }}</td>
               <td style="padding:12px;vertical-align:middle;">
+                <AppBadge :tone="roleTone(u.role)">{{ roleLabel(u.role) }}</AppBadge>
+              </td>
+              <td style="padding:12px;vertical-align:middle;">
                 <AppBadge :tone="u.status === 'active' ? 'success' : 'muted'" :dot="true">
                   {{ u.status === 'active' ? tt('cu.status.active') : tt('cu.status.inactive') }}
                 </AppBadge>
               </td>
               <td style="padding:12px;vertical-align:middle;font-size:12px;color:var(--text-2);">
-                {{ u.channel_ids.length ? tt('cu.channelsCount', { n: u.channel_ids.length }) : tt('cu.channelsNone') }}
+                {{ u.role === 'admin' ? tt('cu.channelsAll') : (u.channel_ids.length ? tt('cu.channelsCount', { n: u.channel_ids.length }) : tt('cu.channelsNone')) }}
               </td>
               <td style="padding:12px 16px;vertical-align:middle;text-align:right;">
                 <button class="cu-act" @click="openEdit(u)" :title="tt('cu.edit')">
@@ -80,11 +84,23 @@
           <input v-model="form.password" type="password" class="cu-input"
             :placeholder="form.id ? tt('cu.modal.passwordPhEdit') : tt('cu.modal.passwordPhCreate')"/>
         </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <label class="cu-label">{{ tt('cu.modal.roleLabel') }}</label>
+          <select v-model="form.role" class="cu-input">
+            <option value="admin">{{ tt('cu.role.admin') }}</option>
+            <option value="editor">{{ tt('cu.role.editor') }}</option>
+            <option value="writer">{{ tt('cu.role.writer') }}</option>
+            <option value="viewer">{{ tt('cu.role.viewer') }}</option>
+          </select>
+          <span style="font-size:11.5px;color:var(--muted);">
+            {{ form.role === 'admin' ? tt('cu.role.adminHint') : tt('cu.role.restrictedHint') }}
+          </span>
+        </div>
         <div v-if="form.id" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
           <label class="cu-label" style="text-transform:none;letter-spacing:0;font-size:12.5px;">{{ tt('cu.modal.activeLabel') }}</label>
           <AppToggle v-model="form.is_active"/>
         </div>
-        <div style="display:flex;flex-direction:column;gap:5px;">
+        <div v-if="form.role !== 'admin'" style="display:flex;flex-direction:column;gap:5px;">
           <label class="cu-label">{{ tt('cu.modal.channelsLabel') }}</label>
           <div v-if="!channels.length" style="font-size:12px;color:var(--muted);padding:8px 0;">{{ tt('cu.modal.noChannels') }}</div>
           <div v-else style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;">
@@ -135,7 +151,14 @@ const loading = ref(true)
 const modalOpen = ref(false)
 const saving = ref(false)
 const error = ref('')
-const form = reactive({ id: null, full_name: '', username: '', password: '', is_active: true, channel_ids: [] })
+const form = reactive({ id: null, full_name: '', username: '', password: '', role: 'editor', is_active: true, channel_ids: [] })
+
+function roleLabel(role) {
+  return tt(`cu.role.${role}`) || role
+}
+function roleTone(role) {
+  return role === 'admin' ? 'accent' : 'muted'
+}
 
 async function loadAll() {
   loading.value = true
@@ -164,6 +187,7 @@ function resetForm() {
   form.full_name = ''
   form.username = ''
   form.password = ''
+  form.role = 'editor'
   form.is_active = true
   form.channel_ids = []
   error.value = ''
@@ -179,6 +203,7 @@ function openEdit(u) {
   form.full_name = u.full_name
   form.username = u.username || ''
   form.password = ''
+  form.role = u.role || 'editor'
   form.is_active = u.status === 'active'
   form.channel_ids = [...u.channel_ids]
   error.value = ''
@@ -197,7 +222,7 @@ async function save() {
   saving.value = true
   try {
     if (form.id) {
-      const payload = { full_name, channel_ids: form.channel_ids, is_active: form.is_active }
+      const payload = { full_name, role: form.role, channel_ids: form.channel_ids, is_active: form.is_active }
       if (form.password) payload.password = form.password
       const updated = await companyUsersApi.update(company.value.id, form.id, payload)
       const i = users.value.findIndex(x => x.id === form.id)
@@ -207,6 +232,7 @@ async function save() {
         full_name,
         username: form.username.trim(),
         password: form.password,
+        role: form.role,
         channel_ids: form.channel_ids,
       })
       users.value = [...users.value, created]
