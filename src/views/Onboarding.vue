@@ -1493,7 +1493,9 @@ async function loadReferences() {
     loadedTariffs.value = Array.isArray(tariffs) ? [...tariffs].sort((a, b) => (a.price_monthly ?? 0) - (b.price_monthly ?? 0)) : []
     if (!chosen.value && loadedTariffs.value.length) chosen.value = loadedTariffs.value[0].id
     businessTypes.value = bt
-    platformsForStep.value = pl.length ? pl : [
+    // is_active:false — faqat manba sifatida ishlatiladigan platformalar (masalan X), tanlovda ko'rsatilmaydi
+    const activePlatforms = (pl || []).filter(p => p.is_active !== false)
+    platformsForStep.value = activePlatforms.length ? activePlatforms : [
       { slug: 'telegram', name_i18n: { uz: 'Telegram' }, is_available: true },
       { slug: 'instagram', name_i18n: { uz: 'Instagram' }, is_available: false },
       { slug: 'website', name_i18n: { uz: 'Veb-sayt' }, is_available: false },

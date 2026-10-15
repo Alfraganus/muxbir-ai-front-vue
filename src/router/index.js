@@ -10,6 +10,9 @@ import AdminAiPrompt from '@/views/admin/AdminAiPrompt.vue'
 import AdminTelegramSessions from '@/views/admin/AdminTelegramSessions.vue'
 import AdminPrompts from '@/views/admin/AdminPrompts.vue'
 import AdminGreetings from '@/views/admin/AdminGreetings.vue'
+import AdminRadarSources from '@/views/admin/AdminRadarSources.vue'
+import AdminStyleProfiles from '@/views/admin/AdminStyleProfiles.vue'
+import AdminStyleProfileEdit from '@/views/admin/AdminStyleProfileEdit.vue'
 import ClientOverview from '@/views/client/ClientOverview.vue'
 import ClientChannels from '@/views/client/ClientChannels.vue'
 import ClientPosts from '@/views/client/ClientPosts.vue'
@@ -20,6 +23,7 @@ import TestMediaRelay from '@/views/client/TestMediaRelay.vue'
 import ClientTeam from '@/views/client/ClientTeam.vue'
 import ClientCategories from '@/views/client/ClientCategories.vue'
 import ClientDiscover from '@/views/client/ClientDiscover.vue'
+import ClientRadar from '@/views/client/ClientRadar.vue'
 import ClientAnalytics from '@/views/client/ClientAnalytics.vue'
 import ClientAiPrompt from '@/views/client/ClientAiPrompt.vue'
 import ClientTelegramApi from '@/views/client/ClientTelegramApi.vue'
@@ -52,6 +56,9 @@ const routes = [
   { path: '/admin/tariffs/new', component: AdminTariffBuilder },
   { path: '/admin/users',      component: AdminUsers },
   { path: '/admin/references', component: AdminReferences },
+  { path: '/admin/radar-sources', component: AdminRadarSources },
+  { path: '/admin/style-profiles', component: AdminStyleProfiles },
+  { path: '/admin/style-profiles/:id', component: AdminStyleProfileEdit },
   { path: '/admin/worker-settings', component: AdminWorkerSettings },
   { path: '/admin/ai-prompt',  component: AdminAiPrompt },
   { path: '/admin/telegram-sessions', component: AdminTelegramSessions },
@@ -61,6 +68,7 @@ const routes = [
   { path: '/client/channels',  component: ClientChannels },
   { path: '/client/posts',     component: ClientPosts },
   { path: '/client/discover',  component: ClientDiscover },
+  { path: '/client/radar',     component: ClientRadar },
   { path: '/client/analytics', component: ClientAnalytics },
   { path: '/client/posts/new',         component: PostEditor },
   { path: '/client/posts/:id/edit',    component: PostEditor },

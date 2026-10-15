@@ -45,6 +45,9 @@
     <template v-else-if="name === 'Database'"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5v6c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-6M4 11.5v6c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-6"/></template>
     <template v-else-if="name === 'List'"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></template>
     <template v-else-if="name === 'Dot'"><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"/></template>
+    <template v-else-if="name === 'Radar'"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 18.4 5.6"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></template>
+    <template v-else-if="name === 'X'"><path d="M4.5 4h4.2l10.8 16h-4.2z"/><path d="M19.5 4l-6.3 7.2M10.8 12.8 4.5 20"/></template>
+    <template v-else-if="name === 'Book'"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5A2.5 2.5 0 0 1 6.5 19H20v3H6.5"/><path d="M8 7h8M8 11h6"/></template>
     <template v-else-if="name === 'More'"><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></template>
   </svg>
 </template>

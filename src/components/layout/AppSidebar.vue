@@ -168,6 +168,8 @@ const adminNav = computed(() => [
   { id: 'audit',     icon: 'Layers',   label: tt('nav.admin.audit'),           path: null },
   { id: 'support',   icon: 'Life',     label: tt('nav.admin.support'),         path: null, count: 7 },
   { id: 'references', icon: 'List',    label: tt('nav.admin.references'),      path: '/admin/references' },
+  { id: 'radar-sources', icon: 'Radar', label: tt('nav.admin.radarSources'),  path: '/admin/radar-sources' },
+  { id: 'style-profiles', icon: 'Book', label: tt('nav.admin.styleProfiles'), path: '/admin/style-profiles' },
   { id: 'worker',    icon: 'Server',   label: tt('nav.admin.worker'),          path: '/admin/worker-settings' },
   { id: 'ai-prompt', icon: 'Sparkle',  label: tt('nav.admin.aiPrompt'),        path: '/admin/ai-prompt' },
   { id: 'prompts',   icon: 'Edit',     label: tt('nav.admin.prompts'),         path: '/admin/prompts' },
@@ -213,6 +215,7 @@ const clientMain = computed(() => {
     { id: 'channels',   icon: 'Telegram', label: tt('nav.client.channels'),       path: '/client/channels', count: channelsCount.value ?? undefined },
     { id: 'posts',      icon: 'Send',     label: tt('nav.client.posts'),          path: '/client/posts', count: postsUsage.used || undefined },
     { id: 'queue',      icon: 'Check',    label: tt('nav.client.queue'),          path: '/client/queue', count: counts.value?.pending || undefined },
+    { id: 'radar',      icon: 'Radar',    label: tt('nav.client.radar'),          path: '/client/radar' },
     { id: 'discover',   icon: 'Sparkle',  label: tt('nav.client.discover'),       path: '/client/discover' },
     { id: 'categories', icon: 'Tag',      label: tt('nav.client.categories'),     path: '/client/categories' },
   ]
@@ -239,6 +242,7 @@ function isActive(path) {
     return currentPath.value === '/client/settings'
       || ['/client/telegram-api', '/client/ai-prompt'].includes(currentPath.value)
   }
-  return currentPath.value === path
+  // Ichki sahifalar (masalan /admin/style-profiles/:id) ham ota menyu bandini faol qiladi
+  return currentPath.value === path || currentPath.value.startsWith(path + '/')
 }
 </script>

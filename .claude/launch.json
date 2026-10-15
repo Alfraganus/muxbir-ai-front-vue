@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "muxbir-backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../backend-ai-muxbir", "run", "start:dev"],
+      "port": 4001
     }
   ]
 }
